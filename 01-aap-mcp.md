@@ -69,7 +69,11 @@ adds the MCP container without touching the rest of the stack.
 ## 4. Verify
 
 ```
-$ podman ps | grep -i mcp
+aap_service@aap-remote /opt/sources/ansible-automation-platform-containerized-setup-2.7-2
+❯ podman ps | grep -i mcp 
+242bc0f298c0  registry.redhat.io/ansible-automation-platform-27/mcp-server-rhel9:latest         /entrypoint.sh        About a minute ago  Up About a minute  8080/tcp, 8086/tcp  ansiblemcp
+aap_service@aap-remote /opt/sources/ansible-automation-platform-containerized-setup-2.7-2
+❯ 
 ```
 
 You should see an `ansiblemcp` container running. The MCP server listens on
