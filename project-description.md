@@ -72,9 +72,15 @@ These are the choices for this demo. Each role can be filled by other tools — 
 
 ```mermaid
 %%{init: {'themeVariables': {'fontSize': '18px'}, 'flowchart': {'nodeSpacing': 45, 'rankSpacing': 70}}}%%
-flowchart LR
-    ZBX[Monitoring<br>Zabbix] -->|alert| EDA[Event routing<br>Event-Driven Ansible]
-    EDA -->|known issue:<br>run template| AAP
+flowchart TD
+    ZBX[Monitoring<br>Zabbix] -->|alert| EDA
+
+    subgraph TEL[Trusted Execution Layer — Ansible Automation Platform]
+        EDA[Event routing<br>Event-Driven Ansible]
+        AAP[Automation Controller<br>remediation catalog]
+        EDA -->|known issue:<br>run template| AAP
+    end
+
     EDA -->|unknown issue:<br>trigger agent| CC
 
     subgraph TRA[AI agent — TRA server]
@@ -83,24 +89,25 @@ flowchart LR
         CC <--> MEM
     end
 
+    CC -->|read-only alert & history<br>via Zabbix MCP| ZBX
     CC -->|read-only diagnostics<br>via linux-mcp| TGT[Managed server<br>RHEL 9]
     CC -->|request sanctioned job<br>via AAP MCP| AAP
 
-    subgraph TEL[Trusted Execution Layer]
-        AAP[AAP Controller<br>remediation catalog]
-    end
-
-    AAP -->|remediation via SSH| TGT
-    AAP -->|create / update / close| ITSM[(ITSM<br>incident API)]
+    AAP -->|remediation automated| TGT
+    AAP -->|update| ITSM[(ITSM<br>Update incident record and CMDB)]
     TGT -.->|agent data| ZBX
 
     classDef default fill:none,stroke:#4a7ebb,stroke-width:2px;
-    classDef tel fill:none,stroke:#5f8f5f,stroke-width:3px;
+    classDef zbx fill:none,stroke:#d64545,stroke-width:2px;
+    classDef agent fill:none,stroke:#5f8f5f,stroke-width:2px;
+    classDef tel fill:none,stroke:#4a7ebb,stroke-width:3px;
     classDef store fill:none,stroke:#888888,stroke-width:2px;
-    class AAP tel;
+    class ZBX zbx;
+    class CC agent;
+    class AAP,EDA tel;
     class MEM,ITSM store;
-    style TRA fill:none,stroke:#888888,stroke-width:1px,stroke-dasharray:3 3;
-    style TEL fill:none,stroke:#5f8f5f,stroke-width:1px,stroke-dasharray:3 3;
+    style TRA fill:none,stroke:#5f8f5f,stroke-width:1px,stroke-dasharray:3 3;
+    style TEL fill:none,stroke:#4a7ebb,stroke-width:1px,stroke-dasharray:3 3;
 ```
 
 The critical property is visible in the diagram: **every arrow that changes state — on the managed server and in the ITSM system — originates from the Trusted Execution Layer.** The AI agent has no direct write path anywhere.
