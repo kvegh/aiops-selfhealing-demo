@@ -6,18 +6,6 @@ AI-driven incident remediation for enterprise infrastructure — with the blast 
 
 A reproducible demo in which infrastructure incidents are detected, diagnosed, and remediated automatically — including incidents nobody wrote a runbook for. An AI agent investigates the unknown cases and resolves them, yet at no point holds the ability to change systems directly: every change, without exception, runs through the organization's governed automation platform.
 
-## Component roles
-
-These are the choices for this demo. Each role can be filled by other tools — the architecture depends on the roles, not the products.
-
-| Role | This demo | Notes |
-|------|-----------|-------|
-| Monitoring & event source | Zabbix | Any monitoring system capable of forwarding events |
-| Automation & orchestration — the Trusted Execution Layer | Ansible Automation Platform (AAP) incl. Event-Driven Ansible | Sole component that changes systems |
-| Managed test server (monitored & remediated) | RHEL 9 | Stand-in for any managed fleet |
-| Agent runtime server — tools, runtimes, admin (TRA) | RHEL 9 | Hosts the AI agent and its integration layer |
-| AI agent | Claude Code (CLI, headless) | Any agentic LLM runtime with policy enforcement |
-
 ## The core idea
 
 An incident is resolved at the lowest capable level. Known issues never wake the AI; the AI never acts outside approved automation; humans are woken with an analysis, not an alert.
@@ -67,6 +55,18 @@ The catalog holds no answer. The agent drafts a new remediation and submits it a
 Judgment is required beyond what any automation should exercise. The agent compiles the complete diagnostic picture — findings, attempted remediations, ruled-out causes — and wakes a human, who starts at the analysis rather than at a raw alert.
 
 > **Management summary.** The bulk of incidents resolve at Level 0 — machine-speed, audit-grade, with no one paged at 3 a.m. The AI agent absorbs the long tail of unknowns at Level 1, working exclusively through the automation platform the organization already owns and governs — existing investment, extended rather than replaced. Escalations that do reach engineers arrive pre-analyzed, cutting time-to-resolution where expert time is scarcest. Autonomy grows only where control grows with it: every action, at every level, runs through the same governed, auditable execution path.
+
+## Component roles
+
+These are the choices for this demo. Each role can be filled by other tools — the architecture depends on the roles, not the products.
+
+| Role | This demo | Notes |
+|------|-----------|-------|
+| Monitoring & event source | Zabbix | Any monitoring system capable of forwarding events |
+| Automation & orchestration — the Trusted Execution Layer | Ansible Automation Platform (AAP) incl. Event-Driven Ansible | Sole component that changes systems |
+| Managed test server (monitored & remediated) | RHEL 9 | Stand-in for any managed fleet |
+| Agent runtime server — tools, runtimes, admin (TRA) | RHEL 9 | Hosts the AI agent and its integration layer |
+| AI agent | Claude Code (CLI, headless) | Any agentic LLM runtime with policy enforcement |
 
 ## Technical architecture
 
