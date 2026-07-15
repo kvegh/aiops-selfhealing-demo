@@ -16,79 +16,67 @@ network listener required.
 ## Environment
 
 - TRA VM: RHEL 9, base installation (from [00-starting-setup](00-starting-setup.md))
-- Target: `rhel-target` VM, RHEL 9, reachable from TRA over SSH (port 22)
+- Target: `testserver1`, RHEL 9, reachable from TRA by hostname over SSH (port 22)
 - Container runtime: Podman (from `container-tools`)
+- SSH user on target: `mcp` (no sudo — read-only diagnostics only)
+- The TRA user's default SSH key (`~/.ssh/id_ed25519`) is already
+  authorized on the target host for the `mcp` user
 
-## 1. Install container tools on the TRA VM
+## Prerequisites
 
-```bash
-sudo dnf install -y container-tools
-```
+- The target host is reachable from the TRA VM over SSH (port 22)
+- The TRA user's default SSH keypair exists at `~/.ssh/id_ed25519`
+- The public key is in `~/.ssh/authorized_keys` for the `mcp` user on
+  the target host
 
-Verify:
+### Target host preparation
 
-```bash
-podman --version
-```
+The `mcp` user on the target host does **not** need sudo. The linux-mcp
+server's diagnostic tools (`systemctl status`, `ss`, `journalctl`,
+`ps`, etc.) run without elevated privileges.
 
-## 2. Prepare SSH key-based authentication
+For full diagnostic access, the `mcp` user needs:
 
-The containerized MCP server connects to the target host over SSH using
-key-based authentication. You need an SSH keypair whose public key is
-authorized on the target host.
+- Membership in the `systemd-journal` group (for `journalctl` access):
 
-> Creating the keypair itself is out of scope — use an existing key or
-> generate one with `ssh-keygen`. What matters is that the private key
-> is available on the TRA VM and the public key is in
-> `~/.ssh/authorized_keys` on the target host.
+  ```bash
+  sudo usermod -aG systemd-journal mcp
+  ```
 
-### Store the private key
+- ACLs on log files that are `root:root 600` on RHEL:
 
-Place the private key in a dedicated location on the TRA VM:
+  ```bash
+  sudo setfacl -m u:mcp:r /var/log/messages
+  sudo setfacl -m u:mcp:r /var/log/secure
+  ```
 
-```bash
-mkdir -p /opt/tra/keys
-cp ~/.ssh/id_ed25519_mcp /opt/tra/keys/target-key
-chmod 600 /opt/tra/keys/target-key
-```
+## 1. Create the SSH config
 
-The container runs as UID 1001. Set ownership accordingly:
+The linux-mcp server runs inside a container and cannot resolve
+hostnames or execute commands on the host directly — all inspection
+happens over SSH to the target. The container needs an SSH config
+to map hostnames to connection parameters.
 
-```bash
-chown 1001:0 /opt/tra/keys/target-key
-```
-
-### Create the SSH config
-
-The MCP server uses `~/.ssh/config` inside the container to resolve host
-aliases. Create a config file that maps your target host alias:
+Create `~/.ssh/config` on the TRA VM:
 
 ```
-Host rhel-target
+Host testserver1
     HostName TARGET_IP
     User mcp
-    Port 22
     IdentityFile /var/lib/mcp/.ssh/id_ed25519
     StrictHostKeyChecking no
 ```
 
-Save this as `/opt/tra/keys/ssh-config` on the TRA VM. The
-`IdentityFile` path is the container-internal mount point, not the host
-path.
+Replace `TARGET_IP` with the IP address of the target host.
 
-Set ownership to match the container user:
+The `IdentityFile` path is the **container-internal** mount point, not
+the host path — the SSH config is read inside the container where the
+key is mounted at `/var/lib/mcp/.ssh/id_ed25519`.
 
-```bash
-chown 1001:0 /opt/tra/keys/ssh-config
-```
-
-### Create the log directory
-
-The MCP server writes logs to a directory that must exist before the
-container starts:
+## 2. Install container tools on the TRA VM
 
 ```bash
-mkdir -p ~/.local/share/linux-mcp-server/logs
+sudo dnf install -y container-tools
 ```
 
 ## 3. Pull the container image
@@ -97,24 +85,37 @@ mkdir -p ~/.local/share/linux-mcp-server/logs
 podman pull quay.io/redhat-services-prod/rhel-lightspeed-tenant/linux-mcp-server:latest
 ```
 
-## 4. Test-run the container
-
-Run the MCP server manually to verify the SSH connection works:
+## 4. Create the log directory
 
 ```bash
-export LINUX_MCP_USER=mcp
-
-podman run --rm --interactive \
-    --userns keep-id:uid=1001,gid=0 \
-    -e LINUX_MCP_USER \
-    -v /opt/tra/keys/target-key:/var/lib/mcp/.ssh/id_ed25519:ro,Z \
-    -v /opt/tra/keys/ssh-config:/var/lib/mcp/.ssh/config:ro,Z \
-    -v $HOME/.local/share/linux-mcp-server/logs:/var/lib/mcp/.local/share/linux-mcp-server/logs:rw,Z \
-    quay.io/redhat-services-prod/rhel-lightspeed-tenant/linux-mcp-server:latest
+mkdir -p ~/.local/share/linux-mcp-server/logs
 ```
 
-The server starts in stdio mode and prints initialization messages.
-Press `Ctrl+C` then `Return` to stop it.
+## 5. Add linux-mcp to the Claude Code configuration
+
+Add the `linux-mcp` entry to the `mcpServers` block in `~/.claude.json`,
+next to the AAP MCP server configured in [01-aap-mcp](01-aap-mcp.md):
+
+```json
+"linux-mcp": {
+    "type": "stdio",
+    "command": "podman",
+    "args": [
+        "run", "--rm", "--interactive",
+        "--userns", "keep-id:uid=1001,gid=0",
+        "-e", "LINUX_MCP_USER=mcp",
+        "-v", "/home/USER/.ssh:/var/lib/mcp/.ssh:ro,Z",
+        "-v", "/home/USER/.local/share/linux-mcp-server/logs:/var/lib/mcp/.local/share/linux-mcp-server/logs:rw,Z",
+        "quay.io/redhat-services-prod/rhel-lightspeed-tenant/linux-mcp-server:latest"
+    ]
+}
+```
+
+Replace `USER` with the local username on the TRA VM (the user that
+runs Claude Code).
+
+Mounting the entire `~/.ssh` directory gives the container access to
+the private key, SSH config, and `known_hosts` in a single mount.
 
 Key flags explained:
 
@@ -123,58 +124,40 @@ Key flags explained:
 | `--rm` | Remove the container after exit |
 | `--interactive` | Keep stdin open (required for stdio transport) |
 | `--userns keep-id:uid=1001,gid=0` | Map the host user to UID 1001 inside the container (the MCP server's runtime user) |
-| `-e LINUX_MCP_USER` | SSH username on the target host |
-| `-v .../target-key:...id_ed25519:ro,Z` | Mount the SSH private key read-only |
-| `-v .../ssh-config:...config:ro,Z` | Mount the SSH config read-only |
+| `-e LINUX_MCP_USER=mcp` | SSH username on the target host |
+| `-v .../.ssh:...:ro,Z` | Mount the entire SSH directory read-only (key, config, known_hosts) |
 | `-v .../logs:...:rw,Z` | Mount the log directory read-write |
 
-> **If the SSH key has a passphrase**, also pass
-> `-e LINUX_MCP_KEY_PASSPHRASE=<passphrase>`. For this demo we assume
-> an unencrypted key.
+Claude Code launches the container automatically at startup via the
+stdio transport — no manual `podman run` needed.
 
-## 5. Configure Claude Code to use linux-mcp
-
-The Claude Code agent (set up in [04-claude-agent](04-claude-agent.md))
-connects to the containerized MCP server via stdio. The relevant entry
-in `/opt/tra/agent/.mcp.json`:
-
-```json
-{
-    "linux-mcp": {
-        "type": "stdio",
-        "command": "podman",
-        "args": [
-            "run", "--rm", "--interactive",
-            "--userns", "keep-id:uid=1001,gid=0",
-            "-e", "LINUX_MCP_USER",
-            "-v", "/opt/tra/keys/target-key:/var/lib/mcp/.ssh/id_ed25519:ro,Z",
-            "-v", "/opt/tra/keys/ssh-config:/var/lib/mcp/.ssh/config:ro,Z",
-            "-v", "/home/USER/.local/share/linux-mcp-server/logs:/var/lib/mcp/.local/share/linux-mcp-server/logs:rw,Z",
-            "quay.io/redhat-services-prod/rhel-lightspeed-tenant/linux-mcp-server:latest"
-        ],
-        "env": {
-            "LINUX_MCP_USER": "mcp"
-        }
-    }
-}
-```
-
-Replace `USER` with the actual username on the TRA VM and `mcp` with
-the SSH user on the target if different.
+> **Note:** The first connection attempt may time out while podman sets
+> up the user namespace. Reconnecting from the MCP status screen
+> resolves this.
 
 ## 6. Verify
 
-From the agent directory, test that Claude Code can reach the target
-host through linux-mcp:
+Start Claude Code from the agent directory and test:
 
 ```bash
 cd /opt/tra/agent
-claude -p "Use linux-mcp to check the OS version on the target host." \
+claude -p "Use linux-mcp to check the OS version on testserver1." \
     --permission-mode bypassPermissions \
     --max-turns 5
 ```
 
 The agent should return the RHEL version of the target host.
+
+## Why an SSH config is needed
+
+The linux-mcp server runs inside a container. It cannot execute commands
+on the host directly — all system inspection happens over SSH to the
+target. The container detects that it is containerized and refuses local
+execution, requiring a `host` parameter on every tool call.
+
+The SSH config mounted into the container maps human-readable hostnames
+to connection parameters (IP, user, key path) so that tool calls can
+reference a short hostname (e.g. `testserver1`) instead of raw IPs.
 
 ## Explicitly out of scope
 
@@ -182,4 +165,5 @@ The agent should return the RHEL version of the target host.
 - Target host user creation and `authorized_keys` setup
 - MCP server installation via pip (we use the container method)
 - Read/write mode configuration (this demo uses read-only, the default)
+- Sudo for the remote `mcp` user (not needed for read-only diagnostics)
 - Claude Code CLI installation and full MCP wiring (covered in [04-claude-agent](04-claude-agent.md))
