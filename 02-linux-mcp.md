@@ -1,4 +1,4 @@
-# 03 – Linux MCP Server
+# 02 – Linux MCP Server
 
 The linux-mcp server gives Claude **read-only** diagnostic access to the
 managed RHEL target host. It connects over SSH and exposes system
