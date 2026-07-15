@@ -134,12 +134,13 @@ Add the remaining MCP servers to the same `mcpServers` block:
         ]
     },
     "zabbix": {
-        "command": "npx",
-        "args": ["-y", "zabbix-mcp-server"],
-        "env": {
-            "ZABBIX_URL": "https://ZABBIX_SERVER",
-            "ZABBIX_API_TOKEN": "ZABBIX_TOKEN"
-        }
+        "command": "podman",
+        "args": [
+            "run", "--rm", "-i",
+            "-v", "/etc/zabbix-mcp/config.toml:/etc/zabbix-mcp/config.toml:ro",
+            "zabbix-mcp-server",
+            "--config", "/etc/zabbix-mcp/config.toml"
+        ]
     },
     "memory": {
         "command": "npx",
