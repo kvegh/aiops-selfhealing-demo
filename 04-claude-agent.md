@@ -48,70 +48,121 @@ manager):
 export ANTHROPIC_API_KEY="sk-ant-..."
 ```
 
-## 4. Connect MCP servers
+## 4. Create an AAP API token
 
-MCP connections are configured in `.mcp.json` at the root of the agent
-project directory. This file is declarative — Claude Code reads it on
-every invocation.
+Claude authenticates to the AAP MCP server with a Personal Access Token
+(PAT). Creating one requires an OAuth2 application first.
 
-Create `/opt/tra/agent/.mcp.json`:
+### Create an OAuth2 application
+
+In the AAP Controller UI:
+
+1. Navigate to **Administration → OAuth2 Applications → Add**.
+2. Set the fields:
+   - **Name:** `mcp-client` (or any descriptive name)
+   - **Grant type:** Resource owner password-based
+   - **Client type:** Confidential
+   - **Redirect URIs:** leave blank
+3. Save. Note the **Client ID** — you won't need the secret for PAT
+   auth, but keep it on record.
+
+### Create a Personal Access Token
+
+1. Navigate to **Authorization → Personal Access Tokens → Add**.
+2. Select the OAuth2 application you just created (`mcp-client`).
+3. Set **Scope** to **Write** (covers both read and write operations —
+   required because the MCP server launches job templates).
+4. Save. **Copy the token value immediately** — it will not be shown
+   again.
+
+The token is bound to the user that is logged in when it is created.
+That user's RBAC permissions determine what the MCP server can do —
+ensure the user has permission to launch the relevant job templates.
+
+Store the token securely. You will reference it in the Claude Code
+configuration on the TRA VM in the next step.
+
+## 5. Connect MCP servers
+
+Claude Code reads MCP configuration from `~/.claude.json`. The AAP MCP
+server uses Streamable HTTP transport with Bearer token authentication.
+
+Edit `~/.claude.json` and add the AAP MCP entry under your project's
+`mcpServers` section. If the file does not exist yet, running
+`claude mcp add` once will create it (see alternative below).
 
 ```json
-{
-  "mcpServers": {
-    "aap": {
-      "type": "http",
-      "url": "https://AAP_SERVER:8448/mcp",
-      "headers": {
-        "Authorization": "Bearer AAP_API_TOKEN"
-      }
-    },
-    "linux-mcp": {
-      "type": "stdio",
-      "command": "podman",
-      "args": [
-        "run", "--rm", "-i",
-        "-v", "/opt/tra/keys/target-key:/key:ro",
-        "ghcr.io/rhel-lightspeed/linux-mcp:latest",
-        "--host", "TARGET_IP",
-        "--user", "ansible",
-        "--key", "/key"
-      ]
-    },
-    "zabbix": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "zabbix-mcp-server"],
-      "env": {
-        "ZABBIX_URL": "https://ZABBIX_SERVER",
-        "ZABBIX_API_TOKEN": "ZABBIX_TOKEN"
-      }
-    },
-    "memory": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-memory"]
+"mcpServers": {
+    "aap-mcp": {
+        "type": "http",
+        "url": "https://AAP_SERVER:8448/mcp",
+        "headers": {
+            "Authorization": "Bearer YOUR_AAP_TOKEN"
+        }
     }
-  }
 }
 ```
 
-Replace the placeholder values (`AAP_SERVER`, `AAP_API_TOKEN`,
+Replace `AAP_SERVER` with the AAP hostname or IP, and `YOUR_AAP_TOKEN`
+with the PAT created in step 4.
+
+> **HTTPS is required.** The MCP server on port 8448 uses TLS with the
+> AAP CA certificate. The TRA VM must trust that CA (see
+> [01-aap-mcp](01-aap-mcp.md), section 5). Using `http://` will fail
+> silently or return 401.
+
+Add the remaining MCP servers to the same `mcpServers` block:
+
+```json
+"mcpServers": {
+    "aap-mcp": {
+        "type": "http",
+        "url": "https://AAP_SERVER:8448/mcp",
+        "headers": {
+            "Authorization": "Bearer YOUR_AAP_TOKEN"
+        }
+    },
+    "linux-mcp": {
+        "command": "podman",
+        "args": [
+            "run", "--rm", "-i",
+            "-v", "/opt/tra/keys/target-key:/key:ro",
+            "ghcr.io/rhel-lightspeed/linux-mcp:latest",
+            "--host", "TARGET_IP",
+            "--user", "ansible",
+            "--key", "/key"
+        ]
+    },
+    "zabbix": {
+        "command": "npx",
+        "args": ["-y", "zabbix-mcp-server"],
+        "env": {
+            "ZABBIX_URL": "https://ZABBIX_SERVER",
+            "ZABBIX_API_TOKEN": "ZABBIX_TOKEN"
+        }
+    },
+    "memory": {
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-memory"]
+    }
+}
+```
+
+Replace the placeholder values (`AAP_SERVER`, `YOUR_AAP_TOKEN`,
 `TARGET_IP`, `ZABBIX_SERVER`, `ZABBIX_TOKEN`) with your environment.
 
-> **Sensitive values in `.mcp.json`:** For a demo this is acceptable. In
-> production, reference environment variables or a secrets manager instead
-> of embedding tokens directly.
+> **Sensitive values in `~/.claude.json`:** For a demo this is acceptable.
+> In production, reference environment variables or a secrets manager
+> instead of embedding tokens directly.
 
 ### Alternative: `claude mcp add`
 
-Each server can also be added interactively. This stores the same
-configuration but via the CLI:
+Each server can also be added interactively:
 
 ```bash
 claude mcp add --transport http \
-  --header "Authorization: Bearer AAP_API_TOKEN" \
-  aap https://AAP_SERVER:8448/mcp
+  --header "Authorization: Bearer YOUR_AAP_TOKEN" \
+  aap-mcp https://AAP_SERVER:8448/mcp
 
 claude mcp add memory -- npx -y @modelcontextprotocol/server-memory
 ```
@@ -122,7 +173,7 @@ claude mcp add memory -- npx -y @modelcontextprotocol/server-memory
 claude mcp list
 ```
 
-All four servers should appear. To test that each server responds:
+All servers should appear. To test that each server responds:
 
 ```bash
 claude -p "List available MCP tools" --output-format json
@@ -130,7 +181,7 @@ claude -p "List available MCP tools" --output-format json
 
 The output should include tools from all configured servers.
 
-## 5. Create the agent instructions (CLAUDE.md)
+## 6. Create the agent instructions (CLAUDE.md)
 
 Claude Code reads `CLAUDE.md` from the working directory on every
 invocation. This file defines the agent's role, constraints, and operating
@@ -187,7 +238,7 @@ Report your findings and actions concisely. Include:
 > **Tuning:** This is a starting point. Refine the instructions based on
 > observed agent behavior during testing.
 
-## 6. Configure headless execution
+## 7. Configure headless execution
 
 Claude Code runs headlessly with `--print` (`-p`) mode: it reads a prompt
 from the command line, executes the task, prints the result, and exits.
@@ -244,7 +295,7 @@ claude -p "diagnose the alert" \
   --max-turns 20
 ```
 
-## 7. Test the agent
+## 8. Test the agent
 
 Run a manual test from the agent directory:
 
@@ -261,7 +312,7 @@ The agent should:
 2. Run a connectivity check via linux-mcp
 3. Return a summary of findings
 
-## 8. Full invocation (EDA integration)
+## 9. Full invocation (EDA integration)
 
 When EDA triggers the agent, it calls Claude Code with the alert payload
 as the prompt. The complete invocation:
