@@ -1,0 +1,22 @@
+---
+- name: Run Claude to analyse and fix Zabbix alert
+  hosts: all
+  gather_facts: false
+
+  tasks:
+    - name: Run Claude Code CLI
+      ansible.builtin.shell: >-
+        claude -p
+        "There is an alert on Zabbix, root cause analyse the alert and the state
+        of the affected server, and fix it autonomously. Afterwards create an
+        incident report and suggested further steps."
+        --dangerously-skip-permissions
+      args:
+        chdir: /home/aaptra/claude-wd
+      become: true
+      become_user: aaptra
+      register: claude_output
+
+    - name: Display incident report
+      ansible.builtin.debug:
+        var: claude_output.stdout_lines
