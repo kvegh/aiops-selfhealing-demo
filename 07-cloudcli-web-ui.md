@@ -22,10 +22,10 @@ by EDA) stream into the UI live as they execute.
 Phone/Browser
     │ HTTPS (TLS, htpasswd on UI shell, rate limit on login API)
     ▼
-nginx on hactar (CLOUDCLI_WEB_HOSTNAME:443)
+nginx on hypervisor host (CLOUDCLI_WEB_HOSTNAME:443)
     │ HTTP, internal network
     ▼
-CloudCLI on tra (TRA_VM_IP:3001, systemd --user service, on-demand)
+CloudCLI on TRA VM (TRA_VM_IP:3001, systemd --user service, on-demand)
     │ spawns (Claude Agents SDK)
     ▼
 Claude Code ──► Vertex AI (gcloud ADC + env vars)
@@ -35,7 +35,7 @@ Security posture: CloudCLI runs **on demand only** — the systemd user service
 starts at SSH login and stops at last logout (no linger), with a 10-hour
 runtime cap. When not demoing, nothing listens on port 3001.
 
-## 1. Installation on tra (as `aaptra`)
+## 1. Installation on the TRA VM (as `aaptra`)
 
 Requires Node.js v22+.
 
@@ -89,8 +89,8 @@ systemctl --user start cloudcli
 
 ### Why each non-obvious line exists
 
-- **`HOST=TRA_VM_IP`** — binds to tra's internal-network IP so nginx on
-  hactar can reach it. Not `127.0.0.1` (unreachable from the hypervisor), not
+- **`HOST=TRA_VM_IP`** — binds to the TRA VM's internal-network IP so nginx on
+  the hypervisor host can reach it. Not `127.0.0.1` (unreachable from the hypervisor), not
   `0.0.0.0` (no need to listen wider than the internal net).
 - **`Environment=PATH=...`** — systemd user units get a minimal PATH
   (`/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin`) that does **not**
@@ -127,7 +127,7 @@ systemctl --user start cloudcli
   *session*, so `user@.service` is never triggered. EDA-driven headless runs
   therefore don't wake the web UI.
 
-## 3. nginx reverse proxy on hactar
+## 3. nginx reverse proxy on the hypervisor host
 
 `/etc/nginx/conf.d/claude.conf`:
 
@@ -213,7 +213,7 @@ subsequent API request. The fix is layering by path:
 | `/api/auth/login`   | CloudCLI JWT login + nginx rate limit   |
 | `/api/` (all else)  | CloudCLI JWT (bcrypt-12, single user)   |
 
-Also required on tra: firewalld allowing 3001 from the internal network.
+Also required on the TRA VM: firewalld allowing 3001 from the internal network.
 
 ## 4. First run
 
