@@ -7,7 +7,7 @@
         port: 5000
   rules:
     - name: Zabbix agent down - invoke Claude
-      condition: event.payload.alert_name == "Linux: Zabbix agent is not available"
+      condition: 'event.payload.alert_name == "Linux: Zabbix agent is not available"'
       action:
         run_job_template:
           name: "Run Claude to analyse and fix"
