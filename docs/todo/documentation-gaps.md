@@ -105,7 +105,9 @@ This is architecturally significant -- it defines the boundary of what the demo 
 
 The four-level escalation model is documented in the README, but the actual EDA routing logic to differentiate Level 0 (deterministic fix, no AI) from Level 1+ (AI-driven) is not implemented or documented. How does the rulebook decide whether a known issue gets a direct `run_job_template` fix vs escalation to Claude? This is an open design question that should at least be captured.
 
-## 12. Zabbix media type Basic Auth JavaScript modification
+## 12. ✅ Zabbix media type Basic Auth JavaScript modification
+
+*Already covered in docs/06-eda-zabbix-integration.md (step 5b, prominently called out).*
 
 The stock Zabbix "Event-Driven Ansible" media type ships without authentication headers. To work with AAP Event Streams (which require Basic Auth), a specific JS line must be added to the media type script:
 
