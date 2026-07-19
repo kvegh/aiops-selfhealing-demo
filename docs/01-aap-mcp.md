@@ -136,26 +136,6 @@ connections.
 
 ## 7. Connect Claude Code CLI
 
-With the MCP server running (section 4) and the AAP CA trusted (section 5),
-add the AAP MCP server to Claude Code:
-
-```
-claude mcp add aap-mcp --transport http --url https://YOUR_AAP_SERVER:8448/mcp --header "Authorization: Bearer YOUR_AAP_TOKEN"
-```
-
-This writes the entry into `~/.claude.json`:
-
-```json
-"mcpServers": {
-    "aap-mcp": {
-        "type": "http",
-        "url": "https://YOUR_AAP_SERVER:8448/mcp",
-        "headers": {
-            "Authorization": "Bearer YOUR_AAP_TOKEN"
-        }
-    }
-}
-```
-
-Verify by starting Claude Code and confirming the `aap-mcp` server connects
-without errors. You can test with a read-only call like listing job templates.
+See [04-claude-agent](04-claude-agent.md), section 3 — the AAP MCP server is
+configured alongside the other MCP servers in `~/.claude.json` using the token
+from section 6 above.

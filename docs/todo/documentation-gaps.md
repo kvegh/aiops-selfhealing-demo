@@ -29,7 +29,7 @@ The procedure was worked out during sessions: create an OAuth2 Application in AA
 
 ## 3. ✅ Connecting Claude Code CLI to AAP MCP (doc 01 says TBD)
 
-*Backfilled section 7 in docs/01-aap-mcp.md: `claude mcp add` command, resulting JSON config, verification step.*
+*Section 7 in docs/01-aap-mcp.md: cross-reference to docs/04-claude-agent.md section 3 (config lives there).*
 
 The full `~/.claude.json` MCP config with HTTP transport and bearer token is covered in `docs/04-claude-agent.md`, but `docs/01-aap-mcp.md` sections 6-7 remain TBD. Either backfill or add a cross-reference.
 
