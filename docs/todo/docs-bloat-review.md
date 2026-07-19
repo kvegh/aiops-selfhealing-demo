@@ -302,7 +302,7 @@ Current:
 Tighter:
 > "AAP 2.7 uses **Event Streams** -- authenticated, gateway-managed endpoints that replace raw `ansible.eda.webhook` port listeners. No extra ports need to be exposed."
 
-### S6-2. Delete four lead-in sentences that restate headings
+### S6-2. Delete four lead-in sentences that restate headings ✅ deleted all four
 
 These one-liners before steps 2, 3, 5, and 6 add nothing — the heading and the table/procedure that follow are self-explanatory:
 

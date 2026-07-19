@@ -80,9 +80,6 @@ mapping. The rulebook file itself stays generic.
 
 ## 2. Create an Event Stream credential
 
-The Event Stream credential defines how external systems (Zabbix)
-authenticate when sending events.
-
 1. Navigate to **Automation Decisions --> Infrastructure --> Credentials**.
 2. Click **Create credential**.
 3. Set the fields:
@@ -101,9 +98,6 @@ Note the username and password -- you will need them when configuring
 the Zabbix media type.
 
 ## 3. Create an Event Stream
-
-The Event Stream provides the authenticated webhook URL that Zabbix
-will POST alerts to.
 
 1. Navigate to **Automation Decisions --> Event Streams**.
 2. Click **Create event stream**.
@@ -139,9 +133,6 @@ Controller.
 
 ## 5. Create a Red Hat AAP credential for EDA
 
-This credential lets EDA connect to Controller to launch job
-templates.
-
 1. Navigate to **Automation Decisions --> Infrastructure --> Credentials**.
 2. Click **Create credential**.
 3. Set the fields:
@@ -163,9 +154,6 @@ templates.
 > `https://aap.example.com/api/controller`.
 
 ## 6. Create a Rulebook Activation
-
-The activation binds the rulebook to the Event Stream and starts
-listening for events.
 
 1. Navigate to **Automation Decisions --> Rulebook Activations**.
 2. Click **Create rulebook activation**.
