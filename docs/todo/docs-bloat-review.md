@@ -57,7 +57,7 @@ The main issue: the same architectural constraint ("AI reads, AAP writes") is st
 **Suggestion:** Delete entirely, or collapse to one sentence:
 > "Most incidents resolve at Level 0 with no one paged. The AI handles the long tail through the automation platform the org already governs."
 
-### R7. Guiding principles — 60% redundant with levels section
+### R7. Guiding principles — 60% redundant with levels section ✅ deleted bullets 2 and 5, kept bullet 1 as-is
 
 **Delete these two bullets entirely** (already said above):
 

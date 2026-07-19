@@ -122,10 +122,8 @@ The critical property is visible in the diagram: **every arrow that changes stat
 ## Guiding principles
 
 - **The automation platform is strictly the only component that changes configurations or executes jobs.** It is the **Trusted Execution Layer**. LLMs are exceptionally creative — and exactly for that reason not reliable enough to follow operational policy unconditionally. Creativity belongs in diagnosis, never in execution.
-- **The AI agent changes nothing.** It analyses, correlates, summarizes — and requests fixes through the Trusted Execution Layer.
-- **All agent communication runs through defined integration interfaces (MCP)** — to monitoring, to the managed server, to the automation platform. Where no interface exists, the automation platform is triggered to gather the information.
+- **All agent communication runs through defined integration interfaces (MCP)** — to monitoring, to the managed server, to the automation platform.
 - **Read-only wherever possible.** The agent's interfaces to the managed server and to monitoring are read-only by construction, not by convention.
-- **Monitoring may trigger automation jobs directly** when an issue is well known and documented. Otherwise it triggers the AI agent to analyse the situation.
 - **The agent operates under policy enforcement** that limits creative side activities outside operational policy — enforced in code, not requested in prompts.
 
 > **Management summary.** Control is not a promise made by the AI — it is a property of the architecture. The single governed execution path preserves every existing approval, audit, and compliance mechanism the organization already relies on. Adopting AI-driven operations this way carries no new class of privileged actor: the platform you already trust remains the only thing touching your systems.
