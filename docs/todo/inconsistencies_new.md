@@ -20,7 +20,7 @@ Three-way mismatch:
 
 Doc 06 is wrong on all three counts by the repo's own troubleshooting guidance and the actual deployed rulebook.
 
-## 3. Claude CLI permission flag (doc 04 vs playbook / doc 06)
+## 3. ✅ Claude CLI permission flag (doc 04 vs playbook / doc 06)
 
 Doc 04 uses `--permission-mode bypassPermissions`. The actual playbook and doc 06 use `--dangerously-skip-permissions`. Different flags for the same purpose.
 

@@ -129,7 +129,7 @@ Start Claude Code from the agent directory and test:
 ```bash
 cd /opt/tra/agent
 claude -p "Use linux-mcp to check the OS version on testserver1." \
-    --permission-mode bypassPermissions \
+    --dangerously-skip-permissions \
     --max-turns 5
 ```
 

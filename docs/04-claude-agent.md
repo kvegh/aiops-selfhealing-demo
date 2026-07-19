@@ -239,10 +239,10 @@ No interactive terminal required.
 ### Permission mode
 
 In automated execution, there is no operator to approve tool calls.
-Use `--permission-mode bypassPermissions` to skip all permission prompts:
+Use `--dangerously-skip-permissions` to skip all permission prompts:
 
 ```bash
-claude -p "diagnose the alert" --permission-mode bypassPermissions
+claude -p "diagnose the alert" --dangerously-skip-permissions
 ```
 
 > **Security note:** This flag grants the agent unrestricted tool access.
@@ -257,7 +257,7 @@ the permitted tools explicitly:
 
 ```bash
 claude -p "diagnose the alert" \
-  --permission-mode bypassPermissions \
+  --dangerously-skip-permissions \
   --allowedTools "aap,linux-mcp,zabbix,Read"
 ```
 
@@ -270,7 +270,7 @@ For machine-readable output (useful when EDA parses the result):
 
 ```bash
 claude -p "diagnose the alert" \
-  --permission-mode bypassPermissions \
+  --dangerously-skip-permissions \
   --output-format json
 ```
 
@@ -283,7 +283,7 @@ To prevent runaway loops, cap the number of agentic turns:
 
 ```bash
 claude -p "diagnose the alert" \
-  --permission-mode bypassPermissions \
+  --dangerously-skip-permissions \
   --max-turns 20
 ```
 
@@ -305,7 +305,7 @@ Run a manual test from the agent directory:
 cd /opt/tra/agent
 
 claude -p "List the hosts monitored by Zabbix and check if the target server is reachable via linux-mcp. Report what you find." \
-  --permission-mode bypassPermissions \
+  --dangerously-skip-permissions \
   --max-turns 10
 ```
 
@@ -321,7 +321,7 @@ as the prompt. The complete invocation:
 
 ```bash
 claude -p "An alert has fired. Details: ${ALERT_PAYLOAD}. Diagnose the issue and remediate it through AAP." \
-  --permission-mode bypassPermissions \
+  --dangerously-skip-permissions \
   --allowedTools "aap,linux-mcp,zabbix,Read" \
   --max-turns 25 \
   --output-format json \
