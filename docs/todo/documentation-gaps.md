@@ -117,7 +117,9 @@ request.addHeader('Authorization: Basic ' + btoa(Eda.params.eda_username + ':' +
 
 This was a hard-won troubleshooting finding. `docs/06-eda-zabbix-integration.md` may already cover this, but it should be verified as a prominently called-out step, not buried.
 
-## 13. Playbook design rationale (`run_claude_analyse_fix.yml`)
+## 13. ✅ Playbook design rationale (`run_claude_analyse_fix.yml`)
+
+*Added inline comments to the playbook: why shell, why chdir, why become_user.*
 
 The playbook uses specific patterns that are non-obvious and worth documenting:
 

@@ -5,6 +5,7 @@
 
   tasks:
     - name: Run Claude Code CLI
+      # shell, not command — command breaks on quoted arguments in the CLI invocation
       ansible.builtin.shell: >-
         claude -p
         "There is an alert on Zabbix, root cause analyse the alert and the state
@@ -12,7 +13,10 @@
         incident report and suggested further steps."
         --dangerously-skip-permissions
       args:
+        # Claude Code needs a working directory with CLAUDE.md guardrails
         chdir: /home/aaptra/claude-wd
+      # Controller connects as ansible user, but Claude must run as aaptra
+      # (owns ~/.claude config, API keys, MCP wiring)
       become: true
       become_user: aaptra
       register: claude_output
