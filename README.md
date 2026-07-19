@@ -38,6 +38,23 @@ flowchart TD
 
 Solid borders are the working demo. The dashed purple branch is **experimental** — the agent authoring new automation content is a research direction, not a shipped capability.
 
+## Demo scenarios
+
+**Stage 1 — self-healing a monitored host (Level 1)**
+
+1. A package is removed from the managed host (`zabbix-agent2`), breaking monitoring
+2. Zabbix detects agent unavailability after the configured timeout
+3. Zabbix fires an alert via the Event-Driven Ansible media type to an EDA Event Stream
+4. EDA rulebook matches the trigger name and launches an AAP job template
+5. The job template invokes Claude Code CLI in headless mode
+6. Claude investigates the host through Phase 1–4 (Zabbix MCP → linux-mcp → AAP MCP)
+7. Claude identifies the missing package and launches the "Deploy Zabbix Agent" job template via AAP MCP
+8. Zabbix confirms recovery after its check interval expires
+
+**Stage 2 — agent-authored remediation (Level 2)** — TBD
+
+The agent generates Ansible playbook content to address an incident with no existing fix, then submits it for machine or human approval before execution.
+
 ## The four response levels
 
 Every incident is handled at the lowest level capable of resolving it. Each level up grants the responding system more autonomy, accompanied by more controlling oversight:
@@ -127,11 +144,6 @@ flowchart TD
 - **The agent operates under policy enforcement** that limits creative side activities outside operational policy — enforced in code, not requested in prompts.
 
 > **Management summary.** Control is not a promise made by the AI — it is a property of the architecture. The single governed execution path preserves every existing approval, audit, and compliance mechanism the organization already relies on. Adopting AI-driven operations this way carries no new class of privileged actor: the platform you already trust remains the only thing touching your systems.
-
-## Demo scenarios
-
-- **Stage 1** — TBD
-- **Stage 2** — TBD
 
 ## Repository layout
 

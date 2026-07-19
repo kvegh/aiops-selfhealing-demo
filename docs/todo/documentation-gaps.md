@@ -4,7 +4,9 @@ Identified by cross-referencing 3-4 days of Claude Code session transcripts (Jul
 
 ---
 
-## 1. Demo scenarios / walkthrough (README says TBD)
+## 1. ✅ Demo scenarios / walkthrough (README says TBD)
+
+*Added Demo scenarios section to README after the core-idea diagram. Stage 1 flow documented, Stage 2 marked TBD. Removed old TBD section.*
 
 The self-healing demo was run successfully multiple times with a well-established flow:
 
