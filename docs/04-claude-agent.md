@@ -57,7 +57,7 @@ Claude authenticates to the AAP MCP server with a Personal Access Token
 
 In the AAP Controller UI:
 
-1. Navigate to **Administration → OAuth2 Applications → Add**.
+1. Navigate to **Access Management → OAuth Applications → Create OAuth application**.
 2. Set the fields:
    - **Name:** `mcp-client` (or any descriptive name)
    - **Grant type:** Resource owner password-based
@@ -68,7 +68,7 @@ In the AAP Controller UI:
 
 ### Create a Personal Access Token
 
-1. Navigate to **Authorization → Personal Access Tokens → Add**.
+1. Navigate to **Access Management → Users → your user → API Tokens → Create API Token**.
 2. Select the OAuth2 application you just created (`mcp-client`).
 3. Set **Scope** to **Write** (covers both read and write operations —
    required because the MCP server launches job templates).

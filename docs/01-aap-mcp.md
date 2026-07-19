@@ -108,7 +108,7 @@ one is a two-step process in the AAP UI.
 
 ### 6a. Create an OAuth2 Application
 
-1. Navigate to **Administration → Applications → Add**
+1. Navigate to **Access Management → OAuth Applications → Create OAuth application**
 2. Fill in:
    - **Name:** `mcp` (or any label you prefer)
    - **Organization:** select your organization
@@ -118,7 +118,7 @@ one is a two-step process in the AAP UI.
 
 ### 6b. Create a Personal Access Token
 
-1. Navigate to **Users → your user → Tokens → Add**
+1. Navigate to **Access Management → Users → your user → API Tokens → Create API Token**
 2. Fill in:
    - **Application:** select the application created above
    - **Scope:** `Write`
