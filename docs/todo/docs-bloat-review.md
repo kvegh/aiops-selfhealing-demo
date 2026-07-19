@@ -144,7 +144,7 @@ Nearly verbatim repeat of the Environment section above it. Keep Environment, dr
 
 Appears in: Environment, Target host preparation intro, and Out of scope. Keep it in Environment only, delete from the other two.
 
-### S2-4. "Why an SSH config is needed" section — delete
+### S2-4. "Why an SSH config is needed" section — delete ✅ deleted, Section 1 intro already covers it
 
 Near-duplicate of Section 1 intro. Fold the one new detail (container detects containerization and refuses local execution) into Section 1:
 

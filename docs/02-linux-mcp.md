@@ -140,17 +140,6 @@ claude -p "Use linux-mcp to check the OS version on testserver1." \
 
 The agent should return the RHEL version of the target host.
 
-## Why an SSH config is needed
-
-The linux-mcp server runs inside a container. It cannot execute commands
-on the host directly — all system inspection happens over SSH to the
-target. The container detects that it is containerized and refuses local
-execution, requiring a `host` parameter on every tool call.
-
-The SSH config mounted into the container maps human-readable hostnames
-to connection parameters (IP, user, key path) so that tool calls can
-reference a short hostname (e.g. `testserver1`) instead of raw IPs.
-
 ## Explicitly out of scope
 
 - SSH keypair generation
