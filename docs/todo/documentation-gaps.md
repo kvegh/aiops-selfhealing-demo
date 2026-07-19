@@ -147,3 +147,7 @@ Incident reports from demo runs consistently recommended the same improvements t
 ## 20. Demo scope disclaimer in the repo
 
 The repo has no explicit statement that this is a **functionality demo**, not a production reference architecture. No attempt is made to follow least-privilege, security hardening, or production-grade guidelines -- that is intentional and out of scope. This was clarified in project memory during this session but is not stated anywhere in the README or docs. Anyone cloning the repo should understand this upfront.
+
+## 21. Cross-check docs against troubleshooting catalog
+
+Review all docs (`docs/00-*` through `docs/06-*`) and verify that the gotchas captured in `docs/troubleshooting.md` are reflected in the relevant setup steps. Where a doc describes a step that has a known pitfall, it should either warn inline or reference the troubleshooting page.
