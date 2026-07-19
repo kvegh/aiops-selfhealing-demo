@@ -99,7 +99,9 @@ Sessions explicitly assessed what Claude cannot do autonomously today:
 
 This is architecturally significant -- it defines the boundary of what the demo can self-configure vs what requires human setup. Undocumented.
 
-## 11. Level 0 vs Level 1 EDA routing
+## 11. ✅ Level 0 vs Level 1 EDA routing
+
+*Design question, already tracked in docs/todo/demo-design.md (Level 0 → Level 1 escalation scenario).*
 
 The four-level escalation model is documented in the README, but the actual EDA routing logic to differentiate Level 0 (deterministic fix, no AI) from Level 1+ (AI-driven) is not implemented or documented. How does the rulebook decide whether a known issue gets a direct `run_job_template` fix vs escalation to Claude? This is an open design question that should at least be captured.
 
