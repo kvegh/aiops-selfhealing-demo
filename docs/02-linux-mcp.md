@@ -17,7 +17,7 @@ network listener required.
 - TRA VM: RHEL 9, base installation (from [00-starting-setup](00-starting-setup.md))
 - Target: `testserver1`, RHEL 9, reachable from TRA by hostname over SSH (port 22)
 - Container runtime: Podman (from `container-tools`)
-- SSH user on target: `mcp` (SSH key authentication, no sudo — read-only diagnostics only)
+- SSH user on target: `mcp` (SSH key authentication, read-only diagnostics only)
 - The TRA user's default SSH key (`~/.ssh/id_ed25519`) is already
   authorized on the target host for the `mcp` user
 
@@ -157,5 +157,4 @@ reference a short hostname (e.g. `testserver1`) instead of raw IPs.
 - Target host user creation and `authorized_keys` setup
 - MCP server installation via pip (we use the container method)
 - Read/write mode configuration (this demo uses read-only, the default)
-- Sudo for the remote `mcp` user (not needed for read-only diagnostics)
 - Claude Code CLI installation and full MCP wiring (covered in [04-claude-agent](04-claude-agent.md))

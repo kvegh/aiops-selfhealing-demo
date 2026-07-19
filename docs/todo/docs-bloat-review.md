@@ -140,7 +140,7 @@ Already covered by paragraph 1 ("MCP stdio transport") and doc 00. Delete.
 
 Nearly verbatim repeat of the Environment section above it. Keep Environment, drop Prerequisites.
 
-### S2-3. "no sudo" stated three times — keep once
+### S2-3. "no sudo" stated three times — keep once ✅ kept in target host prep, dropped from environment and out-of-scope
 
 Appears in: Environment, Target host preparation intro, and Out of scope. Keep it in Environment only, delete from the other two.
 
