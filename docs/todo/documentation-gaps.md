@@ -87,7 +87,9 @@ Sessions established clear equivalences useful as orientation content:
 | Rule Audit | Jobs overview |
 | Projects | Projects (1:1) |
 
-## 10. Autonomous setup feasibility / MCP tool coverage gaps
+## 10. ✅ Autonomous setup feasibility / MCP tool coverage gaps
+
+*Dropped — out of scope for current demo.*
 
 Sessions explicitly assessed what Claude cannot do autonomously today:
 
