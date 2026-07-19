@@ -1,10 +1,8 @@
 # 07 — CloudCLI Web UI (optional)
 
-This step adds a web frontend for Claude Code, making agent sessions viewable
-and drivable from a browser — including mobile. It is **optional**: the
-self-healing pipeline (EDA → Claude Code → AAP) works entirely without it.
-What CloudCLI adds is visibility: interactive sessions from a phone, and live
-streaming of headless (EDA-triggered) Claude runs during demos.
+Optional web frontend for Claude Code. The self-healing pipeline works without
+it — CloudCLI adds browser access to agent sessions and live streaming of
+headless runs during demos.
 
 **Component**: [siteboon/claudecodeui](https://github.com/siteboon/claudecodeui)
 (aka CloudCLI), AGPL-3.0, installed via npm.

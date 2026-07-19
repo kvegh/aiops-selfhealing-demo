@@ -270,7 +270,7 @@ Tighter:
 
 ## docs/05-cloudcli-web-ui.md — Already lean, three minor trims
 
-### S5-1. Intro — "mobile" said twice
+### S5-1. Intro — "mobile" said twice ✅ trimmed, dropped mobile/phone
 
 Current:
 > "...making agent sessions viewable and drivable from a browser — including mobile. ... interactive sessions from a phone, and live streaming of headless (EDA-triggered) Claude runs during demos."
