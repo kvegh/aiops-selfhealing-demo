@@ -17,16 +17,9 @@ network listener required.
 - TRA VM: RHEL 9, base installation (from [00-starting-setup](00-starting-setup.md))
 - Target: `testserver1`, RHEL 9, reachable from TRA by hostname over SSH (port 22)
 - Container runtime: Podman (from `container-tools`)
-- SSH user on target: `mcp` (no sudo — read-only diagnostics only)
+- SSH user on target: `mcp` (SSH key authentication, no sudo — read-only diagnostics only)
 - The TRA user's default SSH key (`~/.ssh/id_ed25519`) is already
   authorized on the target host for the `mcp` user
-
-## Prerequisites
-
-- The target host is reachable from the TRA VM over SSH (port 22)
-- The TRA user's default SSH keypair exists at `~/.ssh/id_ed25519`
-- The public key is in `~/.ssh/authorized_keys` for the `mcp` user on
-  the target host
 
 ### Target host preparation
 

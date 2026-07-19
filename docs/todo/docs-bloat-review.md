@@ -136,7 +136,7 @@ Move the diagnostic detail ("the TLS handshake does not include the signing CA")
 
 Already covered by paragraph 1 ("MCP stdio transport") and doc 00. Delete.
 
-### S2-2. Prerequisites section — delete entirely
+### S2-2. Prerequisites section — delete entirely ✅ deleted, added SSH key auth detail to Environment
 
 Nearly verbatim repeat of the Environment section above it. Keep Environment, drop Prerequisites.
 
