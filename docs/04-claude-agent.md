@@ -85,10 +85,8 @@ configuration on the TRA VM in the next step.
 
 Claude Code reads MCP configuration from `~/.claude.json`. The AAP MCP
 server uses Streamable HTTP transport with Bearer token authentication.
-
-Edit `~/.claude.json` and add the AAP MCP entry under your project's
-`mcpServers` section. If the file does not exist yet, running
-`claude mcp add` once will create it (see alternative below).
+Add the AAP MCP entry under `mcpServers` (if the file doesn't exist,
+`claude mcp add` creates it):
 
 ```json
 "mcpServers": {

@@ -210,13 +210,13 @@ Tighter:
 
 Delete "Store the token securely" and "You will reference it in the next step" — both obvious.
 
-### S4-2. AAP config shown twice — deduplicate
+### S4-2. AAP config shown twice — deduplicate ✅ kept as-is (intentional two-step flow)
 
 The AAP MCP JSON block appears standalone, then again inside the full config ~13 lines later. Delete the standalone block, show the full combined config once with intro:
 
 > "Add all MCP servers to `~/.claude.json` under `mcpServers` (if the file doesn't exist, `claude mcp add` creates it):"
 
-### S4-3. Section 5 intro — trim
+### S4-3. Section 5 intro — trim ✅ trimmed, kept transport/auth info
 
 Current:
 > "Claude Code reads MCP configuration from `~/.claude.json`. The AAP MCP server uses Streamable HTTP transport with Bearer token authentication.
