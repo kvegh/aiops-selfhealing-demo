@@ -8,7 +8,7 @@ Suggestions for trimming without losing technical content. Per-file, with quoted
 
 The main issue: the same architectural constraint ("AI reads, AAP writes") is stated ~5 times in different registers, and two "Management summary" blocks are corporate-speak. Estimated cut: ~40% of prose, zero technical content lost.
 
-### R1. "What this is" — over-written
+### R1. "What this is" — over-written ✅ kept as-is (emphasis preferred)
 
 **Current:**
 > "A reproducible demo in which infrastructure incidents are detected, diagnosed, and remediated automatically — including incidents nobody wrote a runbook for. An AI agent investigates the unknown cases and resolves them, yet at no point holds the ability to change systems directly: every change, without exception, runs through the organization's governed automation platform."
@@ -16,7 +16,7 @@ The main issue: the same architectural constraint ("AI reads, AAP writes") is st
 **Tighter:**
 > "A reproducible demo: infrastructure incidents are detected, diagnosed, and remediated automatically -- including ones nobody wrote a runbook for. The AI agent investigates and resolves, but every change runs through the governed automation platform. Never directly."
 
-### R2. "Four response levels" intro — repeats core idea
+### R2. "Four response levels" intro — repeats core idea ✅ rewritten with level summary list
 
 **Current:**
 > "Every incident is handled at the lowest level capable of resolving it. Each level up grants the responding system more autonomy — and pays for it with more scrutiny. Where an incident lands is not a runtime decision made on a whim; it is defined by policy and enforced by architecture."

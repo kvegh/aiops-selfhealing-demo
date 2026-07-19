@@ -40,7 +40,14 @@ Solid borders are the working demo. The dashed purple branch is **experimental**
 
 ## The four response levels
 
-Every incident is handled at the lowest level capable of resolving it. Each level up grants the responding system more autonomy — and pays for it with more scrutiny. Where an incident lands is not a runtime decision made on a whim; it is defined by policy and enforced by architecture.
+Every incident is handled at the lowest level capable of resolving it. Each level up grants the responding system more autonomy, accompanied by more controlling oversight:
+
+- **Level 0** — deterministic runbooks
+- **Level 1** — AI-driven diagnosis, constrained to approved remediations
+- **Level 2** — agent-authored content under review
+- **Level 3** — full human escalation
+
+Which level handles an incident is not a runtime decision made on a whim; it is defined by policy and enforced by architecture.
 
 **Level 0 — Known issue, known fix.**
 The incident matches a documented pattern in the knowledge base. A predefined remediation template executes deterministically — no intelligence involved, none needed. This is the operational runbook, executed by the automation platform instead of a person: identical response, every time, fully audited. If the fix does not clear the issue, the re-fired event escalates automatically to Level 1.
