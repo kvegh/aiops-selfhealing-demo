@@ -50,9 +50,9 @@ Doc 00 network table labels port 8448 as "HTTP/SSE". Doc 01 uses `https://YOUR_A
 
 Doc 04 says Node.js 18+. Doc 05 says Node.js v22+. Both run on the same TRA VM, so v22 satisfies both, but the stated requirement in doc 04 is misleadingly low if doc 05 components are also installed.
 
-## 9. Doc 06 intro contradicts its own content
+## 9. ✅ Doc 06 intro contradicts its own content — NOT AN ISSUE
 
-The intro says "No custom scripts or JavaScript required" but section 7 requires editing the media type JavaScript to add Basic Auth. The intro likely means no custom webhook scripts (vs the old approach), but the wording is misleading.
+The intro says "No custom scripts or JavaScript required" — this is correct. The media type is Zabbix's built-in EDA media type, not a custom script. Adding one line for Basic Auth is configuring the built-in, not writing custom code.
 
 ## 10. CLAUDE.md: repo file vs doc 04 template
 
