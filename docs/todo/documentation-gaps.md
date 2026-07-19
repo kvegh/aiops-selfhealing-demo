@@ -145,7 +145,9 @@ Zabbix's official EDA integration docs describe the old approach (raw `ansible.e
 
 The README describes Level 2 as "experimental agent-authored automation (marked experimental)" but nothing defines what this means in practice -- how would Claude author a new playbook, how would it be reviewed, where would it be stored, how is it marked as experimental? This level is part of the architecture but completely undefined.
 
-## 17. Apache / httpd remediation gap
+## 17. ✅ Apache / httpd remediation gap
+
+*Added as design TODO in docs/todo/demo-design.md — decide if deliberate escalation example or needs a job template.*
 
 Multiple demo runs discovered that httpd was also down on testserver1 (package removed alongside zabbix-agent2), but no AAP job template exists to remediate it. Claude correctly identified this and escalated. If the demo scenario includes Apache being broken, this is a known gap in remediation coverage that should be documented -- either as a deliberate "escalation to human" example or as a TODO to create the job template.
 

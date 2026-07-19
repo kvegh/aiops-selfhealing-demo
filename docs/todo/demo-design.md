@@ -18,6 +18,10 @@ Open question: how do we decide whether agent-created content (playbook + job te
 
 Add `@modelcontextprotocol/server-memory` (or similar) so the agent can record what it learns across incidents — root causes, resolution steps, patterns. This would build a persistent knowledge base the agent can consult during future investigations. Currently not wired up; needs design decisions on storage location, retention, and whether the agent should read past incidents to inform current diagnosis.
 
+## Apache remediation scenario
+
+httpd was found broken on the target host during demo runs (package removed alongside zabbix-agent2). No AAP job template exists to remediate it — Claude correctly identified the issue and escalated. Decide: is this a deliberate Level 3 "escalation to human" example, or should a remediation job template be created to make it a Level 1 self-healing scenario?
+
 ## AAP as fallback information gatherer
 
 Where no MCP interface exists for a system, the automation platform could be triggered to gather the information instead. Extends the agent's diagnostic reach without adding new direct interfaces.
