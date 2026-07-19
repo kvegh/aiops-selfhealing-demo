@@ -81,9 +81,7 @@ Key settings explained:
 > **SSL note:** If your Zabbix instance uses HTTPS with a self-signed
 > certificate, add `verify_ssl = false` under the `[zabbix.lab]` section.
 
-> **Tool filtering:** The `tools` list limits the tool catalog to the
-> categories needed for incident diagnosis. Add more prefixes as needed
-> (e.g. `"template"`, `"maintenance"`).
+> **Tool filtering:** Add more prefixes as needed (e.g. `"template"`, `"maintenance"`).
 
 ## 4. Set SELinux context
 

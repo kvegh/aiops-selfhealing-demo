@@ -186,7 +186,7 @@ Current:
 Tighter:
 > **No `:Z` flag** — the SELinux label was set in step 4.
 
-### S3-3. Tool filtering note — trim redundancy
+### S3-3. Tool filtering note — trim redundancy ✅ trimmed
 
 Current:
 > "**Tool filtering:** The `tools` list limits the tool catalog to the categories needed for incident diagnosis. Add more prefixes as needed (e.g. `"template"`, `"maintenance"`)."
