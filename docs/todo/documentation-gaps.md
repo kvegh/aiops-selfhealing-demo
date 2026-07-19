@@ -127,7 +127,9 @@ The playbook uses specific patterns that are non-obvious and worth documenting:
 - **`become: true` / `become_user: aaptra`**: Controller connects to the host as the `ansible` user, but Claude Code must run as `aaptra` (owns the `~/.claude` config, API keys, MCP wiring, and working directory).
 - **`chdir: /home/aaptra/claude-wd`**: Claude Code needs a working directory with `CLAUDE.md` guardrails and project context.
 
-## 14. Claude headless transcript behavior
+## 14. ✅ Claude headless transcript behavior
+
+*Added Transcripts subsection to docs/04-claude-agent.md under headless execution (section 7).*
 
 When Claude Code runs in pipe mode (`claude -p`), it creates a JSONL transcript file with a UUID under `~/.claude/projects/.../`, but these sessions are **not** listed by `claude --resume`. This is expected behavior (not a bug) but important operational knowledge when debugging AAP-triggered runs or reviewing what the agent did.
 

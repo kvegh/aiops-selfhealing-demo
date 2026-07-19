@@ -282,6 +282,14 @@ claude -p "diagnose the alert" \
   --max-turns 20
 ```
 
+### Transcripts
+
+Headless runs (`-p`) create JSONL transcript files under
+`~/.claude/projects/.../` with a UUID filename. These transcripts are
+the primary way to review what the agent did during an AAP-triggered
+run. Note: headless sessions do **not** appear in `claude --resume` —
+this is expected behavior, not a bug.
+
 ## 8. Test the agent
 
 Run a manual test from the agent directory:
