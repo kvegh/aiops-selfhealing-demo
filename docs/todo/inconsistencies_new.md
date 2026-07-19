@@ -4,7 +4,7 @@ Cross-referencing all docs, code, and config files in the repo.
 
 ---
 
-## 1. linux-mcp container image and config (doc 02 vs doc 04)
+## 1. ✅ linux-mcp container image and config (doc 02 vs doc 04)
 
 Doc 02 uses `quay.io/redhat-services-prod/rhel-lightspeed-tenant/linux-mcp-server:latest` with SSH config mount, env vars (`LINUX_MCP_USER=mcp`), and log directory volume. Doc 04 uses `ghcr.io/rhel-lightspeed/linux-mcp:latest` with `--host`/`--user`/`--key` CLI args and key at `/opt/tra/keys/target-key`. These are incompatible configurations for the same server.
 
