@@ -311,7 +311,7 @@ These one-liners before steps 2, 3, 5, and 6 add nothing — the heading and the
 - Step 5: "This credential lets EDA connect to Controller to launch job templates." — delete
 - Step 6: "The activation binds the rulebook to the Event Stream and starts listening for events." — delete
 
-### S6-3. Step 8 intro — trim
+### S6-3. Step 8 intro — trim ✅ trimmed
 
 Current:
 > "In production, create a dedicated Zabbix user for EDA notifications with minimal permissions (read access to the relevant host groups). In demo environments, an existing user with the required permissions can be reused."

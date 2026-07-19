@@ -260,10 +260,9 @@ Save the media type.
 
 ## 8. Configure a Zabbix user for EDA notifications
 
-In production, create a dedicated Zabbix user for EDA notifications
-with minimal permissions (read access to the relevant host groups).
-In demo environments, an existing user with the required permissions
-can be reused.
+Use a dedicated Zabbix user for EDA (minimal permissions: read access
+on the relevant host groups). In demo setups, any user with those
+permissions works.
 
 1. Navigate to **Users --> Users** and select the user (or create a
    new one).
