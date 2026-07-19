@@ -14,7 +14,7 @@ configures headless execution for automated invocation by EDA.
 
 ## 1. Install Claude Code CLI
 
-Claude Code requires Node.js 18+.
+Claude Code requires Node.js 22+.
 
 ```bash
 dnf install -y nodejs

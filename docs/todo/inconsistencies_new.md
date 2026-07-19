@@ -46,7 +46,7 @@ Doc 04 uses Anthropic API direct (`ANTHROPIC_API_KEY`). Doc 05 uses Google Verte
 
 Doc 00 network table labels port 8448 as "HTTP/SSE". Doc 01 uses `https://YOUR_AAP_SERVER:8448` — it is HTTPS. The label refers to the application protocol (HTTP + SSE transport), not the TLS layer. Correct as-is.
 
-## 8. Node.js version requirement (doc 04 vs doc 05)
+## 8. ✅ Node.js version requirement (doc 04 vs doc 05)
 
 Doc 04 says Node.js 18+. Doc 05 says Node.js v22+. Both run on the same TRA VM, so v22 satisfies both, but the stated requirement in doc 04 is misleadingly low if doc 05 components are also installed.
 
