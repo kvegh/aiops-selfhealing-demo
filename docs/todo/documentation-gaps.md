@@ -56,7 +56,9 @@ Significant troubleshooting knowledge accumulated across sessions, not captured 
 
 Nowhere documented how testserver1 was added to Zabbix, which templates are linked, or what triggers are configured. The demo assumes this exists but doesn't explain how to set it up.
 
-## 6. Fault injection method ("break" script)
+## 6. ✅ Fault injection method ("break" script)
+
+*Added the actual command (`sudo dnf remove -y zabbix-agent2`) to the demo scenario in the README. No script needed — manual command is the method.*
 
 Multiple sessions reference packages being removed from testserver1 to trigger the demo. The actual mechanism (cron, manual `dnf remove`, or a dedicated script) is never documented. A reproducible demo needs this.
 

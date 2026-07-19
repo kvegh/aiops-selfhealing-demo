@@ -42,7 +42,7 @@ Solid borders are the working demo. The dashed purple branch is **experimental**
 
 **Stage 1 — self-healing a monitored host (Level 1)**
 
-1. A package is removed from the managed host (`zabbix-agent2`), breaking monitoring
+1. A package is removed from the managed host (`sudo dnf remove -y zabbix-agent2`), breaking monitoring
 2. Zabbix detects agent unavailability after the configured timeout
 3. Zabbix fires an alert via the Event-Driven Ansible media type to an EDA Event Stream
 4. EDA rulebook matches the trigger name and launches an AAP job template
