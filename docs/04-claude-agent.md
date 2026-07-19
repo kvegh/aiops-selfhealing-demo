@@ -48,6 +48,11 @@ manager):
 export ANTHROPIC_API_KEY="sk-ant-..."
 ```
 
+> **Claude via Google Vertex AI** requires different configuration
+> (environment variables instead of an API key). See the
+> [Claude Code documentation](https://docs.anthropic.com/en/docs/claude-code/bedrock-vertex)
+> for Vertex-specific setup.
+
 ## 4. Create an AAP API token
 
 Claude authenticates to the AAP MCP server with a Personal Access Token

@@ -38,7 +38,7 @@ Same operation, different navigation paths described.
 - `04-claude-agent.md` heading says "02 – Set up Claude agent" (should be 04)
 - `05-cloudcli-web-ui.md` heading says "07 – CloudCLI Web UI" (should be 05)
 
-## 6. Inference backend (doc 04 vs doc 05)
+## 6. ✅ Inference backend (doc 04 vs doc 05)
 
 Doc 04 uses Anthropic API direct (`ANTHROPIC_API_KEY`). Doc 05 uses Google Vertex AI (`CLAUDE_CODE_USE_VERTEX=1`). Doc 00's network table shows Anthropic API. These are mutually exclusive setups with no note explaining the difference.
 
