@@ -151,7 +151,9 @@ The README describes Level 2 as "experimental agent-authored automation (marked 
 
 Multiple demo runs discovered that httpd was also down on testserver1 (package removed alongside zabbix-agent2), but no AAP job template exists to remediate it. Claude correctly identified this and escalated. If the demo scenario includes Apache being broken, this is a known gap in remediation coverage that should be documented -- either as a deliberate "escalation to human" example or as a TODO to create the job template.
 
-## 18. Playbook verification strategy
+## 18. ✅ Playbook verification strategy
+
+*Added verification steps to CLAUDE.md remediation procedure in docs/04-claude-agent.md: AAP job history, linux-mcp on AAP host, git clone.*
 
 Sessions established three approaches for how Claude verifies a job template is the right one before launching it:
 

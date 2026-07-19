@@ -208,10 +208,14 @@ Platform.
 ## Remediation procedure
 
 1. Identify the appropriate AAP job template for the fix.
-2. Launch the job template via AAP MCP with the correct parameters.
-3. Wait for the job to complete.
-4. Verify the fix by re-checking the system state via linux-mcp.
-5. Verify the alert clears via Zabbix MCP.
+2. Before launching, verify it is the right template:
+   - Review past job runs, job events, and template details via AAP MCP.
+   - Read the playbook source via linux-mcp on the AAP host (if accessible).
+   - Clone the project repo locally to inspect the playbook source.
+3. Launch the job template via AAP MCP with the correct parameters.
+4. Wait for the job to complete.
+5. Verify the fix by re-checking the system state via linux-mcp.
+6. Verify the alert clears via Zabbix MCP.
 
 ## Response format
 
