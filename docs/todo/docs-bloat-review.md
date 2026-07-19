@@ -73,13 +73,13 @@ Current:
 Tighter:
 > "**The automation platform is the only component that changes state.** It is the Trusted Execution Layer."
 
-### R8. Second management summary — delete
+### R8. Second management summary — delete ✅ kept as-is
 
 > "**Management summary.** Control is not a promise made by the AI — it is a property of the architecture. The single governed execution path preserves every existing approval, audit, and compliance mechanism the organization already relies on. Adopting AI-driven operations this way carries no new class of privileged actor: the platform you already trust remains the only thing touching your systems."
 
 Delete entirely. If you want to keep the first sentence, fold it into the architecture diagram caption as a one-liner.
 
-### R9. Architecture diagram caption — trim throat-clearing
+### R9. Architecture diagram caption — trim throat-clearing ✅ trimmed
 
 Current:
 > "The critical property is visible in the diagram: **every arrow that changes state — on the managed server and in the ITSM system — originates from the Trusted Execution Layer.** The AI agent has no direct write path anywhere."

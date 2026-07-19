@@ -117,7 +117,7 @@ flowchart TD
     style TEL fill:none,stroke:#4a7ebb,stroke-width:1px,stroke-dasharray:3 3;
 ```
 
-The critical property is visible in the diagram: **every arrow that changes state — on the managed server and in the ITSM system — originates from the Trusted Execution Layer.** The AI agent has no direct write path anywhere.
+**Every arrow that changes state originates from the Trusted Execution Layer.** The AI agent has no direct write path anywhere.
 
 ## Guiding principles
 
