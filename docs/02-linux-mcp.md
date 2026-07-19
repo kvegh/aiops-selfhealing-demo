@@ -2,8 +2,7 @@
 
 The linux-mcp server gives Claude **read-only** diagnostic access to the
 managed RHEL target host. It connects over SSH and exposes system
-inspection tools (services, logs, processes, network, storage) via MCP
-stdio transport.
+inspection tools (services, logs, processes, network, storage).
 
 The server runs as a container on the TRA VM — the same host where
 Claude Code CLI runs — so the connection is a local stdio pipe, no

@@ -130,7 +130,7 @@ Move the diagnostic detail ("the TLS handshake does not include the signing CA")
 
 ## docs/02-linux-mcp.md — Most bloat, ~25-30 lines removable
 
-### S2-1. Intro paragraph 2 — delete
+### S2-1. Intro paragraph 2 — delete ✅ dropped "via MCP stdio transport" from paragraph 1 instead, kept paragraph 2
 
 > "The server runs as a container on the TRA VM — the same host where Claude Code CLI runs — so the connection is a local stdio pipe, no network listener required."
 
