@@ -139,7 +139,9 @@ When Claude Code runs in pipe mode (`claude -p`), it creates a JSONL transcript 
 
 Zabbix's official EDA integration docs describe the old approach (raw `ansible.eda.webhook` port listeners) but do not mention AAP 2.7 Event Streams. The Event Streams approach is significantly better (managed URLs through the AAP gateway with TLS and auth, no need for separate ports or users per rulebook). A documentation update suggestion to the Zabbix project would be valuable.
 
-## 16. Level 2 experimental agent-authored automation
+## 16. ✅ Level 2 experimental agent-authored automation
+
+*Merged open questions (storage, experimental marking) into Level 2 items in docs/todo/demo-design.md.*
 
 The README describes Level 2 as "experimental agent-authored automation (marked experimental)" but nothing defines what this means in practice -- how would Claude author a new playbook, how would it be reviewed, where would it be stored, how is it marked as experimental? This level is part of the architecture but completely undefined.
 

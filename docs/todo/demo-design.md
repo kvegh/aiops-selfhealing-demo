@@ -8,6 +8,8 @@ Add a demo scenario where a known-issue fix (Level 0) fails, causing automatic e
 
 A meta job template that creates other job templates: accepts playbook name, inventory, credentials as extra vars, uses `ansible.controller.job_template` to create the JT. The agent can launch this through MCP like any other template — keeps Level 2 entirely within the Trusted Execution Layer.
 
+Open questions: where does the agent-authored playbook get stored (dedicated repo, branch, directory)? How is it marked as experimental / agent-generated so it's distinguishable from human-authored content?
+
 ## Level 2 — approval gate for agent-authored content
 
 Open question: how do we decide whether agent-created content (playbook + job template) is safe to execute? The second reviewer agent checks for sanity and policy compliance, but what are the actual criteria? What constitutes a pass vs. a fail? This needs to be untangled before Level 2 is demonstrable.
