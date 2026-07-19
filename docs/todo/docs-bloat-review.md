@@ -164,7 +164,7 @@ Current:
 Tighter:
 > "Claude Code launches the container automatically at startup."
 
-### S2-7. Target host preparation intro — delete preamble
+### S2-7. Target host preparation intro — delete preamble ✅ deleted no-sudo preamble
 
 Lines 34-37 are two sentences saying "no sudo needed" (already covered) before the actual actionable content. Delete them; the actionable intro "For full diagnostic access, the `mcp` user needs:" already exists at line 38.
 

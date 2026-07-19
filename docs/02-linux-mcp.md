@@ -23,10 +23,6 @@ network listener required.
 
 ### Target host preparation
 
-The `mcp` user on the target host does **not** need sudo. The linux-mcp
-server's diagnostic tools (`systemctl status`, `ss`, `journalctl`,
-`ps`, etc.) run without elevated privileges.
-
 For full diagnostic access, the `mcp` user needs:
 
 - Membership in the `systemd-journal` group (for `journalctl` access):
