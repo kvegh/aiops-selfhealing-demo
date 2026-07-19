@@ -74,7 +74,9 @@ Listed in the architecture and in `docs/04-claude-agent.md` MCP config, but no d
 
 Sessions discussed how AAP never exposes credentials post-creation (`$encrypted$` returned for all sensitive fields), `no_log` protection at max verbosity, and runtime-only injection into the execution environment. Relevant for the "Trusted Execution Layer" narrative but undocumented.
 
-## 9. EDA concept mapping for AAP users
+## 9. ✅ EDA concept mapping for AAP users
+
+*Out of scope — the demo assumes EDA familiarity.*
 
 Sessions established clear equivalences useful as orientation content:
 
