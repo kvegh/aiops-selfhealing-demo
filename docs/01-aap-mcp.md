@@ -103,8 +103,59 @@ Any HTTP status without a TLS error means the chain validates.
 
 ## 6. Create an API token
 
-*TBD — token creation for the MCP server, RBAC inheritance notes.*
+The MCP server authenticates via an AAP Personal Access Token (PAT). Creating
+one is a two-step process in the AAP UI.
+
+### 6a. Create an OAuth2 Application
+
+1. Navigate to **Administration → Applications → Add**
+2. Fill in:
+   - **Name:** `mcp` (or any label you prefer)
+   - **Organization:** select your organization
+   - **Authorization grant type:** `Resource owner password-based`
+   - **Client type:** `Confidential`
+3. Save.
+
+### 6b. Create a Personal Access Token
+
+1. Navigate to **Users → your user → Tokens → Add**
+2. Fill in:
+   - **Application:** select the application created above
+   - **Scope:** `Write`
+3. Save.
+4. **Copy the token immediately** — AAP will not show it again.
+
+Store the token securely — you will need it in
+[04-claude-agent](04-claude-agent.md) when configuring Claude Code's MCP
+connections.
+
+> **RBAC note:** The token inherits the permissions of the user it belongs to.
+> For the demo, the user needs at minimum: read access to inventories, projects,
+> job templates, and jobs; execute (launch) permission on the remediation job
+> templates.
 
 ## 7. Connect Claude Code CLI
 
-*TBD — `claude mcp add` with bearer token, session verification.*
+With the MCP server running (section 4) and the AAP CA trusted (section 5),
+add the AAP MCP server to Claude Code:
+
+```
+claude mcp add aap-mcp --transport http --url https://YOUR_AAP_SERVER:8448/mcp --header "Authorization: Bearer YOUR_AAP_TOKEN"
+```
+
+This writes the entry into `~/.claude.json`:
+
+```json
+"mcpServers": {
+    "aap-mcp": {
+        "type": "http",
+        "url": "https://YOUR_AAP_SERVER:8448/mcp",
+        "headers": {
+            "Authorization": "Bearer YOUR_AAP_TOKEN"
+        }
+    }
+}
+```
+
+Verify by starting Claude Code and confirming the `aap-mcp` server connects
+without errors. You can test with a read-only call like listing job templates.
