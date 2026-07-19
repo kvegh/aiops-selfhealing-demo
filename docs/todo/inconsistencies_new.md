@@ -42,9 +42,9 @@ Same operation, different navigation paths described.
 
 Doc 04 uses Anthropic API direct (`ANTHROPIC_API_KEY`). Doc 05 uses Google Vertex AI (`CLAUDE_CODE_USE_VERTEX=1`). Doc 00's network table shows Anthropic API. These are mutually exclusive setups with no note explaining the difference.
 
-## 7. Port 8448 protocol label (doc 00 vs doc 01)
+## 7. ✅ Port 8448 protocol label (doc 00 vs doc 01) — NOT AN ISSUE
 
-Doc 00 network table labels port 8448 as "HTTP/SSE". Doc 01 uses `https://YOUR_AAP_SERVER:8448` — it is HTTPS.
+Doc 00 network table labels port 8448 as "HTTP/SSE". Doc 01 uses `https://YOUR_AAP_SERVER:8448` — it is HTTPS. The label refers to the application protocol (HTTP + SSE transport), not the TLS layer. Correct as-is.
 
 ## 8. Node.js version requirement (doc 04 vs doc 05)
 
