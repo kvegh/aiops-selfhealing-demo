@@ -1,6 +1,6 @@
 # Starting setup
 
-This document defines the baseline environment assumed by this demo. Everything in this document is a **prerequisite** — its installation is out of scope. The build guide starts from this state.
+Baseline environment — all of this is a **prerequisite**. The build guide starts from this state.
 
 ## Environment overview
 

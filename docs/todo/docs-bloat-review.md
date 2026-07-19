@@ -91,7 +91,7 @@ Tighter:
 
 ## docs/00-starting-setup.md — Nearly clean
 
-### S0-1. Opening paragraph
+### S0-1. Opening paragraph ✅ trimmed
 
 Current:
 > "This document defines the baseline environment assumed by this demo. Everything in this document is a **prerequisite** — its installation is out of scope. The build guide starts from this state."
