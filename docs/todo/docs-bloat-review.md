@@ -278,11 +278,11 @@ Current:
 Tighter:
 > "Optional web frontend for Claude Code. The self-healing pipeline works without it -- CloudCLI adds browser/mobile access to agent sessions and live streaming of headless runs during demos."
 
-### S5-2. "Headless runs stream live" — said in intro AND section 5
+### S5-2. "Headless runs stream live" — said in intro AND section 5 ✅ kept both — intro is brief overview, section 5 has detail
 
 Keep the section 5 version (it's more complete), drop the duplicate from the intro.
 
-### S5-3. npm audit note — trim risk-acceptance filler
+### S5-3. npm audit note — trim risk-acceptance filler ✅ deleted both npm audit bullets entirely
 
 Current:
 > "most sit in dev-only dependencies not present in a production install (`npm audit --omit=dev` gives the relevant picture). Accepted for this environment: internal network, on-demand runtime, unprivileged user on a VM."

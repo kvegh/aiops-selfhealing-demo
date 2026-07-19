@@ -46,14 +46,6 @@ npm install -g @cloudcli-ai/cloudcli
 which cloudcli && cloudcli --version
 ```
 
-Notes:
-
-- `npm audit` reports vulnerabilities in the dependency tree; most sit in
-  dev-only dependencies not present in a production install
-  (`npm audit --omit=dev` gives the relevant picture). Accepted for this
-  environment: internal network, on-demand runtime, unprivileged user on a VM.
-- Do **not** run `npm audit fix --force` — it installs breaking major versions
-  into a package you don't maintain.
 
 ## 2. systemd user service
 
