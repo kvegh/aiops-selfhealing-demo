@@ -284,12 +284,10 @@ permissions works.
 5. Ensure the user has at least read permissions on the host groups
    you want to trigger on.
 
-> **One user is enough:** The Zabbix documentation for the old
-> `ansible.eda.webhook` approach says to create a separate user per
-> rulebook (because each rulebook listens on a different port). With
-> Event Streams this does not apply -- the gateway routes by the UUID
-> in the URL, not by port. A single user can have multiple media
-> entries pointing to different Event Stream URLs if needed.
+> **One user is enough:** The old `ansible.eda.webhook` docs say one
+> user per rulebook (different ports). With Event Streams this doesn't
+> apply -- routing is by UUID, not port. One user with multiple media
+> entries is fine.
 
 ## 9. Create a trigger action
 

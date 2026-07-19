@@ -319,7 +319,7 @@ Current:
 Tighter:
 > "Use a dedicated Zabbix user for EDA (minimal permissions: read access on the relevant host groups). In demo setups, any user with those permissions works."
 
-### S6-4. "One user is enough" note — trim history
+### S6-4. "One user is enough" note — trim history ✅ trimmed
 
 Current:
 > "The Zabbix documentation for the old `ansible.eda.webhook` approach says to create a separate user per rulebook (because each rulebook listens on a different port). With Event Streams this does not apply -- the gateway routes by the UUID in the URL, not by port. A single user can have multiple media entries pointing to different Event Stream URLs if needed."
