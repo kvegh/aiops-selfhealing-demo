@@ -138,10 +138,6 @@ Add the remaining MCP servers to the same `mcpServers` block:
             "zabbix-mcp-server",
             "--config", "/etc/zabbix-mcp/config.toml"
         ]
-    },
-    "memory": {
-        "command": "npx",
-        "args": ["-y", "@modelcontextprotocol/server-memory"]
     }
 }
 ```
@@ -162,7 +158,6 @@ claude mcp add --transport http \
   --header "Authorization: Bearer YOUR_AAP_TOKEN" \
   aap-mcp https://AAP_SERVER:8448/mcp
 
-claude mcp add memory -- npx -y @modelcontextprotocol/server-memory
 ```
 
 ### Verify MCP connectivity
@@ -218,12 +213,6 @@ Platform.
 4. Verify the fix by re-checking the system state via linux-mcp.
 5. Verify the alert clears via Zabbix MCP.
 
-## Incident memory
-
-Use the memory MCP to record what you learn:
-- What the incident was, what caused it, how it was resolved.
-- This builds a knowledge base for future incidents.
-
 ## Response format
 
 Report your findings and actions concisely. Include:
@@ -264,7 +253,7 @@ the permitted tools explicitly:
 ```bash
 claude -p "diagnose the alert" \
   --permission-mode bypassPermissions \
-  --allowedTools "aap,linux-mcp,zabbix,memory,Read"
+  --allowedTools "aap,linux-mcp,zabbix,Read"
 ```
 
 This prevents the agent from using its built-in Bash, Edit, or Write
@@ -318,7 +307,7 @@ as the prompt. The complete invocation:
 ```bash
 claude -p "An alert has fired. Details: ${ALERT_PAYLOAD}. Diagnose the issue and remediate it through AAP." \
   --permission-mode bypassPermissions \
-  --allowedTools "aap,linux-mcp,zabbix,memory,Read" \
+  --allowedTools "aap,linux-mcp,zabbix,Read" \
   --max-turns 25 \
   --output-format json \
   2>/opt/tra/logs/agent-$(date +%Y%m%d-%H%M%S).log

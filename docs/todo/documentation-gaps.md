@@ -62,7 +62,9 @@ Nowhere documented how testserver1 was added to Zabbix, which templates are link
 
 Multiple sessions reference packages being removed from testserver1 to trigger the demo. The actual mechanism (cron, manual `dnf remove`, or a dedicated script) is never documented. A reproducible demo needs this.
 
-## 7. Incident memory MCP (`@modelcontextprotocol/server-memory`)
+## 7. ✅ Incident memory MCP (`@modelcontextprotocol/server-memory`)
+
+*Not implemented yet. Removed from docs/04-claude-agent.md (config, CLAUDE.md, allowedTools). Added as design TODO in docs/todo/demo-design.md.*
 
 Listed in the architecture and in `docs/04-claude-agent.md` MCP config, but no dedicated setup doc exists. The doc series goes 00-06 with no memory MCP doc.
 
