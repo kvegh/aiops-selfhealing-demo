@@ -53,7 +53,7 @@ Which level handles an incident is not a runtime decision made on a whim; it is 
 The incident matches a documented pattern. A predefined remediation playbook executes deterministically through Event-Driven Ansible on AAP — fully audited, no AI involved. If the fix doesn't clear the issue, escalation to Level 1 is automatic.
 
 **Level 1 — Unknown issue, known remediations.**
-No documented pattern matches, or the known fix did not clear the issue. The AI agent is woken to investigate: it examines the affected systems read-only, correlates monitoring data with system state, and determines the cause — then resolves it strictly by selecting from the pre-approved remediation catalog. The agent reasons freely, but acts only within the sanctioned repertoire. Diagnosis is creative; execution never is.
+The incident doesn't match any documented pattern, or the known fix did not clear the issue. The AI agent is woken to investigate: it examines the affected systems read-only, correlates monitoring data with system state, and determines the cause — then resolves it strictly by selecting from the pre-approved remediation catalog. The agent reasons freely, but acts only within the approved catalog.
 
 **Level 2 — Unknown issue, no fitting remediation.** *(experimental)*
 The catalog holds no answer. The agent drafts a new remediation and submits it as a proposal — it never executes its own work. An independent second agent instance reviews the proposal for sanity and policy compliance before it may enter the catalog, mirroring the author/reviewer separation of established code review practice. Whether machine review is sufficient here, or whether this level always requires a human gate, is an open question this project deliberately leaves open.

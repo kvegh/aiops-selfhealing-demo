@@ -34,7 +34,7 @@ The main issue: the same architectural constraint ("AI reads, AAP writes") is st
 **Tighter:**
 > "The incident matches a documented pattern. A predefined remediation template executes deterministically -- fully audited, no AI involved. If the fix doesn't clear the issue, escalation to Level 1 is automatic."
 
-### R4. Level 1 — last two sentences say the same thing
+### R4. Level 1 — last two sentences say the same thing ✅ kept first, dropped second, reworded
 
 **Current:**
 > "The agent reasons freely, but acts only within the sanctioned repertoire. Diagnosis is creative; execution never is."
