@@ -8,7 +8,7 @@ Cross-referencing all docs, code, and config files in the repo.
 
 Doc 02 uses `quay.io/redhat-services-prod/rhel-lightspeed-tenant/linux-mcp-server:latest` with SSH config mount, env vars (`LINUX_MCP_USER=mcp`), and log directory volume. Doc 04 uses `ghcr.io/rhel-lightspeed/linux-mcp:latest` with `--host`/`--user`/`--key` CLI args and key at `/opt/tra/keys/target-key`. These are incompatible configurations for the same server.
 
-## 2. Rulebook condition: doc 06 vs actual file vs troubleshooting
+## 2. ✅ Rulebook condition: doc 06 vs actual file vs troubleshooting
 
 Three-way mismatch:
 

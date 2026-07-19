@@ -61,7 +61,7 @@ File: `extensions/eda/rulebooks/zabbix-webhook.yml`
         port: 5000
   rules:
     - name: Zabbix agent down - invoke Claude
-      condition: 'event.payload.alert_name == "Linux: Zabbix agent is not available"'
+      condition: event.payload.event_name is search("Zabbix agent is not available", ignorecase=true)
       action:
         run_job_template:
           name: "Run Claude to analyse and fix"
@@ -72,11 +72,6 @@ The source still says `ansible.eda.webhook` -- Event Streams replace
 it with `ansible.eda.pg_listener` at activation time via source
 mapping. The rulebook file itself stays generic.
 
-> **YAML quoting:** If a condition value contains a colon followed by
-> a space (e.g. `Linux: Zabbix`), the entire condition must be wrapped
-> in single quotes. Otherwise YAML interprets the colon as a mapping
-> key and the file fails to parse. The EDA project sync will silently
-> report "no rulebooks" for invalid YAML.
 
 ## 2. Create an Event Stream credential
 
@@ -394,7 +389,7 @@ Simulate a Zabbix alert by posting directly to the Event Stream URL:
 curl -X POST https://aap.example.com/eda-event-streams/api/eda/v1/external_event_stream/<uuid>/post/ \
   -u "username:password" \
   -H "Content-Type: application/json" \
-  -d '{"alert_name": "Linux: Zabbix agent is not available", "host_name": "testserver1"}'
+  -d '{"event_name": "Zabbix agent is not available", "host_name": "testserver1"}'
 ```
 
 Replace the URL, username, and password with your Event Stream values.
