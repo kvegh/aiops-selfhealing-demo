@@ -75,9 +75,8 @@ In the AAP Controller UI:
 4. Save. **Copy the token value immediately** — it will not be shown
    again.
 
-The token is bound to the user that is logged in when it is created.
-That user's RBAC permissions determine what the MCP server can do —
-ensure the user has permission to launch the relevant job templates.
+The token inherits the creating user's RBAC permissions — ensure that
+user can launch the relevant job templates.
 
 Store the token securely. You will reference it in the Claude Code
 configuration on the TRA VM in the next step.

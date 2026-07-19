@@ -198,7 +198,7 @@ Tighter:
 
 ## docs/04-claude-agent.md — ~30% wordier than needed
 
-### S4-1. Section 4 trailing paragraph — trim
+### S4-1. Section 4 trailing paragraph — trim ✅ compressed RBAC line, kept store/reference notes
 
 Current:
 > "The token is bound to the user that is logged in when it is created. That user's RBAC permissions determine what the MCP server can do — ensure the user has permission to launch the relevant job templates.
