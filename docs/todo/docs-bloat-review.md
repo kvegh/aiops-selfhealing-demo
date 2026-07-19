@@ -236,7 +236,7 @@ Current:
 `ZABBIX_SERVER` and `ZABBIX_TOKEN` don't appear in this config block. Fix to:
 > Replace `AAP_SERVER`, `YOUR_AAP_TOKEN`, and `TARGET_IP` with your environment values.
 
-### S4-5. Section 6 intro — redundant second sentence
+### S4-5. Section 6 intro — redundant second sentence ✅ kept as-is
 
 Current:
 > "Claude Code reads `CLAUDE.md` from the working directory on every invocation. This file defines the agent's role, constraints, and operating procedures."
@@ -244,13 +244,13 @@ Current:
 Tighter:
 > Claude Code reads `CLAUDE.md` from the working directory on every invocation.
 
-### S4-6. Tuning note — delete
+### S4-6. Tuning note — delete ✅ kept as-is
 
 > "**Tuning:** This is a starting point. Refine the instructions based on observed agent behavior during testing."
 
 Says nothing actionable. Delete.
 
-### S4-7. Section 7 intro — trim -p explanation
+### S4-7. Section 7 intro — trim -p explanation ✅ kept as-is
 
 Current:
 > "Claude Code runs headlessly with `--print` (`-p`) mode: it reads a prompt from the command line, executes the task, prints the result, and exits. No interactive terminal required."
@@ -258,7 +258,7 @@ Current:
 Tighter:
 > For headless execution, use `--print` (`-p`) mode — no interactive terminal required.
 
-### S4-8. Section 2 — over-explains why a directory exists
+### S4-8. Section 2 — over-explains why a directory exists ✅ kept as-is
 
 Current:
 > "Create a dedicated directory for the agent. Claude Code reads its configuration (MCP connections, instructions, tool policy) from the working directory it is launched in."
