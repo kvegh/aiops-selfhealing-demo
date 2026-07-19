@@ -82,8 +82,7 @@ You should see an `ansiblemcp` container running. The MCP server listens on
 The installer generates a self-signed CA for AAP. The MCP endpoint on port 8448
 uses a certificate signed by it, so the VM running Claude Code must trust that CA.
 
-Copy the CA certificate — **not** the server cert from the TLS handshake, which
-does not include the signing CA — from the AAP host to the client VM:
+Copy the CA certificate created by AAP at install time (`~/aap/tls/ca.crt`) from the AAP host to the TRA VM:
 
 ```
 # On the AAP host, the CA lives at:

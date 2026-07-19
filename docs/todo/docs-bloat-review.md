@@ -116,7 +116,7 @@ Current:
 Tighter:
 > "The installer is idempotent — it adds the MCP container without touching the existing stack."
 
-### S1-3. CA trust section — restructure
+### S1-3. CA trust section — restructure ✅ simplified with inline path
 
 Current:
 > "Copy the CA certificate — **not** the server cert from the TLS handshake, which does not include the signing CA — from the AAP host to the client VM:"
