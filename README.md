@@ -142,6 +142,7 @@ flowchart TD
 - **All agent communication runs through defined integration interfaces (MCP)** — to monitoring, to the managed server, to the automation platform.
 - **Read-only wherever possible.** The agent's interfaces to the managed server and to monitoring are read-only by construction, not by convention.
 - **The agent operates under policy enforcement** that limits creative side activities outside operational policy — enforced in code, not requested in prompts.
+- **Credentials never reach the agent.** AAP returns `$encrypted$` for all sensitive fields post-creation, enforces `no_log` protection even at maximum verbosity, and injects credentials into the execution environment only at runtime. The agent can launch a job template that uses credentials — it cannot read, extract, or exfiltrate them.
 
 > **Management summary.** Control is not a promise made by the AI — it is a property of the architecture. The single governed execution path preserves every existing approval, audit, and compliance mechanism the organization already relies on. Adopting AI-driven operations this way carries no new class of privileged actor: the platform you already trust remains the only thing touching your systems.
 

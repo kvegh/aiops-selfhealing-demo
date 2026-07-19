@@ -68,7 +68,9 @@ Multiple sessions reference packages being removed from testserver1 to trigger t
 
 Listed in the architecture and in `docs/04-claude-agent.md` MCP config, but no dedicated setup doc exists. The doc series goes 00-06 with no memory MCP doc.
 
-## 8. AAP credential security model
+## 8. ✅ AAP credential security model
+
+*Added as guiding principle in README: credentials never reach the agent ($encrypted$, no_log, runtime-only injection).*
 
 Sessions discussed how AAP never exposes credentials post-creation (`$encrypted$` returned for all sensitive fields), `no_log` protection at max verbosity, and runtime-only injection into the execution environment. Relevant for the "Trusted Execution Layer" narrative but undocumented.
 
