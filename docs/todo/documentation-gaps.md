@@ -50,7 +50,9 @@ Significant troubleshooting knowledge accumulated across sessions, not captured 
 - **Systemd unit files persist after `dnf remove`**: never trust systemd `loaded` state to mean the package is installed. Always verify the binary exists.
 - **AAP MCP write limitations**: no `projects_create`, no `inventories_create`, no EDA-specific endpoints. Many setup steps cannot be done autonomously.
 
-## 5. Zabbix host/trigger/template setup for the target VM
+## 5. ✅ Zabbix host/trigger/template setup for the target VM
+
+*Added Zabbix host setup section to docs/00-starting-setup.md: host creation, three templates (Linux by Zabbix agent, ICMP Ping, Apache by HTTP), timeout note.*
 
 Nowhere documented how testserver1 was added to Zabbix, which templates are linked, or what triggers are configured. The demo assumes this exists but doesn't explain how to set it up.
 

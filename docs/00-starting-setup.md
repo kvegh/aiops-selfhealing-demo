@@ -33,6 +33,23 @@ Four virtual machines. VM sizing is out of scope; use vendor minimums or better.
 - Base RHEL installation with sudo access.
 - Nothing demo-specific installed yet. Claude Code CLI, Podman containers (linux-mcp, MCP filtering proxy), and all MCP client configuration are set up by this guide.
 
+## Zabbix host setup for the target VM
+
+Add the target VM as a monitored host in Zabbix:
+
+1. Navigate to **Data collection → Hosts → Create host**
+2. Set hostname, add to a host group, configure the Zabbix agent interface (IP/DNS, port 10050)
+3. Link the following templates:
+   - **Linux by Zabbix agent** — OS-level metrics and the agent availability trigger (`Zabbix agent is not available`) that drives the demo scenario
+   - **ICMP Ping** — network reachability check
+   - **Apache by HTTP** — HTTP service monitoring
+4. Save and confirm the agent status turns green (ZBX icon)
+
+> The demo scenario relies on the `Zabbix agent is not available` trigger
+> from the Linux by Zabbix agent template. This trigger fires after the
+> `{$AGENT.NODATA_TIMEOUT}` macro expires (default 30 minutes — shorten
+> it for demo purposes).
+
 ## Network requirements
 
 All connectivity is within one lab network. Required reachability:
