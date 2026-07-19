@@ -172,13 +172,13 @@ Lines 34-37 are two sentences saying "no sudo needed" (already covered) before t
 
 ## docs/03-zabbix-mcp.md — Very clean, three minor trims
 
-### S3-1. Section 6 intro sentence — delete
+### S3-1. Section 6 intro sentence — delete ✅ kept as-is
 
 > "The Zabbix MCP entry uses the same pattern as linux-mcp — Claude Code launches the container as a subprocess and communicates over stdio."
 
 Already said in the intro. Just delete.
 
-### S3-2. SELinux reminder — shorten
+### S3-2. SELinux reminder — shorten ✅ trimmed
 
 Current:
 > "**No `:Z` flag** on the volume mount — the SELinux label was set in step 4. Using `:Z` here would fail for non-root users."

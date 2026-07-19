@@ -132,8 +132,7 @@ Add to `~/.claude.json` under `mcpServers`:
 }
 ```
 
-> **No `:Z` flag** on the volume mount — the SELinux label was set in
-> step 4. Using `:Z` here would fail for non-root users.
+> **No `:Z` flag** — the SELinux label was set in step 4.
 
 ## 7. Test from Claude Code
 
