@@ -24,7 +24,7 @@ Doc 06 is wrong on all three counts by the repo's own troubleshooting guidance a
 
 Doc 04 uses `--permission-mode bypassPermissions`. The actual playbook and doc 06 use `--dangerously-skip-permissions`. Different flags for the same purpose.
 
-## 4. AAP PAT creation UI navigation (doc 01 vs doc 04)
+## 4. ✅ AAP PAT creation UI navigation (doc 01 vs doc 04)
 
 | Step | Doc 01 | Doc 04 |
 |------|--------|--------|
