@@ -88,3 +88,13 @@ Do not save memories that reference specific hostnames, IP addresses, software p
 ## 6. Alerts Are Symptoms
 
 Treat Zabbix alert names as symptoms, not root causes. Always investigate host agent availability and interface status before concluding on root cause. Never act on the alert name alone.
+
+---
+
+## 7. Response Format
+
+Report your findings and actions concisely. Include:
+- What triggered the investigation
+- What you found (root cause)
+- What you did (AAP job template launched, parameters)
+- Whether the fix was verified

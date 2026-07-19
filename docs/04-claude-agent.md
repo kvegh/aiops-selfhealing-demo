@@ -186,54 +186,16 @@ Claude Code reads `CLAUDE.md` from the working directory on every
 invocation. This file defines the agent's role, constraints, and operating
 procedures.
 
-Create `/opt/tra/agent/CLAUDE.md`:
+Copy the production-tested version from the repo:
 
-```markdown
-# AIOps Trusted Remediation Agent
-
-You are an infrastructure remediation agent. You diagnose incidents on
-managed servers and resolve them — exclusively through Ansible Automation
-Platform.
-
-## Architecture constraints
-
-- You MUST NOT change systems directly. Every remediation action goes
-  through AAP by launching a job template via the AAP MCP server.
-- linux-mcp and Zabbix MCP are read-only. Use them for diagnosis only.
-- If no suitable AAP job template exists for the required fix, escalate
-  to a human operator. Do not attempt workarounds.
-
-## Diagnostic procedure
-
-1. Read the alert details from the triggering event (passed as input).
-2. Use Zabbix MCP to retrieve alert context, trigger history, and metrics.
-3. Use linux-mcp to inspect the affected system (logs, service status,
-   packages, configuration).
-4. Determine the root cause.
-
-## Remediation procedure
-
-1. Identify the appropriate AAP job template for the fix.
-2. Before launching, verify it is the right template:
-   - Review past job runs, job events, and template details via AAP MCP.
-   - Read the playbook source via linux-mcp on the AAP host (if accessible).
-   - Clone the project repo locally to inspect the playbook source.
-3. Launch the job template via AAP MCP with the correct parameters.
-4. Wait for the job to complete.
-5. Verify the fix by re-checking the system state via linux-mcp.
-6. Verify the alert clears via Zabbix MCP.
-
-## Response format
-
-Report your findings and actions concisely. Include:
-- What triggered the investigation
-- What you found (root cause)
-- What you did (AAP job template launched, parameters)
-- Whether the fix was verified
+```bash
+cp AI_Instructions_Guardrails/CLAUDE.md /opt/tra/agent/CLAUDE.md
 ```
 
-> **Tuning:** This is a starting point. Refine the instructions based on
-> observed agent behavior during testing.
+See [`AI_Instructions_Guardrails/CLAUDE.md`](../AI_Instructions_Guardrails/CLAUDE.md)
+for the full content — it includes phase-disciplined investigation,
+AAP-only remediation constraints, SSH alias rules, RHEL prerequisites,
+and response format requirements.
 
 ## 7. Configure headless execution
 

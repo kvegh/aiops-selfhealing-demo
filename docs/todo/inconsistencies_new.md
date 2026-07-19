@@ -54,7 +54,7 @@ Doc 04 says Node.js 18+. Doc 05 says Node.js v22+. Both run on the same TRA VM, 
 
 The intro says "No custom scripts or JavaScript required" — this is correct. The media type is Zabbix's built-in EDA media type, not a custom script. Adding one line for Basic Auth is configuring the built-in, not writing custom code.
 
-## 10. CLAUDE.md: repo file vs doc 04 template
+## 10. ✅ CLAUDE.md: repo file vs doc 04 template
 
 `AI_Instructions_Guardrails/CLAUDE.md` is the battle-tested version (6 sections, ~90 lines, phase discipline, SSH alias rules, RHEL prerequisites). Doc 04 section 6 contains a completely different simplified template (4 sections, ~30 lines). The doc says "This is a starting point" but never references the actual refined version that exists in the repo.
 
