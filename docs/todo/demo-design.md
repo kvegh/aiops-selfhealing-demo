@@ -22,6 +22,18 @@ Add `@modelcontextprotocol/server-memory` (or similar) so the agent can record w
 
 httpd was found broken on the target host during demo runs (package removed alongside zabbix-agent2). No AAP job template exists to remediate it — Claude correctly identified the issue and escalated. Decide: is this a deliberate Level 3 "escalation to human" example, or should a remediation job template be created to make it a Level 1 self-healing scenario?
 
+## Package-level monitoring in Zabbix
+
+Detect package removal directly rather than waiting for service failure. Faster detection, clearer root cause — the agent currently has to deduce that a missing package is the cause rather than seeing it as the alert.
+
+## Grant mcp user systemd-journal group membership
+
+Journal logs were inaccessible during agent investigations, forcing fallback to DNF logs. Adding the mcp user to the `systemd-journal` group would give the agent direct access to journal output via linux-mcp.
+
+## Audit monitoring templates against host roles
+
+The Apache by HTTP template was linked to testserver1 but httpd was never part of the intended host role. Monitoring templates should match the actual service inventory of each host to avoid false alerts and wasted investigation time.
+
 ## AAP as fallback information gatherer
 
 Where no MCP interface exists for a system, the automation platform could be triggered to gather the information instead. Extends the agent's diagnostic reach without adding new direct interfaces.

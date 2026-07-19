@@ -163,7 +163,9 @@ Sessions established three approaches for how Claude verifies a job template is 
 
 This is operationally important (launching the wrong template could make things worse) and is not documented as part of the investigation methodology.
 
-## 19. Operational improvements identified during demo runs
+## 19. ✅ Operational improvements identified during demo runs
+
+*First three items added as design TODOs in docs/todo/demo-design.md. Fourth (recurring package removal) dropped — past incident detail.*
 
 Incident reports from demo runs consistently recommended the same improvements that are not captured anywhere as known limitations or next steps:
 
