@@ -50,7 +50,7 @@ Every incident is handled at the lowest level capable of resolving it. Each leve
 Which level handles an incident is not a runtime decision made on a whim; it is defined by policy and enforced by architecture.
 
 **Level 0 — Known issue, known fix.**
-The incident matches a documented pattern in the knowledge base. A predefined remediation template executes deterministically — no intelligence involved, none needed. This is the operational runbook, executed by the automation platform instead of a person: identical response, every time, fully audited. If the fix does not clear the issue, the re-fired event escalates automatically to Level 1.
+The incident matches a documented pattern. A predefined remediation playbook executes deterministically through Event-Driven Ansible on AAP — fully audited, no AI involved. If the fix doesn't clear the issue, escalation to Level 1 is automatic.
 
 **Level 1 — Unknown issue, known remediations.**
 No documented pattern matches, or the known fix did not clear the issue. The AI agent is woken to investigate: it examines the affected systems read-only, correlates monitoring data with system state, and determines the cause — then resolves it strictly by selecting from the pre-approved remediation catalog. The agent reasons freely, but acts only within the sanctioned repertoire. Diagnosis is creative; execution never is.

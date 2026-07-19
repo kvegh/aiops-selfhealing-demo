@@ -26,7 +26,7 @@ The main issue: the same architectural constraint ("AI reads, AAP writes") is st
 
 (First sentence is already stated verbatim earlier.)
 
-### R3. Level 0 — over-explained
+### R3. Level 0 — over-explained ✅ trimmed, added EDA/AAP context
 
 **Current:**
 > "The incident matches a documented pattern in the knowledge base. A predefined remediation template executes deterministically — no intelligence involved, none needed. This is the operational runbook, executed by the automation platform instead of a person: identical response, every time, fully audited. If the fix does not clear the issue, the re-fired event escalates automatically to Level 1."
