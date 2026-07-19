@@ -39,3 +39,8 @@ The media type JavaScript concatenates them. Putting the full URL in Send-to res
 
 **Systemd unit files persist after `dnf remove`.**
 A service can show as `loaded` in systemd even after its package has been removed (if `daemon-reload` was not run). Always verify the binary exists before concluding a service is installed.
+
+## Known upstream issues
+
+**Zabbix EDA integration docs describe the old webhook approach.**
+Zabbix's official documentation still references raw `ansible.eda.webhook` port listeners. It does not cover AAP 2.7 Event Streams, which provide gateway-managed URLs with TLS and authentication — no separate ports or users per rulebook needed. This demo uses Event Streams exclusively.

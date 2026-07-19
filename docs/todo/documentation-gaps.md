@@ -133,7 +133,9 @@ The playbook uses specific patterns that are non-obvious and worth documenting:
 
 When Claude Code runs in pipe mode (`claude -p`), it creates a JSONL transcript file with a UUID under `~/.claude/projects/.../`, but these sessions are **not** listed by `claude --resume`. This is expected behavior (not a bug) but important operational knowledge when debugging AAP-triggered runs or reviewing what the agent did.
 
-## 15. Zabbix EDA documentation update suggestion
+## 15. ✅ Zabbix EDA documentation update suggestion
+
+*Added to docs/troubleshooting.md under "Known upstream issues".*
 
 Zabbix's official EDA integration docs describe the old approach (raw `ansible.eda.webhook` port listeners) but do not mention AAP 2.7 Event Streams. The Event Streams approach is significantly better (managed URLs through the AAP gateway with TLS and auth, no need for separate ports or users per rulebook). A documentation update suggestion to the Zabbix project would be valuable.
 
