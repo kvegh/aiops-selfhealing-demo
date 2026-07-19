@@ -6,10 +6,9 @@ automatically trigger the Claude agent via AAP. Zabbix ships a native
 Event Stream, and configure an action. No custom scripts or JavaScript
 required.
 
-AAP 2.7 uses **Event Streams** -- managed, token-authenticated
-endpoints that replace raw `ansible.eda.webhook` port listeners. Event
-Streams provide credential-based authentication and a gateway-managed
-URL, so no extra ports need to be exposed.
+AAP 2.7 uses **Event Streams** -- authenticated, gateway-managed
+endpoints that replace raw `ansible.eda.webhook` port listeners. No
+extra ports need to be exposed.
 
 ## Environment
 

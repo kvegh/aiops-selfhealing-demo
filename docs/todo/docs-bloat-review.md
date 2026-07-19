@@ -294,7 +294,7 @@ Tighter:
 
 ## docs/06-eda-zabbix-integration.md — Solid, minor trims
 
-### S6-1. AAP 2.7 paragraph — "authenticated" said twice
+### S6-1. AAP 2.7 paragraph — "authenticated" said twice ✅ merged into single mention
 
 Current:
 > "AAP 2.7 uses **Event Streams** -- managed, token-authenticated endpoints that replace raw `ansible.eda.webhook` port listeners. Event Streams provide credential-based authentication and a gateway-managed URL, so no extra ports need to be exposed."
