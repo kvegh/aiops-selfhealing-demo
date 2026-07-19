@@ -156,7 +156,7 @@ Delete the entire end-of-file "Why an SSH config is needed" section.
 
 Lines 117-118 explain what the `-v ~/.ssh` mount does, then the flags table says the same thing. Delete lines 117-118.
 
-### S2-6. Obvious stdio note — trim
+### S2-6. Obvious stdio note — trim ✅ trimmed
 
 Current:
 > "Claude Code launches the container automatically at startup via the stdio transport — no manual `podman run` needed."

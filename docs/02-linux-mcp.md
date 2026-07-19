@@ -120,8 +120,7 @@ Key flags explained:
 | `-v .../.ssh:...:ro,Z` | Mount the entire SSH directory read-only |
 | `-v .../logs:...:rw,Z` | Mount the log directory read-write |
 
-Claude Code launches the container automatically at startup via the
-stdio transport — no manual `podman run` needed.
+Claude Code launches the container automatically at startup.
 
 > **Note:** The first connection attempt may time out while podman sets
 > up the user namespace. Reconnecting from the MCP status screen
