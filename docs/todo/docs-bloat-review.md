@@ -228,7 +228,7 @@ Tighter:
 
 Transport and auth type are visible in the JSON itself.
 
-### S4-4. Placeholder list — wrong values mentioned
+### S4-4. Placeholder list — wrong values mentioned ✅ fixed, added YOUR_ANSIBLE_USER
 
 Current:
 > "Replace the placeholder values (`AAP_SERVER`, `YOUR_AAP_TOKEN`, `TARGET_IP`, `ZABBIX_SERVER`, `ZABBIX_TOKEN`) with your environment."

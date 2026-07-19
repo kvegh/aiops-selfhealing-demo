@@ -126,7 +126,7 @@ Add the remaining MCP servers to the same `mcpServers` block:
             "-v", "/opt/tra/keys/target-key:/key:ro",
             "ghcr.io/rhel-lightspeed/linux-mcp:latest",
             "--host", "TARGET_IP",
-            "--user", "ansible",
+            "--user", "YOUR_ANSIBLE_USER",
             "--key", "/key"
         ]
     },
@@ -146,8 +146,8 @@ Add the remaining MCP servers to the same `mcpServers` block:
 }
 ```
 
-Replace the placeholder values (`AAP_SERVER`, `YOUR_AAP_TOKEN`,
-`TARGET_IP`, `ZABBIX_SERVER`, `ZABBIX_TOKEN`) with your environment.
+Replace `AAP_SERVER`, `YOUR_AAP_TOKEN`, `TARGET_IP`, and
+`YOUR_ANSIBLE_USER` with your environment values.
 
 > **Sensitive values in `~/.claude.json`:** For a demo this is acceptable.
 > In production, reference environment variables or a secrets manager
