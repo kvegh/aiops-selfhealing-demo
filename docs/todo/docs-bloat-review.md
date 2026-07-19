@@ -41,7 +41,7 @@ The main issue: the same architectural constraint ("AI reads, AAP writes") is st
 
 **Tighter:** Pick one. The second is punchier — delete the first.
 
-### R5. Level 2 — padded
+### R5. Level 2 — padded ✅ trimmed analogy and redundant phrasing
 
 **Current:**
 > "An independent second agent instance reviews the proposal for sanity and policy compliance before it may enter the catalog, mirroring the author/reviewer separation of established code review practice. Whether machine review is sufficient here, or whether this level always requires a human gate, is an open question this project deliberately leaves open."
