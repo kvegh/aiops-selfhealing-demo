@@ -49,7 +49,7 @@ The main issue: the same architectural constraint ("AI reads, AAP writes") is st
 **Tighter:**
 > "An independent second agent reviews for sanity and policy compliance before the proposal enters the catalog. Whether machine review suffices or a human gate is always required is an open question."
 
-### R6. First management summary — delete or collapse
+### R6. First management summary — delete or collapse ✅ kept, reworded autonomy sentence
 
 **Current (full paragraph):**
 > "**Management summary.** The bulk of incidents resolve at Level 0 — machine-speed, audit-grade, with no one paged at 3 a.m. The AI agent absorbs the long tail of unknowns at Level 1, working exclusively through the automation platform the organization already owns and governs — existing investment, extended rather than replaced. Escalations that do reach engineers arrive pre-analyzed, cutting time-to-resolution where expert time is scarcest. Autonomy grows only where control grows with it: every action, at every level, runs through the same governed, auditable execution path."
