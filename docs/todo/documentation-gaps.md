@@ -33,7 +33,9 @@ The procedure was worked out during sessions: create an OAuth2 Application in AA
 
 The full `~/.claude.json` MCP config with HTTP transport and bearer token is covered in `docs/04-claude-agent.md`, but `docs/01-aap-mcp.md` sections 6-7 remain TBD. Either backfill or add a cross-reference.
 
-## 4. Troubleshooting catalog
+## 4. ✅ Troubleshooting catalog
+
+*Created docs/troubleshooting.md with all 10 items, grouped by component.*
 
 Significant troubleshooting knowledge accumulated across sessions, not captured anywhere:
 
