@@ -33,7 +33,7 @@ Doc 04 uses `--permission-mode bypassPermissions`. The actual playbook and doc 0
 
 Same operation, different navigation paths described.
 
-## 5. Heading / filename mismatches
+## 5. ✅ Heading / filename mismatches
 
 - `04-claude-agent.md` heading says "02 – Set up Claude agent" (should be 04)
 - `05-cloudcli-web-ui.md` heading says "07 – CloudCLI Web UI" (should be 05)

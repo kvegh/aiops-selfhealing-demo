@@ -1,4 +1,4 @@
-# 02 – Set up Claude agent
+# 04 – Set up Claude agent
 
 Claude Code CLI runs on the TRA VM as the AI agent. This section installs
 the CLI, connects it to the MCP servers deployed in prior steps, and
