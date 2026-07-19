@@ -117,7 +117,7 @@ Key flags explained:
 | `--interactive` | Keep stdin open (required for stdio transport) |
 | `--userns keep-id:uid=1001,gid=0` | Map the host user to UID 1001 inside the container (the MCP server's runtime user) |
 | `-e LINUX_MCP_USER=mcp` | SSH username on the target host |
-| `-v .../.ssh:...:ro,Z` | Mount the entire SSH directory read-only (key, config, known_hosts) |
+| `-v .../.ssh:...:ro,Z` | Mount the entire SSH directory read-only |
 | `-v .../logs:...:rw,Z` | Mount the log directory read-write |
 
 Claude Code launches the container automatically at startup via the

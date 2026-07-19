@@ -152,7 +152,7 @@ Near-duplicate of Section 1 intro. Fold the one new detail (container detects co
 
 Delete the entire end-of-file "Why an SSH config is needed" section.
 
-### S2-5. Redundant mount explanation
+### S2-5. Redundant mount explanation ✅ trimmed table entry, kept prose
 
 Lines 117-118 explain what the `-v ~/.ssh` mount does, then the flags table says the same thing. Delete lines 117-118.
 
