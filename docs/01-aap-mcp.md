@@ -63,8 +63,6 @@ mcp_extra_settings='[{"setting": "DEFAULT_PAGE_SIZE", "value": "25"}]'
 $ ansible-playbook -i inventory ansible.containerized_installer.install
 ```
 
-The installer is idempotent — re-running it against an existing deployment
-adds the MCP container without touching the rest of the stack.
 
 ## 4. Verify
 

@@ -103,12 +103,12 @@ Tighter:
 
 ## docs/01-aap-mcp.md — Three small trims
 
-### S1-1. "sole write path" said twice
+### S1-1. "sole write path" said twice ✅ kept as-is (deliberate emphasis)
 
 The intro says it, then the variable explanation repeats it. Trim the variable section to:
 > "`mcp_allow_write_operations=true` — grants read-write access (launch job templates, create resources). The other MCP servers are read-only."
 
-### S1-2. Idempotency over-explained
+### S1-2. Idempotency over-explained ✅ deleted entirely
 
 Current:
 > "The installer is idempotent — re-running it against an existing deployment adds the MCP container without touching the rest of the stack."
