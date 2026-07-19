@@ -1,4 +1,4 @@
-# 05 — CloudCLI Web UI (optional)
+# 07 — CloudCLI Web UI (optional)
 
 Optional web frontend for Claude Code. The self-healing pipeline works without
 it — CloudCLI adds browser access to agent sessions and live streaming of
