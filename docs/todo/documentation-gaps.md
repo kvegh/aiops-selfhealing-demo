@@ -174,7 +174,9 @@ Incident reports from demo runs consistently recommended the same improvements t
 - **Audit monitoring templates against host roles**: Apache monitoring template was linked to testserver1 but httpd was never part of the intended role
 - **Investigate recurring package removal pattern**: DNF logs showed repeated install/remove cycles over multiple days
 
-## 20. Demo scope disclaimer in the repo
+## 20. ✅ Demo scope disclaimer in the repo
+
+*Added disclaimer to README top: functionality demo, not production reference.*
 
 The repo has no explicit statement that this is a **functionality demo**, not a production reference architecture. No attempt is made to follow least-privilege, security hardening, or production-grade guidelines -- that is intentional and out of scope. This was clarified in project memory during this session but is not stated anywhere in the README or docs. Anyone cloning the repo should understand this upfront.
 
