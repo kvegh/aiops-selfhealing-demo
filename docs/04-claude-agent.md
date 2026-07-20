@@ -283,20 +283,49 @@ The agent should:
 
 ## 9. Full invocation (EDA integration)
 
-When EDA triggers the agent, it calls Claude Code with the alert payload
-as the prompt. The complete invocation:
+EDA launches the agent via an AAP job template that runs the playbook
+[`playbooks/run_claude_analyse_fix.yml`](../playbooks/run_claude_analyse_fix.yml):
 
-```bash
-claude -p "An alert has fired. Details: ${ALERT_PAYLOAD}. Diagnose the issue and remediate it through AAP." \
-  --dangerously-skip-permissions \
-  --allowedTools "aap,linux-mcp,zabbix,Read" \
-  --max-turns 25 \
-  --output-format json \
-  2>/opt/tra/logs/agent-$(date +%Y%m%d-%H%M%S).log
+```yaml
+---
+- name: Run Claude to analyse and fix Zabbix alert
+  hosts: all
+  gather_facts: false
+
+  tasks:
+    - name: Run Claude Code CLI
+      # shell, not command — command breaks on quoted arguments in the CLI invocation
+      ansible.builtin.shell: >-
+        claude -p
+        "There is an alert on Zabbix, root cause analyse the alert and the state
+        of the affected server, and fix it autonomously. Afterwards create an
+        incident report and suggested further steps."
+        --dangerously-skip-permissions
+      args:
+        # Claude Code needs a working directory with CLAUDE.md guardrails
+        chdir: /home/aaptra/claude-wd
+      # Controller connects as ansible user, but Claude must run as aaptra
+      # (owns ~/.claude config, API keys, MCP wiring)
+      become: true
+      become_user: aaptra
+      register: claude_output
+
+    - name: Display incident report
+      ansible.builtin.debug:
+        var: claude_output.stdout_lines
 ```
 
-> **Note:** The exact EDA-to-agent integration (rulebook, webhook handler,
-> alert payload format) is covered in a later section.
+The prompt does not inject the alert payload — the agent discovers the
+active alert itself via Zabbix MCP. The `CLAUDE.md` guardrails
+(phase discipline, AAP-only remediation) govern what happens next.
+
+> **Optional tuning:** For tighter control, the invocation can be
+> extended with `--allowedTools` (restrict to MCP tools only),
+> `--max-turns` (cap agent loops), `--output-format json` (machine-readable
+> output), alert payload injection via `{{ extra_vars }}`, and stderr
+> redirection to a log file. See
+> [Claude Code documentation](https://docs.anthropic.com/en/docs/claude-code/cli-usage)
+> for available flags.
 
 ## Explicitly out of scope
 

@@ -58,6 +58,6 @@ The intro says "No custom scripts or JavaScript required" — this is correct. T
 
 `AI_Instructions_Guardrails/CLAUDE.md` is the battle-tested version (6 sections, ~90 lines, phase discipline, SSH alias rules, RHEL prerequisites). Doc 04 section 6 contains a completely different simplified template (4 sections, ~30 lines). The doc says "This is a starting point" but never references the actual refined version that exists in the repo.
 
-## 11. Playbook invocation: doc 04 section 9 vs actual playbook
+## 11. ✅ Playbook invocation: doc 04 section 9 vs actual playbook
 
 Doc 04 shows `${ALERT_PAYLOAD}` being interpolated into the prompt, plus `--allowedTools` and `--max-turns 25`. The actual playbook has a generic hardcoded prompt with no payload injection, no `--allowedTools`, and no `--max-turns`.
