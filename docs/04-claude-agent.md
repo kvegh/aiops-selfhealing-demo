@@ -290,6 +290,6 @@ active alert itself via Zabbix MCP. The `CLAUDE.md` guardrails
 
 - Deployment of individual MCP servers (linux-mcp container, Zabbix MCP)
   — covered in their own sections
-- EDA rulebook configuration — covered in [06-eda-zabbix-integration](06-eda-zabbix-integration.md)
+- EDA rulebook and Zabbix integration — covered in [06-eda-zabbix-integration](06-eda-zabbix-integration.md)
 - Claude Code SDK (Python) as an alternative to CLI invocation
 - Production hardening (rate limiting, cost controls, retry logic)
