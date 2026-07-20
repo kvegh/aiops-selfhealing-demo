@@ -2,6 +2,8 @@
 - name: Receive Zabbix alerts via webhook
   hosts: all
   sources:
+    # Event Streams replace this source with pg_listener at activation
+    # time via source mapping — host/port are never used but required.
     - ansible.eda.webhook:
         host: 0.0.0.0
         port: 5000
