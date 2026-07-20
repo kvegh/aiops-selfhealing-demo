@@ -131,6 +131,7 @@ Add the remaining MCP servers to the same `mcpServers` block:
             "run", "--rm", "--interactive",
             "--userns", "keep-id:uid=1001,gid=0",
             "-e", "LINUX_MCP_USER=mcp",
+            "-e", "LINUX_MCP_ALLOWED_LOG_PATHS=/var/log/messages,/var/log/secure",
             "-v", "/home/USER/.ssh:/var/lib/mcp/.ssh:ro,Z",
             "-v", "/home/USER/.local/share/linux-mcp-server/logs:/var/lib/mcp/.local/share/linux-mcp-server/logs:rw,Z",
             "quay.io/redhat-services-prod/rhel-lightspeed-tenant/linux-mcp-server:latest"
