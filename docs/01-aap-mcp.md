@@ -45,6 +45,10 @@ mcp_extra_settings='[{"setting": "DEFAULT_PAGE_SIZE", "value": "25"}]'
 - `mcp_extra_settings` / `DEFAULT_PAGE_SIZE` — caps list-type API responses
   at 25 items, keeping tool responses small for the model context.
 
+> **No `mcp_verify_ssl=false` here.** Instead of disabling certificate
+> verification, we trust the AAP-generated CA on the client VMs (see
+> section 5 below). This keeps TLS end-to-end.
+
 Resulting inventory state:
 
 ```
