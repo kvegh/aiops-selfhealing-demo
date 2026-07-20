@@ -11,7 +11,7 @@ Four virtual machines. VM sizing is out of scope; use vendor minimums or better.
 | `aap` | Automation platform | AAP (latest, 2.7 as of writing), containerized installation on RHEL, default configuration | AAP admin |
 | `zabbix` | Monitoring | Zabbix appliance, default configuration | Zabbix admin |
 | `rhel-target` | Managed target | RHEL, base installation | SSH user with sudo (Ansible-ready) |
-| `tra` | Trusted Remediation Agent | RHEL, base installation; runs Claude Code CLI and the MCP layer | root/sudo on the VM itself |
+| `tra` | Tools, Runtimes, Admin (TRA) | RHEL, base installation; runs Claude Code CLI and the MCP layer | root/sudo on the VM itself |
 
 ## Baseline definitions
 
