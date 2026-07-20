@@ -118,9 +118,9 @@ Key flags explained:
 
 Claude Code launches the container automatically at startup — no manual `podman run` needed.
 
-> **Note:** The first connection attempt may time out while podman sets
-> up the user namespace. Reconnecting from the MCP status screen
-> resolves this.
+> **Note:** The first podman launch is slow (user namespace setup). Start
+> an interactive `claude` session, run `/mcp` to check connection status,
+> and reconnect if needed. Subsequent starts are fast.
 
 ## 6. Verify
 
