@@ -61,7 +61,7 @@ All connectivity is within one lab network. Required reachability:
 | `tra` | `rhel-target` | 22 (SSH) | Read-only diagnostics via linux-mcp |
 | `aap` | `rhel-target` | 22 (SSH) | Remediation job execution |
 | `zabbix` ← `rhel-target` | `zabbix` | 10051 (Zabbix trapper) | Agent → server reporting |
-| `zabbix` | `aap` (EDA) | webhook port (defined during EDA setup) | Alert forwarding to EDA |
+| `zabbix` | `aap` | 443 (HTTPS) | Alert forwarding to EDA via Event Streams |
 | `tra` | Anthropic API (internet) | 443 | Claude Code CLI inference |
 
 ## Credentials checklist
