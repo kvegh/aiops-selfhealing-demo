@@ -394,7 +394,8 @@ Claude Code CLI diagnoses via MCP servers, remediates via AAP
    should have incremented.
 5. In AAP: check **Rulebook Activations --> History** — confirm the
    rulebook fired and launched the job template.
-6. Confirm Claude diagnosed and remediated the issue.
+6. Watch the agent work in real time via CloudCLI
+   (see [05-cloudcli-web-ui](05-cloudcli-web-ui.md)).
 7. Confirm the Zabbix problem clears.
 
 ## Explicitly out of scope
