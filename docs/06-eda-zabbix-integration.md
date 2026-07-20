@@ -383,21 +383,6 @@ Claude Code CLI diagnoses via MCP servers, remediates via AAP
 
 ## 12. Test the integration
 
-### Manual Event Stream test
-
-Simulate a Zabbix alert by posting directly to the Event Stream URL:
-
-```bash
-curl -X POST https://aap.example.com/eda-event-streams/api/eda/v1/external_event_stream/<uuid>/post/ \
-  -u "username:password" \
-  -H "Content-Type: application/json" \
-  -d '{"event_name": "Zabbix agent is not available", "host_name": "testserver1"}'
-```
-
-Replace the URL, username, and password with your Event Stream values.
-Check the Event Stream detail page for received events, and the AAP
-Controller for the launched job.
-
 ### Live test
 
 1. Stop the Zabbix agent on the target server (or simulate a failure
