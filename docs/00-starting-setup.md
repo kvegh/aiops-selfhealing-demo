@@ -47,8 +47,7 @@ Add the target VM as a monitored host in Zabbix:
 
 > The demo scenario relies on the `Zabbix agent is not available` trigger
 > from the Linux by Zabbix agent template. This trigger fires after the
-> `{$AGENT.NODATA_TIMEOUT}` macro expires (default 30 minutes — shorten
-> it for demo purposes).
+> `{$AGENT.TIMEOUT}` macro expires (default 3 minutes).
 
 ## Network requirements
 

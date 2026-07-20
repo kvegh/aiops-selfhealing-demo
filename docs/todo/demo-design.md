@@ -54,7 +54,7 @@ Create an AAP workflow template that stages the demo incident end-to-end: node 1
 
 ## Shorten Zabbix reaction times for demos
 
-The default `{$AGENT.NODATA_TIMEOUT}` is 30 minutes — too slow for a live demo. Override it at host level (host → Macros tab) to `3m` or less. Also verify the `agent.ping` item interval is short enough (default 1m is fine). Check that the trigger action has no "problem duration" condition adding extra delay. Document the recommended demo values in doc 00.
+The default `{$AGENT.TIMEOUT}` is 3 minutes. Override it at host level (host → Macros tab) if needed. Also verify the `agent.ping` item interval is short enough (default 1m is fine). Check that the trigger action has no "problem duration" condition adding extra delay. Document the recommended demo values in doc 00.
 
 ## ITSM integration
 
