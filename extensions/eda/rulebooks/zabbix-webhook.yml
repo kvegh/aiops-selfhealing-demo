@@ -3,7 +3,8 @@
   hosts: all
   sources:
     # Event Streams replace this source with pg_listener at activation
-    # time via source mapping — host/port are never used but required.
+    # time via source mapping — these values are never used, but port
+    # is required by the webhook plugin schema.
     - ansible.eda.webhook:
         host: 0.0.0.0
         port: 5000
