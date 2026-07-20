@@ -49,7 +49,7 @@ repo-root/
 
 ### Rulebook
 
-File: `extensions/eda/rulebooks/zabbix-webhook.yml`
+File: [`extensions/eda/rulebooks/zabbix-webhook.yml`](../extensions/eda/rulebooks/zabbix-webhook.yml)
 
 ```yaml
 ---
@@ -319,7 +319,7 @@ conditions will POST the alert payload to the Event Stream URL.
 The job template **Run Claude to analyse and fix** must exist in AAP
 and point to the playbook that invokes Claude Code CLI.
 
-File: `playbooks/run_claude_analyse_fix.yml`
+File: [`playbooks/run_claude_analyse_fix.yml`](../playbooks/run_claude_analyse_fix.yml)
 
 ```yaml
 ---

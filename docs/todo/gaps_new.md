@@ -25,11 +25,11 @@ The `Repository layout` section in the README claims directories that don't exis
 
 The README architecture diagram still shows `MEM[(Incident memory<br>MCP)]` connected to Claude Code with a bidirectional arrow. This was removed from docs and config in gap 7 of the previous round, but the diagram was not updated. The component doesn't exist.
 
-## 4. No cross-reference from doc 06 to actual rulebook file
+## 4. ✅ No cross-reference from doc 06 to actual rulebook file
 
 Doc 06 reproduces the rulebook inline (and it has already drifted — see inconsistencies #2). It never references `extensions/eda/rulebooks/` as the canonical source, so the reader has no way to find the actual deployed file.
 
-## 5. No cross-reference from doc 06 to actual playbook file
+## 5. ✅ No cross-reference from doc 06 to actual playbook file
 
 Same problem: doc 06 reproduces the playbook inline but doesn't reference `playbooks/run_claude_analyse_fix.yml`. The inline copy will continue to drift.
 
