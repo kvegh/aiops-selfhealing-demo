@@ -4,7 +4,7 @@ Missing content, broken references, undocumented divergences.
 
 ---
 
-## 1. README repository layout is wrong
+## 1. ✅ README repository layout is wrong
 
 The `Repository layout` section in the README claims directories that don't exist and omits ones that do.
 

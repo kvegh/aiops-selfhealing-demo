@@ -151,11 +151,11 @@ flowchart TD
 ## Repository layout
 
 ```
-docs/            architecture, design decisions, documented failure modes
-docs/build/      sequential reimplementation guide (start at 00-starting-setup.md)
-playbooks/       AAP project content used by the remediation templates
-rulebooks/       EDA rulebooks (level routing)
-config/          sanitized reference configuration (AAP installer inventory, MCP configs, agent settings)
+docs/                          build guide (00 through 06), troubleshooting
+docs/todo/                     backlog and design notes
+playbooks/                     AAP project content used by the remediation templates
+extensions/eda/rulebooks/      EDA rulebooks (level routing)
+AI_Instructions_Guardrails/    agent guardrails (CLAUDE.md)
 ```
 
 ## Status
