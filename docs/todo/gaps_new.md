@@ -33,7 +33,7 @@ Doc 06 reproduces the rulebook inline (and it has already drifted — see incons
 
 Same problem: doc 06 reproduces the playbook inline but doesn't reference `playbooks/run_claude_analyse_fix.yml`. The inline copy will continue to drift.
 
-## 6. Doc 04 section 9 references "a later section" without a link
+## 6. ✅ Doc 04 section 9 references "a later section" without a link
 
 "The exact EDA-to-agent integration (rulebook, webhook handler, alert payload format) is covered in a later section." — no link to doc 06. The reader doesn't know which section.
 
