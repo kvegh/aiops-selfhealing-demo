@@ -21,7 +21,7 @@ Four virtual machines. VM sizing is out of scope; use vendor minimums or better.
 - Default post-install state: admin login works on the web UI, no projects, job templates, or inventories created yet.
 
 ### Zabbix VM
-- Zabbix deployed as the official appliance image.
+- Zabbix deployed as the [official appliance image](https://www.zabbix.com/download).
 - Default post-install state: admin login works on the web UI, no custom hosts, triggers, or media types configured yet.
 
 ### RHEL target VM
