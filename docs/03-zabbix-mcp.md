@@ -144,17 +144,6 @@ claude -p "Use Zabbix to list all monitored hosts." \
 
 The agent should return the list of hosts from Zabbix.
 
-## Updating
-
-```bash
-cd /opt/zabbix-mcp-server
-git pull
-podman build -t zabbix-mcp-server .
-```
-
-The config file is not affected. The next Claude Code invocation will
-use the new image.
-
 ## Explicitly out of scope
 
 - Zabbix appliance installation and configuration
