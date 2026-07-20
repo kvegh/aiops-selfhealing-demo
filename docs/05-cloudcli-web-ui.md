@@ -5,7 +5,11 @@ it — CloudCLI adds browser access to agent sessions and live streaming of
 headless runs during demos.
 
 **Component**: [siteboon/claudecodeui](https://github.com/siteboon/claudecodeui)
-(aka CloudCLI), AGPL-3.0, installed via npm.
+(aka CloudCLI), AGPL-3.0, installed via npm. Built and open-sourced by
+[Siteboon](https://siteboon.com/) — their two-way session sharing
+(terminal sessions appear in the browser and vice versa, including live
+streaming of headless runs) is what makes the web layer of this demo
+work. Thank you, Siteboon.
 
 **How it works**: CloudCLI reads and writes Claude Code's native session state
 under `~/.claude`. It does not talk to any Anthropic service itself — it spawns
