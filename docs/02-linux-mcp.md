@@ -127,7 +127,7 @@ Claude Code launches the container automatically at startup — no manual `podma
 Start Claude Code from the agent directory and test:
 
 ```bash
-cd /opt/tra/agent
+cd ~/claude-wd
 claude -p "Use linux-mcp to check the OS version on testserver1." \
     --dangerously-skip-permissions \
     --max-turns 5

@@ -46,7 +46,7 @@ The current playbook uses a generic prompt and minimal flags. Future refinements
 - **`--allowedTools "aap,linux-mcp,zabbix,Read"`:** restrict the agent to MCP tools only, preventing use of Bash/Edit/Write
 - **`--max-turns 25`:** cap agent loops to prevent runaway execution
 - **`--output-format json`:** machine-readable output for downstream parsing
-- **Stderr logging:** `2>/opt/tra/logs/agent-$(date +%Y%m%d-%H%M%S).log`
+- **Stderr logging:** `2>~/claude-wd/logs/agent-$(date +%Y%m%d-%H%M%S).log`
 
 ## Demo trigger via AAP (no shell access needed)
 

@@ -136,7 +136,7 @@ Add to `~/.claude.json` under `mcpServers`:
 ## 7. Test from Claude Code
 
 ```bash
-cd /opt/tra/agent
+cd ~/claude-wd
 claude -p "Use Zabbix to list all monitored hosts." \
     --dangerously-skip-permissions \
     --max-turns 5
