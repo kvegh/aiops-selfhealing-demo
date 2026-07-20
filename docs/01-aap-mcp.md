@@ -9,7 +9,7 @@ alongside the existing AAP growth-topology containers.
 ## Environment
 
 - Single-VM AAP 2.7 growth architecture, containerized, on RHEL
-- Installer runs as the AAP service user
+- Installer runs as the AAP service user (here: `aap_service`)
 
 ## 1. Starting point
 
@@ -65,8 +65,11 @@ $ ansible-playbook -i inventory ansible.containerized_installer.install
 ## 4. Verify
 
 ```
-$ podman ps | grep -i mcp 
-242bc0f298c0  registry.redhat.io/ansible-automation-platform-27/mcp-server-rhel9:latest  /entrypoint.sh  Up About a minute  8080/tcp, 8086/tcp  ansiblemcp
+aap_service@aap-remote /opt/sources/ansible-automation-platform-containerized-setup-2.7-2
+❯ podman ps | grep -i mcp 
+242bc0f298c0  registry.redhat.io/ansible-automation-platform-27/mcp-server-rhel9:latest         /entrypoint.sh        About a minute ago  Up About a minute  8080/tcp, 8086/tcp  ansiblemcp
+aap_service@aap-remote /opt/sources/ansible-automation-platform-containerized-setup-2.7-2
+❯ 
 ```
 
 You should see an `ansiblemcp` container running. The MCP server listens on
