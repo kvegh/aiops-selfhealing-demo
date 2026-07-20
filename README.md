@@ -154,13 +154,13 @@ flowchart TD
 
 ## Repository layout
 
-```
-docs/                          build guide (00 through 06), troubleshooting
-docs/todo/                     backlog and design notes
-playbooks/                     AAP project content used by the remediation templates
-extensions/eda/rulebooks/      EDA rulebooks (level routing)
-AI_Instructions_Guardrails/    agent guardrails (CLAUDE.md)
-```
+| Path | Content |
+|---|---|
+| [`docs/`](docs/) | Build guide (00 through 06), troubleshooting |
+| [`docs/todo/`](docs/todo/) | Backlog and design notes |
+| [`playbooks/`](playbooks/) | AAP project content used by the remediation templates |
+| [`extensions/eda/rulebooks/`](extensions/eda/rulebooks/) | EDA rulebooks (level routing) |
+| [`AI_Instructions_Guardrails/`](AI_Instructions_Guardrails/) | Agent guardrails (CLAUDE.md) |
 
 ## Status
 
