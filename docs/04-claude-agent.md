@@ -27,15 +27,15 @@ Verify:
 $ claude --version
 ```
 
-## 2. Set up the agent project directory
+## 2. Set up the agent **W**orking **D**irectory
 
 Create a dedicated directory for the agent. Claude Code reads its
 configuration (MCP connections, instructions, tool policy) from the
-working directory it is launched in.
+working directory it is launched in. We use `~/claude-wd`:
 
 ```bash
-mkdir -p /opt/tra/agent
-cd /opt/tra/agent
+mkdir -p ~/claude-wd
+cd ~/claude-wd
 ```
 
 ## 3. Authenticate
@@ -189,7 +189,7 @@ procedures.
 Copy the production-tested version from the repo:
 
 ```bash
-cp AI_Instructions_Guardrails/CLAUDE.md /opt/tra/agent/CLAUDE.md
+cp AI_Instructions_Guardrails/CLAUDE.md ~/claude-wd/CLAUDE.md
 ```
 
 See [`AI_Instructions_Guardrails/CLAUDE.md`](../AI_Instructions_Guardrails/CLAUDE.md)
@@ -232,7 +232,7 @@ ID from the transcript filename and resume it explicitly with
 Run a manual test from the agent directory:
 
 ```bash
-cd /opt/tra/agent
+cd ~/claude-wd
 
 claude -p "List the hosts monitored by Zabbix and check if the target server is reachable via linux-mcp. Report what you find." \
   --dangerously-skip-permissions \
