@@ -4,7 +4,7 @@ Duplicated content, redundant sections, content that should be consolidated.
 
 ---
 
-## 1. PAT creation duplicated (doc 01 + doc 04)
+## 1. ✅ PAT creation duplicated (doc 01 + doc 04)
 
 AAP OAuth2 Application and Personal Access Token creation is fully described in both doc 01 (section 6) and doc 04 (section 4). The two descriptions use different UI navigation paths (see inconsistencies_new.md #4). One should be canonical and the other should cross-reference.
 

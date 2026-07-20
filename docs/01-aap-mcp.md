@@ -101,41 +101,8 @@ $ curl -s -o /dev/null -w '%{http_code}\n' https://YOUR_AAP_SERVER:8448/mcp
 
 Any HTTP status without a TLS error means the chain validates.
 
-## 6. Create an API token
+## 6. Create an API token and connect Claude Code CLI
 
-The MCP server authenticates via an AAP Personal Access Token (PAT). Creating
-one is a two-step process in the AAP UI.
-
-### 6a. Create an OAuth2 Application
-
-1. Navigate to **Access Management → OAuth Applications → Create OAuth application**
-2. Fill in:
-   - **Name:** `mcp` (or any label you prefer)
-   - **Organization:** select your organization
-   - **Authorization grant type:** `Resource owner password-based`
-   - **Client type:** `Confidential`
-3. Save.
-
-### 6b. Create a Personal Access Token
-
-1. Navigate to **Access Management → Users → your user → API Tokens → Create API Token**
-2. Fill in:
-   - **Application:** select the application created above
-   - **Scope:** `Write`
-3. Save.
-4. **Copy the token immediately** — AAP will not show it again.
-
-Store the token securely — you will need it in
-[04-claude-agent](04-claude-agent.md) when configuring Claude Code's MCP
-connections.
-
-> **RBAC note:** The token inherits the permissions of the user it belongs to.
-> For the demo, the user needs at minimum: read access to inventories, projects,
-> job templates, and jobs; execute (launch) permission on the remediation job
-> templates.
-
-## 7. Connect Claude Code CLI
-
-See [04-claude-agent](04-claude-agent.md), section 3 — the AAP MCP server is
-configured alongside the other MCP servers in `~/.claude.json` using the token
-from section 6 above.
+The MCP server authenticates via an AAP Personal Access Token (PAT).
+Token creation and Claude Code CLI configuration are covered in
+[04-claude-agent](04-claude-agent.md), sections 4 and 5.
