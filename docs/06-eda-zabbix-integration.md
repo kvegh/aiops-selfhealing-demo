@@ -388,10 +388,14 @@ Claude Code CLI diagnoses via MCP servers, remediates via AAP
 1. Stop the Zabbix agent on the target server (or simulate a failure
    the monitoring template detects).
 2. Wait for Zabbix to fire the trigger.
-3. Observe the action log in **Alerts --> Actions --> Action log**.
-4. Confirm the EDA rulebook matched and launched the job template.
-5. Confirm Claude diagnosed and remediated the issue.
-6. Confirm the Zabbix problem clears.
+3. In Zabbix: check **Alerts --> Actions --> Action log** for the
+   outgoing EDA notification.
+4. In AAP: check **Event Streams** — the event count on your stream
+   should have incremented.
+5. In AAP: check **Rulebook Activations --> History** — confirm the
+   rulebook fired and launched the job template.
+6. Confirm Claude diagnosed and remediated the issue.
+7. Confirm the Zabbix problem clears.
 
 ## Explicitly out of scope
 
