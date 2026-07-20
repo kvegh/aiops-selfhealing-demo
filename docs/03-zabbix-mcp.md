@@ -147,5 +147,5 @@ The agent should return the list of hosts from Zabbix.
 ## Explicitly out of scope
 
 - Zabbix appliance installation and configuration
-- Zabbix host/trigger/template setup for the target VM
+- Zabbix host/trigger/template setup for the target VM (covered in [00-starting-setup](00-starting-setup.md))
 - Claude Code CLI installation and full MCP wiring (covered in [04-claude-agent](04-claude-agent.md))
