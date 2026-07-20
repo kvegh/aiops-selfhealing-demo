@@ -165,3 +165,5 @@ flowchart TD
 ## Status
 
 Working demo; documentation in progress. Failure modes and design decisions are documented deliberately — real behavior over polished success.
+
+Pull requests are welcome. For questions or ideas, open a [GitHub Issue](https://github.com/kvegh/aiops-selfhealing-demo/issues) or reach out via [GitHub](https://github.com/kvegh).
