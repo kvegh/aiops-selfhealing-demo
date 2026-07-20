@@ -17,11 +17,11 @@ The `Repository layout` section in the README claims directories that don't exis
 | — | `docs/todo/` exists, not listed |
 | — | `docs/troubleshooting.md` exists, not listed |
 
-## 2. CLAUDE.md: repo version never referenced from docs
+## 2. ✅ CLAUDE.md: repo version never referenced from docs — fixed in inconsistency #10
 
 `AI_Instructions_Guardrails/CLAUDE.md` is the refined, battle-tested agent instruction file (~90 lines, 6 sections including phase discipline, SSH alias rules, RHEL prerequisites, memory hygiene). Doc 04 section 6 contains a separate simplified template (~30 lines, 4 sections) and says "This is a starting point" but never mentions that a refined version exists in the repo. The reader doesn't know to look for it.
 
-## 3. Incident memory MCP still in architecture diagram
+## 3. ✅ Incident memory MCP still in architecture diagram
 
 The README architecture diagram still shows `MEM[(Incident memory<br>MCP)]` connected to Claude Code with a bidirectional arrow. This was removed from docs and config in gap 7 of the previous round, but the diagram was not updated. The component doesn't exist.
 

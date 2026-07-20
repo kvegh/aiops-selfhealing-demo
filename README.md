@@ -138,6 +138,10 @@ flowchart TD
 
 **Every arrow that changes state originates from the Trusted Execution Layer.** The AI agent has no direct write path anywhere.
 
+> **Incident memory MCP** is shown in the diagram but not yet implemented.
+> It is planned as a persistent knowledge graph for cross-incident learning —
+> see [`docs/todo/demo-design.md`](docs/todo/demo-design.md#incident-memory-mcp).
+
 ## Guiding principles
 
 - **The automation platform is strictly the only component that changes configurations or executes jobs.** It is the **Trusted Execution Layer**. LLMs are exceptionally creative — and exactly for that reason not reliable enough to follow operational policy unconditionally. Creativity belongs in diagnosis, never in execution.
