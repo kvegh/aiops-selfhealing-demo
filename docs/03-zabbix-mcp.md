@@ -3,10 +3,9 @@
 The Zabbix MCP server gives Claude **read-only** access to the
 monitoring layer — hosts, problems, triggers, history, and events. It
 uses the [initMAX/zabbix-mcp-server](https://github.com/initMAX/zabbix-mcp-server),
-built and open-sourced by [initMAX](https://www.initmax.com/) — a Zabbix
-Premium Partner with deep Zabbix expertise. Their work on this MCP
-server is what makes the monitoring side of this AIOps demo possible.
-Thank you, initMAX.
+built and open-sourced by [initMAX](https://www.initmax.com/), a Czech
+Zabbix consultancy. Their MCP server is what makes the monitoring side
+of this AIOps demo possible. Thank you, initMAX.
 
 The server runs as a container, launched by Claude Code on demand via
 stdio transport — no persistent service, port mapping, or network
