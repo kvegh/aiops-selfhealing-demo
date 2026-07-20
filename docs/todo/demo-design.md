@@ -48,6 +48,10 @@ The current playbook uses a generic prompt and minimal flags. Future refinements
 - **`--output-format json`:** machine-readable output for downstream parsing
 - **Stderr logging:** `2>/opt/tra/logs/agent-$(date +%Y%m%d-%H%M%S).log`
 
+## Demo trigger via AAP (no shell access needed)
+
+Create an AAP workflow template that stages the demo incident end-to-end: node 1 removes zabbix-agent2 from the target host, node 2 deletes node 1's job record via the AAP API so the agent doesn't see AAP caused the outage. This lets SSPs run the demo entirely through the AAP UI without needing SSH access to the target host. The workflow template name should be innocuous (e.g. "Scheduled Maintenance") so Claude doesn't connect it to the incident if it appears in the job history.
+
 ## ITSM integration
 
 The architecture diagram shows ITSM (incident record and CMDB updates) as a target of the Trusted Execution Layer, but no ITSM system is wired up in the demo yet.
