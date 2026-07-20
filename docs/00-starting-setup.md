@@ -16,7 +16,7 @@ Four virtual machines. VM sizing is out of scope; use vendor minimums or better.
 ## Baseline definitions
 
 ### AAP VM
-- AAP installed via the containerized installer on RHEL, driven by the standard installer inventory file (`inventory` ini format). A reference inventory is included in `config/` of this repository.
+- AAP installed via the containerized installer on RHEL, driven by the standard installer inventory file (`inventory` ini format).
 - All AAP components on this single VM (Controller, EDA, gateway).
 - Default post-install state: admin login works on the web UI, no projects, job templates, or inventories created yet.
 

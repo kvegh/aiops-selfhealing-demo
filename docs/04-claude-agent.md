@@ -148,8 +148,8 @@ Add the remaining MCP servers to the same `mcpServers` block:
 }
 ```
 
-Replace `AAP_SERVER`, `YOUR_AAP_TOKEN`, `TARGET_IP`, and
-`YOUR_ANSIBLE_USER` with your environment values.
+Replace `AAP_SERVER`, `YOUR_AAP_TOKEN`, and `USER` with your
+environment values.
 
 > **Sensitive values in `~/.claude.json`:** For a demo this is acceptable.
 > In production, reference environment variables or a secrets manager
