@@ -13,10 +13,11 @@ work. Thank you, Siteboon.
 
 **How it works**: CloudCLI reads and writes Claude Code's native session state
 under `~/.claude`. It does not talk to any Anthropic service itself — it spawns
-and observes the local Claude Code integration, which in this setup is
-authenticated against **Google Vertex AI**. Sessions started in the terminal
-appear in the web UI and vice versa. Headless `claude -p` runs (e.g. triggered
-by EDA) stream into the UI live as they execute.
+and observes the local Claude Code process, which authenticates via
+`ANTHROPIC_API_KEY` (direct) or Google Vertex AI environment variables
+(see systemd unit below). Sessions started in the terminal appear in the web
+UI and vice versa. Headless `claude -p` runs (e.g. triggered by EDA) stream
+into the UI live as they execute.
 
 Replace the placeholders below with your environment values:
 
@@ -25,7 +26,7 @@ Replace the placeholders below with your environment values:
 | `TRA_VM_IP` | Internal-network IP of the TRA VM |
 | `CLOUDCLI_WEB_HOSTNAME` | Public FQDN for the CloudCLI web UI |
 | `AAP_WEB_HOSTNAME` | FQDN of the AAP instance (used for shared TLS certs) |
-| `GCP_PROJECT_ID` | Google Cloud project ID for Vertex AI |
+| `GCP_PROJECT_ID` | Google Cloud project ID (Vertex AI only — not needed with `ANTHROPIC_API_KEY`) |
 
 ## Architecture
 
@@ -39,7 +40,7 @@ nginx on hypervisor host (CLOUDCLI_WEB_HOSTNAME:443)
 CloudCLI on TRA VM (TRA_VM_IP:3001, systemd --user service, on-demand)
     │ spawns (Claude Agents SDK)
     ▼
-Claude Code ──► Vertex AI (gcloud ADC + env vars)
+Claude Code ──► Anthropic API or Vertex AI
 ```
 
 Security posture: CloudCLI runs **on demand only** — the systemd user service
@@ -73,9 +74,13 @@ After=network-online.target
 ExecStart=%h/.npm-global/bin/cloudcli --port 3001
 Environment=HOST=TRA_VM_IP
 Environment=PATH=%h/.local/bin:%h/.npm-global/bin:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin
-Environment=CLAUDE_CODE_USE_VERTEX=1
-Environment=ANTHROPIC_VERTEX_PROJECT_ID=GCP_PROJECT_ID
-Environment=CLOUD_ML_REGION=global
+# --- Authentication: pick ONE block, delete the other ---
+# Option A: Anthropic API directly
+Environment=ANTHROPIC_API_KEY=sk-ant-...
+# Option B: Google Vertex AI
+#Environment=CLAUDE_CODE_USE_VERTEX=1
+#Environment=ANTHROPIC_VERTEX_PROJECT_ID=GCP_PROJECT_ID
+#Environment=CLOUD_ML_REGION=global
 RuntimeMaxSec=10h
 Restart=on-failure
 WorkingDirectory=/home/aaptra/claude-wd
@@ -100,9 +105,12 @@ systemctl --user start cloudcli
   include `~/.local/bin`, where the `claude` binary lives. Without this line
   CloudCLI cannot find Claude Code and reports it as "not authenticated" —
   a misleading symptom of a missing binary.
-- **Vertex env vars** — user units do not source `.bashrc`; anything the
-  spawned Claude Code needs must be declared here explicitly. Vertex
-  credentials themselves come from gcloud Application Default Credentials
+- **Authentication env vars** — systemd user units do not source `.bashrc`;
+  anything the spawned Claude Code needs must be declared here explicitly.
+  Use `ANTHROPIC_API_KEY` for direct Anthropic API access, or the three
+  Vertex variables (`CLAUDE_CODE_USE_VERTEX`, `ANTHROPIC_VERTEX_PROJECT_ID`,
+  `CLOUD_ML_REGION`) for Google Vertex AI. Vertex credentials themselves come
+  from gcloud Application Default Credentials
   (`~/.config/gcloud/application_default_credentials.json`), which Claude Code
   discovers via `$HOME` — no `GOOGLE_APPLICATION_CREDENTIALS` needed.
 - **`RuntimeMaxSec=10h`** — hard cap: the service stops 10 hours after start
@@ -224,13 +232,14 @@ Also required on the TRA VM: firewalld allowing 3001 from the internal network.
 2. Register the **single user** (registration locks after the first account;
    the auth DB lives at `~/.cloudcli/auth.db` — to reset:
    `sqlite3 ~/.cloudcli/auth.db "DELETE FROM users;"` and restart).
-3. The wizard's agent check reports *"Claude CLI is not authenticated. Run
+3. The wizard's agent check may report *"Claude CLI is not authenticated. Run
    claude /login or configure ANTHROPIC_API_KEY."* — this probe does not
-   recognize Vertex environment authentication. **It is cosmetic; skip past
-   it.** Sessions work; the agents section is optional.
-4. Open a project, send a prompt, and confirm the request appears in the GCP
-   project's Vertex AI metrics — that is the proof the web path is
-   Vertex-backed end to end.
+   recognize Vertex environment authentication. With `ANTHROPIC_API_KEY` it
+   should detect the key correctly. Either way, **skip past the agents
+   section if it complains** — sessions work regardless.
+4. Open a project, send a prompt, and confirm it works — e.g. check
+   Vertex AI metrics in your GCP project, or verify API usage on the
+   Anthropic dashboard.
 
 ## 5. Operational notes
 

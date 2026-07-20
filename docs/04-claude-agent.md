@@ -10,7 +10,7 @@ configures headless execution for automated invocation by EDA.
 
 - TRA VM: RHEL 9, base installation (from [00-starting-setup](00-starting-setup.md))
 - AAP MCP server deployed and reachable on port 8448 (from [01-aap-mcp](01-aap-mcp.md))
-- Anthropic API key available
+- Anthropic API key or Google Vertex AI project credentials available
 
 ## 1. Install Claude Code CLI
 
