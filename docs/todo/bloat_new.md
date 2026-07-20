@@ -8,13 +8,13 @@ Duplicated content, redundant sections, content that should be consolidated.
 
 AAP OAuth2 Application and Personal Access Token creation is fully described in both doc 01 (section 6) and doc 04 (section 4). The two descriptions use different UI navigation paths (see inconsistencies_new.md #4). One should be canonical and the other should cross-reference.
 
-## 2. linux-mcp config in two docs with conflicting details (doc 02 + doc 04)
+## 2. ✅ linux-mcp config in two docs (doc 02 + doc 04) — NOT AN ISSUE
 
-Doc 02 is the dedicated linux-mcp setup doc. Doc 04 section 5 reproduces a full linux-mcp config block — but with a different container image, different argument style, and different paths (see inconsistencies_new.md #1). The canonical config should live in doc 02 only; doc 04 should reference it.
+Both docs need the config block: doc 02 for setup and verification, doc 04 for the combined MCP wiring. The conflicting details were fixed in inconsistency #1.
 
-## 3. Zabbix MCP config in two docs (doc 03 + doc 04)
+## 3. ✅ Zabbix MCP config in two docs (doc 03 + doc 04) — NOT AN ISSUE
 
-Doc 03 is the dedicated Zabbix MCP setup doc. Doc 04 section 5 reproduces the Zabbix MCP config block. Same duplication risk as linux-mcp.
+Same as #2. Doc 03 needs it for setup, doc 04 for the combined wiring.
 
 ## 4. Rulebook reproduced inline in doc 06
 
