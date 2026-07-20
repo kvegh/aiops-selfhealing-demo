@@ -49,11 +49,13 @@ mcp_extra_settings='[{"setting": "DEFAULT_PAGE_SIZE", "value": "25"}]'
 > verification, we trust the AAP-generated CA on the client VMs (see
 > section 5 below). This keeps TLS end-to-end.
 
-Resulting inventory state:
+Resulting inventory state (relevant lines):
 
 ```
-$ grep mcp inventory
 [ansiblemcp]
+YOUR_AAP_SERVER
+
+[all:vars]
 mcp_allow_write_operations=true
 mcp_extra_settings='[{"setting": "DEFAULT_PAGE_SIZE", "value": "25"}]'
 ```
