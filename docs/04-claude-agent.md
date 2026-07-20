@@ -217,43 +217,6 @@ claude -p "diagnose the alert" --dangerously-skip-permissions
 > by construction, and AAP enforces RBAC on every job launch. The blast
 > radius is bounded by the MCP servers, not by the permission mode.
 
-### Restrict available tools (optional)
-
-To further limit what the agent can do, use `--allowedTools` to enumerate
-the permitted tools explicitly:
-
-```bash
-claude -p "diagnose the alert" \
-  --dangerously-skip-permissions \
-  --allowedTools "aap,linux-mcp,zabbix,Read"
-```
-
-This prevents the agent from using its built-in Bash, Edit, or Write
-tools — restricting it to MCP interactions and reading files.
-
-### Output format
-
-For machine-readable output (useful when EDA parses the result):
-
-```bash
-claude -p "diagnose the alert" \
-  --dangerously-skip-permissions \
-  --output-format json
-```
-
-The JSON output includes the response text, session ID, token usage, and
-cost.
-
-### Limit agent turns
-
-To prevent runaway loops, cap the number of agentic turns:
-
-```bash
-claude -p "diagnose the alert" \
-  --dangerously-skip-permissions \
-  --max-turns 20
-```
-
 ### Transcripts
 
 Headless runs (`-p`) create JSONL transcript files under
@@ -319,13 +282,9 @@ The prompt does not inject the alert payload — the agent discovers the
 active alert itself via Zabbix MCP. The `CLAUDE.md` guardrails
 (phase discipline, AAP-only remediation) govern what happens next.
 
-> **Optional tuning:** For tighter control, the invocation can be
-> extended with `--allowedTools` (restrict to MCP tools only),
-> `--max-turns` (cap agent loops), `--output-format json` (machine-readable
-> output), alert payload injection via `{{ extra_vars }}`, and stderr
-> redirection to a log file. See
-> [Claude Code documentation](https://docs.anthropic.com/en/docs/claude-code/cli-usage)
-> for available flags.
+> **Optional tuning:** See [`docs/todo/demo-design.md`](todo/demo-design.md#playbook-invocation-tuning)
+> for planned refinements (tool restrictions, turn limits, payload
+> injection, structured output).
 
 ## Explicitly out of scope
 
