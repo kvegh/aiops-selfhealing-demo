@@ -17,7 +17,7 @@ configures headless execution for automated invocation by EDA.
 Claude Code requires Node.js 22+.
 
 ```bash
-dnf install -y nodejs
+dnf module install -y nodejs:22/common
 npm install -g @anthropic-ai/claude-code
 ```
 
