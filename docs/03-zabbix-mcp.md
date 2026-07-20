@@ -23,8 +23,7 @@ In the Zabbix web UI:
 
 1. Navigate to **Users → API tokens → Create API token**.
 2. Select the admin user (the token inherits the user's permissions).
-3. Optionally set an expiration date.
-4. Click **Add**. Copy the token — it is shown only once.
+3. Click **Add**. Copy the token — it is shown only once.
 
 > For this demo the admin user is sufficient. In production, create a
 > dedicated read-only user and associate the token with that user.
