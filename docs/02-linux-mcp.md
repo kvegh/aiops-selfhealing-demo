@@ -139,5 +139,4 @@ The agent should return the RHEL version of the target host.
 
 - SSH keypair generation
 - Target host user creation and `authorized_keys` setup
-- Read/write mode configuration (this demo uses read-only, the default)
 - Claude Code CLI installation and full MCP wiring (covered in [04-claude-agent](04-claude-agent.md))
