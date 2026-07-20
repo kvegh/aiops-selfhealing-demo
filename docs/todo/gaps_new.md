@@ -37,10 +37,10 @@ Same problem: doc 06 reproduces the playbook inline but doesn't reference `playb
 
 "The exact EDA-to-agent integration (rulebook, webhook handler, alert payload format) is covered in a later section." — no link to doc 06. The reader doesn't know which section.
 
-## 7. Doc 04 CLAUDE.md template lacks verification steps
+## 7. ✅ Doc 04 CLAUDE.md template lacks verification steps — fixed in inconsistency #10
 
 The template in doc 04 section 6 includes a "Remediation procedure" that says to identify and launch the right template, but doesn't include the verification steps we added to it (review past job runs, read playbook source, clone repo). The actual `AI_Instructions_Guardrails/CLAUDE.md` has phase discipline with verification built in, but the doc 04 template doesn't reflect any of this.
 
-## 8. Playbook lacks --max-turns safety limit
+## 8. ✅ Playbook lacks --max-turns safety limit — moved to demo-design.md
 
 The actual `playbooks/run_claude_analyse_fix.yml` doesn't use `--max-turns`. Doc 04 section 9 recommends `--max-turns 25`, and the CLAUDE.md has a 2-cycle loop limit, but the playbook itself has no turn cap — meaning a misbehaving agent could run indefinitely.
