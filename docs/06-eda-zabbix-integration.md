@@ -401,6 +401,5 @@ Claude Code CLI diagnoses via MCP servers, remediates via AAP
 ## Explicitly out of scope
 
 - Zabbix trigger and template configuration for the target host (covered in [00-starting-setup](00-starting-setup.md))
-- EDA controller installation and project sync in AAP
 - Claude Code CLI setup (covered in [04-claude-agent](04-claude-agent.md))
 - Advanced rulebook patterns (multiple conditions, Level 0 vs Level 1 routing)
