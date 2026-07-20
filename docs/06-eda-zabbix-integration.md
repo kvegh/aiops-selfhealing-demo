@@ -2,9 +2,11 @@
 
 This section connects Zabbix to Event-Driven Ansible so that alerts
 automatically trigger the Claude agent via AAP. Zabbix ships a native
-**Event-Driven Ansible** media type -- import it, point it at an AAP
-Event Stream, and configure an action. No custom scripts or JavaScript
-required.
+**Event-Driven Ansible** media type -- no custom scripts or JavaScript
+required. However, Zabbix's built-in EDA media type does not yet
+support AAP 2.7 Event Streams directly, so we tune the existing media
+type and media settings to post to an Event Stream endpoint instead of
+a raw webhook listener.
 
 AAP 2.7 uses **Event Streams** -- authenticated, gateway-managed
 endpoints that replace raw `ansible.eda.webhook` port listeners. No
