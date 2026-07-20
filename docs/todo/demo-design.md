@@ -38,6 +38,16 @@ The Apache by HTTP template was linked to testserver1 but httpd was never part o
 
 Where no MCP interface exists for a system, the automation platform could be triggered to gather the information instead. Extends the agent's diagnostic reach without adding new direct interfaces.
 
+## Playbook invocation tuning
+
+The current playbook uses a generic prompt and minimal flags. Future refinements:
+
+- **Alert payload injection:** pass `{{ extra_vars }}` into the prompt so the agent gets alert details directly instead of discovering them via Zabbix MCP
+- **`--allowedTools "aap,linux-mcp,zabbix,Read"`:** restrict the agent to MCP tools only, preventing use of Bash/Edit/Write
+- **`--max-turns 25`:** cap agent loops to prevent runaway execution
+- **`--output-format json`:** machine-readable output for downstream parsing
+- **Stderr logging:** `2>/opt/tra/logs/agent-$(date +%Y%m%d-%H%M%S).log`
+
 ## ITSM integration
 
 The architecture diagram shows ITSM (incident record and CMDB updates) as a target of the Trusted Execution Layer, but no ITSM system is wired up in the demo yet.
