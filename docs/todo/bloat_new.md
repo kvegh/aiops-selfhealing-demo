@@ -16,14 +16,14 @@ Both docs need the config block: doc 02 for setup and verification, doc 04 for t
 
 Same as #2. Doc 03 needs it for setup, doc 04 for the combined wiring.
 
-## 4. Rulebook reproduced inline in doc 06
+## 4. ✅ Rulebook reproduced inline in doc 06 — NOT AN ISSUE
 
-Doc 06 reproduces the full rulebook content that already exists at `extensions/eda/rulebooks/`. The inline copy has already drifted (see mistakes_new.md #1). Should reference the file, not duplicate it.
+Kept inline for build guide readability. Link to canonical file added in gap #4. Drift was fixed in inconsistency #2.
 
-## 5. Playbook reproduced inline in doc 06
+## 5. ✅ Playbook reproduced inline in doc 06 — NOT AN ISSUE
 
-Doc 06 reproduces the playbook that already exists at `playbooks/run_claude_analyse_fix.yml`. Same drift risk.
+Kept inline for build guide readability. Link to canonical file added in gap #5.
 
-## 6. Environment-specific values in doc 05
+## 6. ✅ Environment-specific values in doc 05
 
 Doc 05 contains specific IPs, domains, GCP project IDs, and service account paths from the demo environment. These should be replaced with placeholders like the other docs use (`AAP_SERVER`, `TARGET_IP`, etc.).

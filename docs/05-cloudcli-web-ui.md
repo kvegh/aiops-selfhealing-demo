@@ -14,6 +14,15 @@ authenticated against **Google Vertex AI**. Sessions started in the terminal
 appear in the web UI and vice versa. Headless `claude -p` runs (e.g. triggered
 by EDA) stream into the UI live as they execute.
 
+Replace the placeholders below with your environment values:
+
+| Placeholder | Meaning |
+|---|---|
+| `TRA_VM_IP` | Internal-network IP of the TRA VM |
+| `CLOUDCLI_WEB_HOSTNAME` | Public FQDN for the CloudCLI web UI |
+| `AAP_WEB_HOSTNAME` | FQDN of the AAP instance (used for shared TLS certs) |
+| `GCP_PROJECT_ID` | Google Cloud project ID for Vertex AI |
+
 ## Architecture
 
 ```
