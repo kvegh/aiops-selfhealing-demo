@@ -4,7 +4,6 @@ The AAP MCP server is Claude's **sole write path** into the environment. It is
 deployed by the AAP containerized installer itself, as an additional container
 alongside the existing AAP growth-topology containers.
 
-> **Note:** The Ansible MCP server is a Technology Preview feature in AAP 2.6/2.7.
 > Official documentation: [Deploy Ansible MCP server on Ansible Automation Platform](https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.7/extend-assembly_deploying_ansible_mcp_server)
 
 ## Environment
