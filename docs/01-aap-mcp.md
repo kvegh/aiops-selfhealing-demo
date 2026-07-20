@@ -9,7 +9,6 @@ alongside the existing AAP growth-topology containers.
 ## Environment
 
 - Single-VM AAP 2.7 growth architecture, containerized, on RHEL
-- Installer runs as the AAP service user (here: `aap_service`)
 
 ## 1. Starting point
 
