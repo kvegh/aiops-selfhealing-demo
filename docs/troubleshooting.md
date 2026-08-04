@@ -88,11 +88,11 @@ Enabling linger does not restart anything; it only prevents future teardown.
 
 Verify unattended: log out completely, then from hactar:
 
-    curl -sS -o /dev/null -w '%{http_code}\n' http://PUT_YOUR_IP_HERE:3001/
+    curl -sS -o /dev/null -w '%{http_code}\n' http://TRA_VM_IP:3001/
 
 ### Notes
 
-**The service binds to `PUT_YOUR_IP_HERE:3001`, not localhost.**
+**The service binds to `TRA_VM_IP:3001`, not localhost.**
 `curl 127.0.0.1:3001` will refuse — expected, not a fault.
 
 **Root cannot use `systemctl --user` against another user's manager.**
