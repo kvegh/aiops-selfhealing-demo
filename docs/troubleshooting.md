@@ -40,6 +40,71 @@ The media type JavaScript concatenates them. Putting the full URL in Send-to res
 **Systemd unit files persist after `dnf remove`.**
 A service can show as `loaded` in systemd even after its package has been removed (if `daemon-reload` was not run). Always verify the binary exists before concluding a service is installed.
 
+## CloudCLI access
+
+CloudCLI is the browser-based interface to Claude Code. Three distinct failures
+can occur — identify which one by what the browser shows.
+
+### Symptom triage
+
+| Browser shows | Meaning | First action |
+|---|---|---|
+| `502 Bad Gateway` | Backend down. nginx is up, cannot reach `cloudcli` on tra. | Check the service (below) |
+| CloudCLI login screen | App token cleared. Not a fault. | Log in |
+| "Offline — please check your connection" | Page loaded, WebSocket did not connect. Backend and nginx both served the shell. | **Capture the WS status code before touching anything** |
+
+### The "Offline" case
+
+This is the ambiguous one. The app rendered, so nginx and the backend are
+both alive — the failure is in the live connection established afterward.
+
+Before restarting anything, capture:
+
+    F12 → Network → filter WS → reload → status code of the failed request
+
+    101  handshake succeeded, look elsewhere
+    401  auth — check htpasswd on the WS location
+    200  nginx is stripping the upgrade headers
+    502  backend died between shell load and socket open
+
+And on tra:
+
+    ss -tnp | grep :3001
+    systemctl --machine=aaptra@.host --user status cloudcli
+    journalctl --machine=aaptra@.host --user -u cloudcli -n 100 --no-pager
+
+A restart usually clears it, but restarting first destroys the evidence.
+
+### systemd linger (required)
+
+**`cloudcli` runs as a systemd user service under `aaptra`.**
+Without linger the user manager is torn down at logout, taking the service
+with it — the service works while you are SSHed in and dies when you disconnect.
+
+    sudo loginctl enable-linger aaptra
+    loginctl show-user aaptra | grep -i linger    # expect Linger=yes
+
+Enabling linger does not restart anything; it only prevents future teardown.
+
+Verify unattended: log out completely, then from hactar:
+
+    curl -sS -o /dev/null -w '%{http_code}\n' http://PUT_YOUR_IP_HERE:3001/
+
+### Notes
+
+**The service binds to `PUT_YOUR_IP_HERE:3001`, not localhost.**
+`curl 127.0.0.1:3001` will refuse — expected, not a fault.
+
+**Root cannot use `systemctl --user` against another user's manager.**
+Use `--machine=aaptra@.host --user`.
+
+**Settings → Agents → Claude may show "Disconnected" and "Failed to check authentication status" while the CLI works normally.**
+Cosmetic; verify by sending a prompt.
+
+**CloudCLI self-hosted is single-user.**
+htpasswd identities are a door, not isolation — all sessions share one `~/.claude`,
+one MCP config, one AAP token, one `--dangerously-skip-permissions` process family.
+
 ## Known upstream issues
 
 **Zabbix EDA integration docs describe the old webhook approach.**
