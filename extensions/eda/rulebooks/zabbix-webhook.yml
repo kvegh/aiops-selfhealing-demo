@@ -1,0 +1,17 @@
+---
+- name: Receive Zabbix alerts via webhook
+  hosts: all
+  sources:
+    # Event Streams replace this source with pg_listener at activation
+    # time via source mapping — these values are never used, but port
+    # is required by the webhook plugin schema.
+    - ansible.eda.webhook:
+        host: 0.0.0.0
+        port: 5000
+  rules:
+    - name: Zabbix agent down - invoke Claude
+      condition: event.payload.event_name is search("Zabbix agent is not available", ignorecase=true)
+      action:
+        run_job_template:
+          name: "Run Claude to analyse and fix"
+          organization: "Default"

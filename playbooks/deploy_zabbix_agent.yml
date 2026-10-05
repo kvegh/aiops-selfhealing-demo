@@ -1,0 +1,38 @@
+---
+- name: Install and configure Zabbix agent
+  hosts: all
+  vars_files:
+    # Create your own 'myvars' vault file with: ansible-vault create myvars
+    # See myvars.example for required variables.
+    - myvars
+
+  tasks:
+    - name: Install Zabbix repo
+      ansible.builtin.dnf:
+        name: https://repo.zabbix.com/zabbix/7.4/release/rhel/9/noarch/zabbix-release-latest.el9.noarch.rpm
+        state: present
+        disable_gpg_check: true
+
+    - name: Install zabbix-agent2
+      ansible.builtin.dnf:
+        name: zabbix-agent2
+        state: present
+
+    - name: Configure Zabbix server address
+      ansible.builtin.lineinfile:
+        path: /etc/zabbix/zabbix_agent2.conf
+        regex: ^Server=
+        line: "Server={{ zabbix_server }}"
+      notify: restart zabbix-agent2
+
+    - name: Enable and start zabbix-agent2
+      ansible.builtin.service:
+        name: zabbix-agent2
+        enabled: true
+        state: started
+
+  handlers:
+    - name: restart zabbix-agent2
+      ansible.builtin.service:
+        name: zabbix-agent2
+        state: restarted
