@@ -1,0 +1,84 @@
+---
+# Restores the demo corporate website after the fault.
+#
+# This is the approved remediation the agent selects from the catalog once
+# it has diagnosed the missing content file. It is deliberately written to
+# restore *service*, not merely to undo the specific fault: if the aside
+# copy is gone too, it redeploys from the project rather than giving up.
+# A remediation that only works against one exact failure shape is not
+# much of a remediation.
+
+- name: Restore the demo website content
+  hosts: all
+  become: true
+
+  vars:
+    demo_website_root: /var/www/redhat
+
+  tasks:
+    - name: Look for the content file and the aside copy
+      ansible.builtin.stat:
+        path: "{{ demo_website_root }}/{{ item }}"
+      loop:
+        - content.html
+        - content.html.disabled
+      register: demo_files
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Note what is present
+      ansible.builtin.set_fact:
+        content_present: "{{ demo_files.results[0].stat.exists }}"
+        aside_present: "{{ demo_files.results[1].stat.exists }}"
+
+    - name: Move the aside copy back
+      ansible.builtin.command:
+        argv:
+          - mv
+          - "{{ demo_website_root }}/content.html.disabled"
+          - "{{ demo_website_root }}/content.html"
+      when:
+        - not content_present
+        - aside_present
+      changed_when: true
+
+    - name: Redeploy from the project when the aside copy is gone too
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../demo-web/content.html"
+        dest: "{{ demo_website_root }}/content.html"
+        owner: root
+        group: root
+        mode: "0644"
+        setype: httpd_sys_content_t
+      when:
+        - not content_present
+        - not aside_present
+
+    - name: Confirm nginx serves the page again
+      ansible.builtin.command:
+        argv:
+          - curl
+          - -sS
+          - -o/dev/null
+          - -w%{http_code}
+          # Resolved to the loopback on purpose: the public name points at
+          # this host's external address, which it cannot reach from here
+          # (no NAT hairpin).
+          - --resolve
+          - redhat.supercorp.at:443:127.0.0.1
+          - https://redhat.supercorp.at/content.html
+      register: demo_check
+      changed_when: false
+      failed_when: demo_check.stdout != "200"
+      retries: 3
+      delay: 2
+      until: demo_check is succeeded
+
+    - name: Report
+      ansible.builtin.debug:
+        msg: >-
+          Website content restored
+          ({{ 'was already present' if content_present
+              else 'moved back from the aside copy' if aside_present
+              else 'redeployed from the project' }});
+          /content.html returns {{ demo_check.stdout }}.

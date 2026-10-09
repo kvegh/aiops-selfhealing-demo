@@ -1,0 +1,36 @@
+---
+# Breaks the demo corporate website by moving its content file aside.
+#
+# This is the fault the audience causes by pressing the button: nginx then
+# returns a genuine 404 for /content.html, because the file really is not
+# there. Nothing is simulated.
+#
+# Launched directly by the job template behind /api/panic. The shell page
+# (index.html) is deliberately untouched, so it keeps polling and every
+# viewer flips to the outage on their own.
+
+- name: Inject the demo website fault
+  hosts: all
+  become: true
+
+  vars:
+    demo_website_root: /var/www/redhat
+
+  tasks:
+    - name: Move the page content aside
+      ansible.builtin.command:
+        argv:
+          - mv
+          - "{{ demo_website_root }}/content.html"
+          - "{{ demo_website_root }}/content.html.disabled"
+        # Skips cleanly when the fault is already injected, so an
+        # enthusiastic second press is a no-op rather than an error.
+        removes: "{{ demo_website_root }}/content.html"
+      register: demo_fault
+
+    - name: Report
+      ansible.builtin.debug:
+        msg: >-
+          {{ 'Fault injected — /content.html now returns 404.'
+             if demo_fault is changed
+             else 'Already faulted; nothing to do.' }}
