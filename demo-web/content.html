@@ -1,0 +1,59 @@
+<!--
+  The corporate website body. THIS is the file the demo fault moves aside,
+  so that /redhat/content.html returns a real HTTP 404.
+
+  It is injected into the page by index.html (the shell), which survives the
+  outage and keeps polling. Do not add a <html>/<body> wrapper here.
+-->
+<header class="masthead">
+    <div class="brand">
+        <span class="hat">&#9650;</span>
+        <span class="brandname">Red Hat</span>
+    </div>
+    <nav>
+        <a href="#">Products</a>
+        <a href="#">Solutions</a>
+        <a href="#">Training</a>
+        <a href="#">Support</a>
+    </nav>
+</header>
+
+<section class="hero">
+    <p class="eyebrow">Enterprise open source</p>
+    <h1>The platform your platform runs on.</h1>
+    <p class="lede">
+        Trusted by 90&percnt; of the Fortune 500, several Fortune 500 impersonators,
+        and one conference audience that is about to do something unwise.
+    </p>
+</section>
+
+<section class="panic">
+    <p class="warning">&#9888; Authorized personnel only</p>
+    <button id="panic-button" type="button">DO NOT CLICK</button>
+    <p class="smallprint">
+        This button is load-bearing. Clicking it will not do anything you would enjoy explaining.
+    </p>
+</section>
+
+<section class="cards">
+    <article>
+        <h2>Infrastructure</h2>
+        <p>Standardize on a platform that stays supported for longer than the project that chose it.</p>
+    </article>
+    <article>
+        <h2>Automation</h2>
+        <p>Every change through one governed execution path. Even the ones nobody planned.</p>
+    </article>
+    <article>
+        <h2>Resilience</h2>
+        <p>Incidents happen. What matters is how quickly the platform notices and corrects them.</p>
+    </article>
+</section>
+
+<footer>
+    <p>
+        &copy; 2026 Not Actually Red Hat, Inc. &mdash; this is
+        <strong>supercorp.at/redhat</strong>, a demo site. Any resemblance to a real
+        corporate homepage is entirely the point.
+    </p>
+</footer>
