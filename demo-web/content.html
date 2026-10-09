@@ -3,57 +3,746 @@
   so that /redhat/content.html returns a real HTTP 404.
 
   It is injected into the page by index.html (the shell), which survives the
-  outage and keeps polling. Do not add a <html>/<body> wrapper here.
+  outage and keeps polling. Self-contained: carries its own <style>, so the
+  shell only has to style the 404 state. Do not add a <html>/<body> wrapper.
 -->
-<header class="masthead">
-    <div class="brand">
-        <span class="hat">&#9650;</span>
-        <span class="brandname">Red Hat</span>
-    </div>
-    <nav>
-        <a href="#">Products</a>
-        <a href="#">Solutions</a>
-        <a href="#">Training</a>
+<style>
+/* ---------------------------------------------------------------
+   Palette per Red Hat brand standards: red-50 #ee0000 is the brand
+   red, red-60/70 the shades, #151515 the near-black. Guidance is
+   "pops of red" against dark fills -- so the page is light and the
+   button section is near-black, which is what makes the red pop.
+   --------------------------------------------------------------- */
+.rh {
+    --red:       #ee0000;   /* red-50 */
+    --red-dark:  #a60000;   /* red-60 */
+    --red-deep:  #5f0000;   /* red-70 */
+    --red-soft:  #f56e6e;   /* red-40 */
+    --red-wash:  #fef0f0;   /* red-05 */
+    --ink:       #151515;
+    --ink-2:     #292929;
+    --muted:     #6a6e73;
+    --line:      #d2d2d2;
+    --paper:     #ffffff;
+    --haze:      #f2f2f2;
+
+    --display: "Red Hat Display", "Red Hat Text", Helvetica, Arial, sans-serif;
+    --text:    "Red Hat Text", Helvetica, Arial, sans-serif;
+
+    font-family: var(--text);
+    color: var(--ink);
+    background: var(--paper);
+    line-height: 1.6;
+}
+
+.rh *,
+.rh *::before,
+.rh *::after { box-sizing: border-box; }
+
+.rh h1, .rh h2, .rh h3 {
+    font-family: var(--display);
+    line-height: 1.12;
+    letter-spacing: -0.015em;
+    margin: 0;
+}
+
+.rh a { color: inherit; }
+
+.rh .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* ---- utility bar ------------------------------------------------ */
+
+.rh-utility {
+    background: var(--ink);
+    color: #fff;
+    font-size: 13px;
+}
+
+.rh-utility .wrap {
+    display: flex;
+    justify-content: flex-end;
+    gap: 22px;
+    padding-top: 9px;
+    padding-bottom: 9px;
+}
+
+.rh-utility a {
+    color: #d8d8d8;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.rh-utility a:hover { color: #fff; }
+
+/* Utility links are the first thing worth dropping on a phone. */
+@media (max-width: 720px) {
+    .rh-utility .wrap { justify-content: center; gap: 16px; }
+    .rh-utility .u-hide-sm { display: none; }
+}
+
+/* ---- masthead --------------------------------------------------- */
+
+.rh-masthead {
+    border-bottom: 1px solid var(--line);
+    background: var(--paper);
+}
+
+.rh-masthead .wrap {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    padding-top: 14px;
+    padding-bottom: 14px;
+}
+
+.rh-logo {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    text-decoration: none;
+    flex: 0 0 auto;
+}
+
+.rh-logo svg { display: block; height: 30px; width: auto; }
+
+.rh-logo .wordmark {
+    font-family: var(--display);
+    font-weight: 900;
+    font-size: 20px;
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+}
+
+.rh-nav {
+    display: flex;
+    gap: 26px;
+    margin-left: auto;
+}
+
+.rh-nav a {
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 500;
+    padding: 6px 0;
+    border-bottom: 3px solid transparent;
+    white-space: nowrap;
+}
+
+.rh-nav a:hover {
+    color: var(--red);
+    border-bottom-color: var(--red);
+}
+
+/* The mega-menu nav collapses to a scrolling strip rather than a
+   hamburger -- no JS, and the audience still sees a real nav. */
+@media (max-width: 900px) {
+    .rh-masthead .wrap { gap: 14px; flex-wrap: wrap; }
+    .rh-nav {
+        order: 3;
+        width: 100%;
+        margin-left: 0;
+        gap: 20px;
+        overflow-x: auto;
+        padding-bottom: 2px;
+        scrollbar-width: none;
+    }
+    .rh-nav::-webkit-scrollbar { display: none; }
+}
+
+/* ---- the vault: hazard section around the button ---------------- */
+
+.rh-vault {
+    background:
+        radial-gradient(ellipse 70% 55% at 50% 42%, #2a0000 0%, transparent 70%),
+        var(--ink);
+    color: #fff;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.rh-tape {
+    height: 14px;
+    background: repeating-linear-gradient(
+        -45deg,
+        var(--red) 0 18px,
+        #1c1c1c 18px 36px
+    );
+}
+
+.rh-vault .wrap {
+    padding-top: 52px;
+    padding-bottom: 56px;
+}
+
+.rh-clearance {
+    display: inline-block;
+    margin: 0 0 22px;
+    padding: 7px 15px;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.17em;
+    text-transform: uppercase;
+    color: #ffc9c9;
+    background: rgba(238, 0, 0, 0.1);
+}
+
+.rh-vault h2 {
+    font-size: clamp(30px, 6.4vw, 56px);
+    font-weight: 900;
+    margin-bottom: 12px;
+}
+
+.rh-vault h2 em {
+    font-style: normal;
+    color: var(--red-soft);
+}
+
+.rh-vault-lede {
+    margin: 0 auto 36px;
+    max-width: 520px;
+    font-size: clamp(15px, 2.2vw, 18px);
+    color: #c9c9c9;
+}
+
+/* ---- the button ------------------------------------------------- */
+
+.rh-button-cradle {
+    position: relative;
+    display: inline-grid;
+    place-items: center;
+    margin-bottom: 14px;
+}
+
+/* Expanding halo, purely decorative. */
+.rh-button-cradle::before {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 2px solid rgba(238, 0, 0, 0.55);
+    animation: rh-halo 2.6s ease-out infinite;
+    pointer-events: none;
+}
+
+@keyframes rh-halo {
+    0%   { transform: scale(1);    opacity: 0.85; }
+    100% { transform: scale(1.42); opacity: 0;    }
+}
+
+#panic-button {
+    appearance: none;
+    -webkit-appearance: none;
+    border: 0;
+    cursor: pointer;
+    position: relative;
+    width:  min(290px, 76vw);
+    height: min(290px, 76vw);
+    border-radius: 50%;
+    padding: 0 26px;
+    color: #fff;
+    font-family: var(--display);
+    text-shadow: 0 2px 5px rgba(0, 0, 0, 0.45);
+    background:
+        radial-gradient(circle at 37% 30%, #ff5c5c 0%, var(--red) 46%, var(--red-dark) 78%, var(--red-deep) 100%);
+    box-shadow:
+        0 0 0 10px rgba(238, 0, 0, 0.11),
+        0 0 0 20px rgba(238, 0, 0, 0.055),
+        0 20px 42px rgba(0, 0, 0, 0.6),
+        inset 0 -12px 24px rgba(0, 0, 0, 0.36),
+        inset 0 9px 20px rgba(255, 255, 255, 0.26);
+    transition: transform 0.07s ease, box-shadow 0.18s ease, filter 0.2s ease;
+}
+
+#panic-button .pb-small {
+    display: block;
+    font-size: clamp(11px, 2.5vw, 14px);
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    opacity: 0.9;
+    margin-bottom: 7px;
+}
+
+#panic-button .pb-big {
+    display: block;
+    font-size: clamp(25px, 7.2vw, 42px);
+    font-weight: 900;
+    letter-spacing: -0.01em;
+    line-height: 1.02;
+}
+
+#panic-button:hover { filter: brightness(1.07); }
+#panic-button:focus-visible { outline: 4px solid #fff; outline-offset: 7px; }
+
+#panic-button:active {
+    transform: translateY(9px) scale(0.965);
+    box-shadow:
+        0 0 0 10px rgba(238, 0, 0, 0.11),
+        0 6px 14px rgba(0, 0, 0, 0.55),
+        inset 0 -5px 15px rgba(0, 0, 0, 0.42),
+        inset 0 5px 14px rgba(255, 255, 255, 0.18);
+}
+
+#panic-button[disabled] {
+    cursor: not-allowed;
+    filter: grayscale(0.8) brightness(0.72);
+}
+
+#panic-button[disabled] ~ .rh-halo,
+.rh-button-cradle:has(#panic-button[disabled])::before { animation: none; opacity: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+    .rh-button-cradle::before { animation: none; opacity: 0.5; }
+    #panic-button { transition: none; }
+}
+
+.rh-dare {
+    margin: 0 0 40px;
+    font-size: 14px;
+    color: #9a9a9a;
+    font-style: italic;
+}
+
+/* ---- warnings ---------------------------------------------------- */
+
+.rh-warnings {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(255px, 1fr));
+    gap: 14px;
+    text-align: left;
+    margin: 0 0 30px;
+    padding: 0;
+    list-style: none;
+}
+
+.rh-warnings li {
+    background: rgba(255, 255, 255, 0.045);
+    border: 1px solid rgba(255, 255, 255, 0.11);
+    border-left: 4px solid var(--red);
+    border-radius: 5px;
+    padding: 17px 19px;
+}
+
+.rh-warnings h3 {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #ffb3b3;
+    margin-bottom: 7px;
+}
+
+.rh-warnings p {
+    margin: 0;
+    font-size: 14.5px;
+    line-height: 1.55;
+    color: #c4c4c4;
+}
+
+/* ---- stat strip --------------------------------------------------- */
+
+.rh-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 1px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 26px;
+}
+
+.rh-stats div {
+    background: #1b1b1b;
+    padding: 17px 14px;
+}
+
+.rh-stats .n {
+    display: block;
+    font-family: var(--display);
+    font-size: 31px;
+    font-weight: 900;
+    color: var(--red-soft);
+    line-height: 1;
+}
+
+.rh-stats .k {
+    display: block;
+    margin-top: 7px;
+    font-size: 11.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #8c8c8c;
+}
+
+.rh-legal {
+    margin: 0 auto;
+    max-width: 660px;
+    font-size: 12.5px;
+    line-height: 1.65;
+    color: #7e7e7e;
+}
+
+/* ---- brand statement ---------------------------------------------- */
+
+.rh-statement .wrap {
+    padding-top: 62px;
+    padding-bottom: 56px;
+    max-width: 920px;
+    text-align: center;
+}
+
+.rh-eyebrow {
+    margin: 0 0 14px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--red);
+}
+
+.rh-statement h1 {
+    font-size: clamp(26px, 4.6vw, 42px);
+    font-weight: 900;
+    margin-bottom: 18px;
+}
+
+.rh-statement p {
+    margin: 0;
+    font-size: 17px;
+    color: var(--muted);
+}
+
+/* ---- products ------------------------------------------------------ */
+
+.rh-products { background: var(--haze); border-top: 1px solid var(--line); }
+.rh-products .wrap { padding-top: 52px; padding-bottom: 56px; }
+
+.rh-products h2 {
+    font-size: clamp(22px, 3.6vw, 32px);
+    font-weight: 900;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.rh-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 18px;
+}
+
+.rh-card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    padding: 24px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.rh-card .pip {
+    width: 34px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--red);
+    margin-bottom: 5px;
+}
+
+.rh-card h3 { font-size: 17px; font-weight: 700; }
+
+.rh-card p {
+    margin: 0;
+    font-size: 14.5px;
+    color: var(--muted);
+    flex: 1;
+}
+
+.rh-card .cta {
+    font-size: 14.5px;
+    font-weight: 700;
+    color: var(--red);
+    text-decoration: none;
+}
+
+.rh-card .cta:hover { text-decoration: underline; }
+
+/* ---- customers ------------------------------------------------------ */
+
+.rh-logos .wrap { padding-top: 48px; padding-bottom: 48px; text-align: center; }
+
+.rh-logos h2 {
+    font-size: clamp(19px, 3vw, 26px);
+    font-weight: 700;
+    margin-bottom: 26px;
+}
+
+.rh-logos ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 16px 40px;
+}
+
+.rh-logos li {
+    font-family: var(--display);
+    font-weight: 900;
+    font-size: clamp(14px, 2.4vw, 19px);
+    letter-spacing: 0.04em;
+    color: #9c9c9c;
+}
+
+/* ---- footer ---------------------------------------------------------- */
+
+.rh-footer {
+    background: var(--ink);
+    color: #b4b4b4;
+    font-size: 14px;
+}
+
+.rh-footer .wrap { padding-top: 42px; padding-bottom: 42px; }
+
+.rh-footer-cols {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 26px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid #333;
+}
+
+.rh-footer h3 {
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #fff;
+    margin-bottom: 11px;
+}
+
+.rh-footer ul { list-style: none; margin: 0; padding: 0; }
+.rh-footer li { margin-bottom: 7px; }
+.rh-footer a { color: #b4b4b4; text-decoration: none; }
+.rh-footer a:hover { color: #fff; }
+
+.rh-colophon {
+    padding-top: 22px;
+    font-size: 12.5px;
+    line-height: 1.65;
+    color: #8a8a8a;
+}
+
+.rh-colophon strong { color: #ddd; }
+</style>
+
+<div class="rh">
+
+<div class="rh-utility">
+    <div class="wrap">
+        <a href="#" class="u-hide-sm">Console</a>
+        <a href="#" class="u-hide-sm">Docs</a>
         <a href="#">Support</a>
-    </nav>
+        <a href="#">Log in</a>
+        <a href="#" class="u-hide-sm">Contact us</a>
+    </div>
+</div>
+
+<header class="rh-masthead">
+    <div class="wrap">
+        <a class="rh-logo" href="#">
+            <!-- Stylised hat mark. Deliberately not the real trademark: this
+                 is a mockup, and it should be obvious that it is one. -->
+            <svg viewBox="0 0 64 34" role="img" aria-label="Not Red Hat">
+                <path d="M14 22c-3 0-6 1-6 3.5S14 31 31 31s24-3 24-6c0-1.6-1.4-2.6-3.4-3.3.5.9.6 1.6.3 2.2-1 2-9.6 3.4-20.3 3.4-9.5 0-16.4-1-17.6-2.6-.3-.4-.3-1 0-2z" fill="#a60000"/>
+                <path d="M31 4c6.5 0 10.4 2.6 12.3 7.1.7 1.7 1.3 3.8 1.9 5.4.5 1.4 1.6 2 3.2 2.3 2.6.5 4.2 1.4 4.6 2.6.6 1.9-2 3.3-7.4 4.2-4.5.8-10 1.1-14.6 1.1-11.9 0-19.5-1.4-20.4-3.2-.4-.9.3-2 2-3.1 1.3-.9 2-1.9 2-3.2 0-1 .4-1.9 1.3-2.4.9-.5 1.9-.3 2.8.3.7.5 1.2.4 1.6-.3C22.4 10.8 25.6 4 31 4z" fill="#ee0000"/>
+            </svg>
+            <span class="wordmark">Red Hat</span>
+        </a>
+        <nav class="rh-nav">
+            <a href="#">AI</a>
+            <a href="#">Hybrid cloud</a>
+            <a href="#">Products</a>
+            <a href="#">Training</a>
+            <a href="#">Learn</a>
+            <a href="#">Partners</a>
+        </nav>
+    </div>
 </header>
 
-<section class="hero">
-    <p class="eyebrow">Enterprise open source</p>
-    <h1>The platform your platform runs on.</h1>
-    <p class="lede">
-        Trusted by 90&percnt; of the Fortune 500, several Fortune 500 impersonators,
-        and one conference audience that is about to do something unwise.
-    </p>
-</section>
+<main>
 
-<section class="panic">
-    <p class="warning">&#9888; Authorized personnel only</p>
-    <button id="panic-button" type="button">DO NOT CLICK</button>
-    <p class="smallprint">
-        This button is load-bearing. Clicking it will not do anything you would enjoy explaining.
-    </p>
-</section>
+    <section class="rh-vault">
+        <div class="rh-tape"></div>
+        <div class="wrap">
 
-<section class="cards">
-    <article>
-        <h2>Infrastructure</h2>
-        <p>Standardize on a platform that stays supported for longer than the project that chose it.</p>
-    </article>
-    <article>
-        <h2>Automation</h2>
-        <p>Every change through one governed execution path. Even the ones nobody planned.</p>
-    </article>
-    <article>
-        <h2>Resilience</h2>
-        <p>Incidents happen. What matters is how quickly the platform notices and corrects them.</p>
-    </article>
-</section>
+            <p class="rh-clearance">Restricted &middot; Clearance level 0 &middot; You do not have it</p>
 
-<footer>
-    <p>
-        &copy; 2026 Not Actually Red Hat, Inc. &mdash; this is
-        <strong>supercorp.at/redhat</strong>, a demo site. Any resemblance to a real
-        corporate homepage is entirely the point.
-    </p>
+            <h2>The <em>Secret</em> Red Hat Button</h2>
+            <p class="rh-vault-lede">
+                Every enterprise has one. Most of them hide it better than this.
+            </p>
+
+            <div class="rh-button-cradle">
+                <button id="panic-button" type="button">
+                    <span class="pb-small">Secret Red Hat Button</span>
+                    <span class="pb-big">DO NOT<br>PUSH!</span>
+                </button>
+            </div>
+
+            <p class="rh-dare">It is a button. You are an adult. These facts are in tension.</p>
+
+            <ul class="rh-warnings">
+                <li>
+                    <h3>&#9888; Change request denied</h3>
+                    <p>
+                        This button went through full change management. The change was
+                        rejected unanimously. The button was installed that same afternoon.
+                    </p>
+                </li>
+                <li>
+                    <h3>&#128274; Load-bearing</h3>
+                    <p>
+                        Pressing this will not affect production &mdash; according to the
+                        same person who said that about the last one, who no longer works here.
+                    </p>
+                </li>
+                <li>
+                    <h3>&#128220; Fully documented</h3>
+                    <p>
+                        Procedure RH&#8209;0001 covers exactly what happens next.
+                        Page one reads &ldquo;don't&rdquo;. There is no page two.
+                    </p>
+                </li>
+            </ul>
+
+            <div class="rh-stats">
+                <div><span class="n">0</span><span class="k">Days since last incident</span></div>
+                <div><span class="n">0</span><span class="k">Approvals obtained</span></div>
+                <div><span class="n">100%</span><span class="k">Of you were warned</span></div>
+            </div>
+
+            <p class="rh-legal">
+                By pressing this button you accept responsibility for the resulting outage,
+                the incident bridge, the post&#8209;mortem, the action items arising from the
+                post&#8209;mortem, and the recurring meeting about the action items.
+                Red Hat&reg; is a registered trademark of Red Hat,&nbsp;Inc. This page is not.
+            </p>
+
+        </div>
+        <div class="rh-tape"></div>
+    </section>
+
+    <section class="rh-statement">
+        <div class="wrap">
+            <p class="rh-eyebrow">Enterprise open source</p>
+            <h1>Red Hat is the leading provider of enterprise open source software solutions</h1>
+            <p>
+                Trusted by 90&percnt; of the Fortune 500, several Fortune 500 impersonators,
+                and one conference audience currently deciding whether the rules apply to them.
+            </p>
+        </div>
+    </section>
+
+    <section class="rh-products">
+        <div class="wrap">
+            <h2>Build on a reliable foundation. Take your apps anywhere.</h2>
+            <div class="rh-grid">
+                <article class="rh-card">
+                    <span class="pip"></span>
+                    <h3>Red Hat AI</h3>
+                    <p>Train, tune and serve models on a platform that behaves the same wherever it runs.</p>
+                    <a class="cta" href="#">Get portfolio details &rsaquo;</a>
+                </article>
+                <article class="rh-card">
+                    <span class="pip"></span>
+                    <h3>Red Hat Enterprise Linux</h3>
+                    <p>The operating system that stays supported for longer than the project that chose it.</p>
+                    <a class="cta" href="#">Get product details &rsaquo;</a>
+                </article>
+                <article class="rh-card">
+                    <span class="pip"></span>
+                    <h3>Red Hat OpenShift</h3>
+                    <p>Run containers in production without inventing a platform team's worth of glue first.</p>
+                    <a class="cta" href="#">Explore the product &rsaquo;</a>
+                </article>
+                <article class="rh-card">
+                    <span class="pip"></span>
+                    <h3>Ansible Automation Platform</h3>
+                    <p>Every change through one governed execution path &mdash; including the ones nobody planned.</p>
+                    <a class="cta" href="#">Get product details &rsaquo;</a>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="rh-logos">
+        <div class="wrap">
+            <h2>Organizations succeeding with Red Hat</h2>
+            <ul>
+                <li>SUPERCORP</li>
+                <li>ACME</li>
+                <li>INITECH</li>
+                <li>GLOBEX</li>
+                <li>UMBRELLA</li>
+                <li>HOOLI</li>
+            </ul>
+        </div>
+    </section>
+
+</main>
+
+<footer class="rh-footer">
+    <div class="wrap">
+        <div class="rh-footer-cols">
+            <div>
+                <h3>Products</h3>
+                <ul>
+                    <li><a href="#">Red Hat Enterprise Linux</a></li>
+                    <li><a href="#">Red Hat OpenShift</a></li>
+                    <li><a href="#">Ansible Automation Platform</a></li>
+                </ul>
+            </div>
+            <div>
+                <h3>Tools</h3>
+                <ul>
+                    <li><a href="#">My account</a></li>
+                    <li><a href="#">Customer support</a></li>
+                    <li><a href="#">Documentation</a></li>
+                </ul>
+            </div>
+            <div>
+                <h3>Try, buy &amp; sell</h3>
+                <ul>
+                    <li><a href="#">Product trial center</a></li>
+                    <li><a href="#">Red Hat Marketplace</a></li>
+                    <li><a href="#">Red Hat Store</a></li>
+                </ul>
+            </div>
+            <div>
+                <h3>Communicate</h3>
+                <ul>
+                    <li><a href="#">Contact sales</a></li>
+                    <li><a href="#">Contact training</a></li>
+                    <li><a href="#">Social</a></li>
+                </ul>
+            </div>
+        </div>
+        <p class="rh-colophon">
+            &copy; 2026 Not Actually Red Hat,&nbsp;Inc. &mdash; this is
+            <strong>supercorp.at/redhat</strong>, a demonstration page built for a live
+            AIOps self&#8209;healing session. Any resemblance to a real corporate homepage
+            is entirely the point. No affiliation, no endorsement, no warranty, no page two.
+        </p>
+    </div>
 </footer>
+
+</div>

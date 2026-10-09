@@ -1,0 +1,145 @@
+---
+# Switches the demo corporate website on before a session and off afterwards.
+#
+#   demo_website_state=enabled    serve the button page
+#   demo_website_state=disabled   serve the inert placeholder
+#
+# Intended as two AAP job templates over one playbook ("Enable Demo Website"
+# / "Disable Demo Website"), each pinning the state as an extra variable.
+#
+# Disabling swaps the page rather than removing the site, so /redhat keeps
+# answering 200. A deleted site would look broken to anyone holding the
+# link, and would trip HTTP monitoring every time the demo was put away.
+#
+# Scope note: this manages the site as a whole. The fault-injection and
+# restore templates operate on content.html *inside* an enabled site — they
+# are the demo incident, this is the demo setup.
+#
+# Apache needs no special configuration for the fault to work: a request for
+# a file that is not there is a 404 by default. That is the whole trick —
+# the outage the audience sees is a real web server returning a real 404,
+# not a simulated one.
+#
+# Monitoring: the Zabbix web scenario watches content.html, which only
+# exists while the demo is enabled. Disable that scenario alongside this
+# playbook, or putting the demo away will page the agent.
+
+- name: Switch the demo corporate website on or off
+  hosts: all
+  become: true
+
+  vars:
+    demo_website_root: /var/www/html/redhat
+    demo_website_manage_firewall: true
+
+  tasks:
+    # No default on purpose — a play-level var would outrank the inventory
+    # and silently shadow whatever AAP supplies.
+    - name: Require an explicit state
+      ansible.builtin.assert:
+        that:
+          - demo_website_state is defined
+          - demo_website_state in ['enabled', 'disabled']
+        fail_msg: >-
+          demo_website_state must be 'enabled' or 'disabled'. Supply it from
+          the job template or -e demo_website_state=... on the CLI.
+        quiet: true
+
+    # ---- common: the site always exists and is always served -----------
+
+    - name: Install Apache
+      ansible.builtin.dnf:
+        name: httpd
+        state: present
+
+    - name: Create the site directory
+      ansible.builtin.file:
+        path: "{{ demo_website_root }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+        # Explicit rather than inherited: a file moved into place can carry
+        # the wrong context, and a mislabelled site fails as a 403, which
+        # looks nothing like the fault we are demonstrating.
+        setype: httpd_sys_content_t
+
+    - name: Open the firewall for HTTP
+      ansible.posix.firewalld:
+        service: http
+        permanent: true
+        immediate: true
+        state: enabled
+      when: demo_website_manage_firewall | bool
+
+    # ---- enabled: shell + button page ----------------------------------
+
+    - name: Enable the demo
+      when: demo_website_state == 'enabled'
+      block:
+
+        - name: Deploy the shell and the button page
+          ansible.builtin.copy:
+            src: "{{ playbook_dir }}/../demo-web/{{ item.src }}"
+            dest: "{{ demo_website_root }}/{{ item.dest }}"
+            owner: root
+            group: root
+            mode: "0644"
+            setype: httpd_sys_content_t
+          loop:
+            - { src: index.html, dest: index.html }
+            - { src: content.html, dest: content.html }
+          loop_control:
+            label: "{{ item.dest }}"
+
+    # ---- disabled: inert placeholder -----------------------------------
+
+    - name: Disable the demo
+      when: demo_website_state == 'disabled'
+      block:
+
+        - name: Serve the placeholder as the index
+          ansible.builtin.copy:
+            src: "{{ playbook_dir }}/../demo-web/disabled.html"
+            dest: "{{ demo_website_root }}/index.html"
+            owner: root
+            group: root
+            mode: "0644"
+            setype: httpd_sys_content_t
+
+        # content.html going away is what the placeholder is for: no shell
+        # left polling for it, so nothing renders a 404 at the visitor.
+        # The .disabled backup is the fault-injection artefact — clearing it
+        # means putting the demo away mid-incident still leaves it clean.
+        - name: Remove the button page and any fault-injection backup
+          ansible.builtin.file:
+            path: "{{ demo_website_root }}/{{ item }}"
+            state: absent
+          loop:
+            - content.html
+            - content.html.disabled
+
+    # ---- common: serve and prove it ------------------------------------
+
+    - name: Start and enable Apache
+      ansible.builtin.service:
+        name: httpd
+        state: started
+        enabled: true
+
+    - name: Confirm the site answers
+      ansible.builtin.uri:
+        url: "http://localhost/redhat/{{ 'content.html' if demo_website_state == 'enabled' else 'index.html' }}"
+        status_code: 200
+      register: demo_website_check
+      retries: 5
+      delay: 2
+      until: demo_website_check is succeeded
+
+    - name: Report
+      ansible.builtin.debug:
+        msg: >-
+          Demo website {{ demo_website_state }} on {{ inventory_hostname }}.
+          {{ 'Shell at /redhat/, fault target /redhat/content.html.'
+             if demo_website_state == 'enabled'
+             else 'Placeholder served at /redhat/ — disable the Zabbix web scenario too.' }}

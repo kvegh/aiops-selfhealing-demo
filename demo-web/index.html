@@ -7,210 +7,116 @@
 <!--
   Outer shell. This file is never touched by the demo fault, so it keeps
   polling content.html and every phone in the room flips to the outage and
-  back on its own. content.html is the file that actually disappears.
+  back on its own. content.html is the file that actually disappears, and
+  it carries its own styling -- the shell only styles the 404 state.
 -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@400;700;900&family=Red+Hat+Text:wght@400;500;700&display=swap">
 <style>
-    :root {
-        --ink: #151515;
-        --muted: #6a6e73;
-        --line: #d2d2d2;
-        --red: #ee0000;
-        --paper: #ffffff;
-    }
-
     * { box-sizing: border-box; }
 
+    html, body { margin: 0; padding: 0; }
+
     body {
-        margin: 0;
-        font-family: "Red Hat Text", "Open Sans", Helvetica, Arial, sans-serif;
-        color: var(--ink);
-        background: var(--paper);
+        font-family: "Red Hat Text", Helvetica, Arial, sans-serif;
+        background: #fff;
+        color: #151515;
         -webkit-text-size-adjust: 100%;
     }
 
-    /* ---- shell states ---------------------------------------------- */
-
     #stage.is-gone { display: none; }
+
+    /* ---- the 404 the audience gets when the site goes down -------- */
 
     #notfound {
         display: none;
-        padding: 18vh 24px;
+        padding: 17vh 24px;
         text-align: center;
-        font-family: Menlo, Consolas, monospace;
+        font-family: "Red Hat Mono", Menlo, Consolas, monospace;
     }
 
     #notfound.is-shown { display: block; }
 
     #notfound h1 {
-        margin: 0 0 12px;
-        font-size: clamp(36px, 9vw, 64px);
-        letter-spacing: -0.02em;
+        margin: 0 0 10px;
+        font-family: "Red Hat Display", Helvetica, Arial, sans-serif;
+        font-size: clamp(56px, 16vw, 128px);
+        font-weight: 900;
+        letter-spacing: -0.04em;
+        line-height: 1;
+        color: #151515;
     }
 
-    #notfound p {
-        margin: 6px 0;
-        color: var(--muted);
-        font-size: 15px;
+    #notfound .sub {
+        margin: 0;
+        font-size: clamp(16px, 3.4vw, 21px);
+        font-weight: 700;
+        letter-spacing: 0.02em;
     }
 
     #notfound .hr {
-        max-width: 520px;
-        margin: 28px auto 0;
-        border-top: 1px solid var(--line);
-        padding-top: 14px;
+        max-width: 560px;
+        margin: 30px auto 0;
+        border-top: 1px solid #d2d2d2;
+        padding-top: 16px;
     }
 
-    /* ---- corporate page -------------------------------------------- */
-
-    .masthead {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 24px;
-        flex-wrap: wrap;
-        padding: 18px 28px;
-        border-bottom: 1px solid var(--line);
-    }
-
-    .brand { display: flex; align-items: center; gap: 10px; }
-    .hat { color: var(--red); font-size: 22px; line-height: 1; }
-    .brandname { font-size: 21px; font-weight: 700; letter-spacing: -0.01em; }
-
-    nav { display: flex; gap: 22px; flex-wrap: wrap; }
-
-    nav a {
-        color: var(--ink);
-        text-decoration: none;
-        font-size: 15px;
-    }
-
-    nav a:hover { color: var(--red); }
-
-    .hero {
-        max-width: 860px;
-        margin: 0 auto;
-        padding: 56px 28px 36px;
-        text-align: center;
-    }
-
-    .eyebrow {
-        margin: 0 0 10px;
-        text-transform: uppercase;
-        letter-spacing: 0.12em;
-        font-size: 12px;
-        font-weight: 700;
-        color: var(--red);
-    }
-
-    .hero h1 {
-        margin: 0 0 16px;
-        font-size: clamp(30px, 6vw, 50px);
-        line-height: 1.1;
-        letter-spacing: -0.02em;
-    }
-
-    .lede {
-        margin: 0;
-        font-size: 17px;
+    #notfound .hr p {
+        margin: 5px 0;
+        font-size: 13.5px;
         line-height: 1.6;
-        color: var(--muted);
+        color: #6a6e73;
     }
 
-    /* ---- the irresistible button ------------------------------------ */
-
-    .panic {
-        max-width: 860px;
-        margin: 0 auto;
-        padding: 20px 28px 56px;
-        text-align: center;
+    #notfound .server {
+        margin-top: 18px;
+        font-size: 12.5px;
+        color: #9a9a9a;
     }
 
-    .warning {
-        margin: 0 0 18px;
-        font-size: 13px;
-        font-weight: 700;
-        letter-spacing: 0.04em;
-        color: var(--muted);
+    /* Small pulse so a static 404 still looks like something is happening. */
+    #notfound .watching {
+        display: inline-block;
+        margin-top: 22px;
+        padding: 7px 15px;
+        border: 1px solid #d2d2d2;
+        border-radius: 999px;
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #6a6e73;
     }
 
-    #panic-button {
-        appearance: none;
-        border: 0;
-        cursor: pointer;
-        width: min(260px, 72vw);
-        height: min(260px, 72vw);
+    #notfound .dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        margin-right: 7px;
         border-radius: 50%;
-        background: radial-gradient(circle at 38% 32%, #ff4d4d, var(--red) 58%, #a60000);
-        box-shadow: 0 16px 34px rgba(170, 0, 0, 0.42), inset 0 -9px 18px rgba(0, 0, 0, 0.28);
-        color: #fff;
-        font: 700 clamp(18px, 4.6vw, 27px)/1.15 inherit;
-        letter-spacing: 0.02em;
-        transition: transform 0.08s ease, box-shadow 0.15s ease, filter 0.2s ease;
-        animation: throb 2.4s ease-in-out infinite;
+        background: #ee0000;
+        vertical-align: baseline;
+        animation: blink 1.3s ease-in-out infinite;
     }
 
-    #panic-button:hover { filter: brightness(1.07); }
-
-    #panic-button:active {
-        transform: translateY(7px) scale(0.97);
-        box-shadow: 0 5px 14px rgba(170, 0, 0, 0.42), inset 0 -4px 12px rgba(0, 0, 0, 0.32);
-    }
-
-    #panic-button[disabled] {
-        cursor: not-allowed;
-        filter: grayscale(0.75) brightness(0.85);
-        animation: none;
-    }
-
-    @keyframes throb {
-        0%, 100% { box-shadow: 0 16px 34px rgba(170, 0, 0, 0.42), inset 0 -9px 18px rgba(0, 0, 0, 0.28); }
-        50%      { box-shadow: 0 16px 48px rgba(238, 0, 0, 0.70), inset 0 -9px 18px rgba(0, 0, 0, 0.28); }
-    }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
 
     @media (prefers-reduced-motion: reduce) {
-        #panic-button { animation: none; }
+        #notfound .dot { animation: none; }
     }
 
-    .smallprint {
-        margin: 20px auto 0;
-        max-width: 420px;
-        font-size: 13px;
-        line-height: 1.5;
-        color: var(--muted);
-    }
-
-    /* ---- filler ------------------------------------------------------ */
-
-    .cards {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 1px;
-        background: var(--line);
-        border-top: 1px solid var(--line);
-    }
-
-    .cards article { background: var(--paper); padding: 30px 28px; }
-    .cards h2 { margin: 0 0 10px; font-size: 18px; }
-    .cards p { margin: 0; font-size: 15px; line-height: 1.6; color: var(--muted); }
-
-    footer {
-        padding: 26px 28px 40px;
-        text-align: center;
-        font-size: 13px;
-        line-height: 1.6;
-        color: var(--muted);
-    }
-
-    /* ---- click feedback --------------------------------------------- */
+    /* ---- click feedback ------------------------------------------- */
 
     #flash {
         position: fixed;
         inset: 0;
         display: none;
         place-items: center;
-        background: rgba(0, 0, 0, 0.82);
+        background: rgba(0, 0, 0, 0.86);
         color: #fff;
-        font: 700 clamp(18px, 5vw, 30px)/1.3 inherit;
+        font-family: "Red Hat Display", Helvetica, Arial, sans-serif;
+        font-weight: 900;
+        font-size: clamp(22px, 6vw, 40px);
         text-align: center;
         padding: 24px;
         z-index: 10;
@@ -225,11 +131,13 @@
 
 <section id="notfound">
     <h1>404</h1>
-    <p>Not Found</p>
+    <p class="sub">Not Found</p>
     <div class="hr">
-        <p>The requested URL /redhat/content.html was not found on this server.</p>
+        <p>The requested URL <code>/redhat/content.html</code> was not found on this server.</p>
         <p id="nf-note">&nbsp;</p>
     </div>
+    <p class="watching"><span class="dot"></span>Monitoring has been notified</p>
+    <p class="server">Apache/2.4 (Red Hat Enterprise Linux) Server at supercorp.at Port 443</p>
 </section>
 
 <div id="flash"><span id="flash-text"></span></div>
@@ -246,7 +154,7 @@
     var flash = document.getElementById("flash");
     var flashText = document.getElementById("flash-text");
 
-    var up = null;          // null = unknown, true/false once polled
+    var up = null;                  // null = unknown, true/false once polled
     var clickedThisOutage = false;
 
     function showFlash(msg, ms) {
@@ -257,7 +165,7 @@
         }
     }
 
-    // The button must be re-bound every time content.html is re-injected.
+    // Must be re-bound every time content.html is re-injected.
     function bindButton() {
         var btn = document.getElementById("panic-button");
         if (!btn) { return; }
@@ -266,41 +174,39 @@
             if (clickedThisOutage) { return; }
             clickedThisOutage = true;
             btn.disabled = true;
-            btn.textContent = "oh no";
 
-            showFlash("You clicked it.");
+            showFlash("You pushed it.");
 
             // nginx proxies this to the AAP job template launch endpoint and
             // injects the token, so no credentials ever reach the browser.
             fetch("/api/panic", { method: "POST", cache: "no-store" })
                 .then(function (r) {
                     if (!r.ok) { throw new Error("HTTP " + r.status); }
-                    showFlash("You clicked it.", 1800);
+                    showFlash("You pushed it.", 2200);
                 })
                 .catch(function (err) {
                     clickedThisOutage = false;
                     btn.disabled = false;
-                    btn.textContent = "DO NOT CLICK";
                     showFlash("Fault injection failed: " + err.message, 4000);
                 });
         });
     }
 
     function render(state, html) {
-        if (state === up) { return; }     // only touch the DOM on a transition
+        if (state === up) { return; }       // only touch the DOM on a transition
         up = state;
 
         if (state) {
             stage.innerHTML = html;
             stage.classList.remove("is-gone");
             notfound.classList.remove("is-shown");
-            clickedThisOutage = false;    // rearmed once the site is back
+            clickedThisOutage = false;      // rearmed once the site is back
             bindButton();
         } else {
             stage.classList.add("is-gone");
             stage.innerHTML = "";
             notfound.classList.add("is-shown");
-            nfNote.textContent = "Monitoring has been notified. " + new Date().toLocaleTimeString();
+            nfNote.textContent = "Outage detected at " + new Date().toLocaleTimeString() + ".";
             flash.classList.remove("is-shown");
         }
     }
