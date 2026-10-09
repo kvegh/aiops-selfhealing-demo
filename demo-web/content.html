@@ -197,6 +197,9 @@
     font-size: clamp(30px, 6.4vw, 56px);
     font-weight: 900;
     margin-bottom: 12px;
+    /* Split the heading into even lines rather than stranding the last
+       word on its own. Ignored by older browsers, which just wrap. */
+    text-wrap: balance;
 }
 
 .rh-vault h2 em {
