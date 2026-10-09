@@ -68,9 +68,9 @@ Linger works, but it is a weaker posture: the UI is now continuously exposed rat
 
 **Proposed direction:** start CloudCLI from an AAP job template instead of running it permanently. Users authenticate to AAP with their own accounts, which gives named authentication and an audit record of who started it and when, rather than one shared password. Scope this to a team with execute permission on exactly that one job template — not general AAP access, which would trade one exposure for a larger one.
 
-**Implementation gotcha:** an AAP job that becomes `aaptra` cannot start a systemd *user* service. sudo creates a login shell, not a PAM/logind session, so `user@.service` is never triggered — the same gotcha already documented in doc 05 for EDA-driven headless runs. Two ways around it:
+**Implementation gotcha:** an AAP job that becomes `AGENT_USER` cannot start a systemd *user* service. sudo creates a login shell, not a PAM/logind session, so `user@.service` is never triggered — the same gotcha already documented in doc 05 for EDA-driven headless runs. Two ways around it:
 
-- **Convert `cloudcli` to a system unit with `User=aaptra`**, started by root with a plain `systemctl start cloudcli`. Preferred: it removes the `--machine=aaptra@.host` dance and the linger question entirely. The user-service design made sense when the lifecycle was tied to a human's SSH login; once it is tied to a job, a system unit is simpler.
+- **Convert `cloudcli` to a system unit with `User=AGENT_USER`**, started by root with a plain `systemctl start cloudcli`. Preferred: it removes the `--machine=AGENT_USER@.host` dance and the linger question entirely. The user-service design made sense when the lifecycle was tied to a human's SSH login; once it is tied to a job, a system unit is simpler.
 - Keep the user unit and have the job toggle `loginctl enable-linger` / `disable-linger` around it.
 
 **Auto-stop is required, not optional** — everyone will forget to stop it, and the setup drifts back to always-on within weeks. Keep `RuntimeMaxSec=10h` as a backstop and/or add a scheduled stop job with a shorter cap.
@@ -84,7 +84,6 @@ Open question: AAP would gate *starting* CloudCLI, not *using* it. Once running,
 - **Linger contradiction.** The section calls linger "required"; doc 05 documents no-linger as a deliberate security posture. Both docs need to reflect whatever lifecycle is settled on above, with the trade-off stated rather than left implicit.
 - **Linger does not override `RuntimeMaxSec=10h`.** The "verify unattended" `curl` can return 200 right after logout and fail the next morning for an unrelated reason. Worth a sentence.
 - **"Disconnected" is not always cosmetic.** The section says it is, but doc 05 documents a real cause with the same symptom: a wrong `Environment=PATH=` means systemd cannot find the `claude` binary and CloudCLI reports it as an authentication failure. Add "if prompts genuinely fail, check PATH first".
-- **Bare hostnames.** `hactar` and `tra` should be "hypervisor host" and "TRA VM", matching the placeholder convention in doc 05.
 - **Indented code blocks** should be fenced with language tags, as everywhere else in the docs.
 - **The WS status code list** could be a table, matching the triage table directly above it.
 - **No links into doc 05** — cross-references to the architecture, the split-auth table for the `401` row, and the `HOST=` rationale for the bind note would save readers re-deriving what is already documented.

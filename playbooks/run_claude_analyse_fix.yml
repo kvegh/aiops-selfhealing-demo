@@ -4,6 +4,18 @@
   gather_facts: false
 
   tasks:
+    # No default on purpose — a play-level var would outrank the inventory
+    # and silently shadow whatever AAP supplies.
+    - name: Require the agent user
+      ansible.builtin.assert:
+        that:
+          - claude_agent_user is defined
+          - claude_agent_user | length > 0
+        fail_msg: >-
+          claude_agent_user is not set. Supply it from the AAP inventory, a job
+          template extra variable, or -e claude_agent_user=... on the CLI.
+        quiet: true
+
     - name: Run Claude Code CLI
       # shell, not command — command breaks on quoted arguments in the CLI invocation
       ansible.builtin.shell: >-
@@ -13,12 +25,13 @@
         incident report and suggested further steps."
         --dangerously-skip-permissions
       args:
-        # Claude Code needs a working directory with CLAUDE.md guardrails
-        chdir: /home/aaptra/claude-wd
-      # Controller connects as ansible user, but Claude must run as aaptra
-      # (owns ~/.claude config, API keys, MCP wiring)
+        # Claude Code needs a working directory with CLAUDE.md guardrails.
+        # Defaulted inline, not at play level, so inventory still wins.
+        chdir: "{{ claude_agent_workdir | default('/home/' ~ claude_agent_user ~ '/claude-wd') }}"
+      # Controller connects as the ansible user, but Claude must run as the
+      # agent user (owns ~/.claude config, API keys, MCP wiring)
       become: true
-      become_user: aaptra
+      become_user: "{{ claude_agent_user }}"
       register: claude_output
 
     - name: Display incident report

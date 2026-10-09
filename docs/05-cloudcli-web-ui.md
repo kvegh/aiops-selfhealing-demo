@@ -24,6 +24,7 @@ Replace the placeholders below with your environment values:
 | Placeholder | Meaning |
 |---|---|
 | `TRA_VM_IP` | Internal-network IP of the TRA VM |
+| `AGENT_USER` | Unprivileged user on the TRA VM that owns `~/.claude`, the API keys and the MCP wiring, and that Claude Code runs as |
 | `CLOUDCLI_WEB_HOSTNAME` | Public FQDN for the CloudCLI web UI |
 | `AAP_WEB_HOSTNAME` | FQDN of the AAP instance (used for shared TLS certs) |
 | `GCP_PROJECT_ID` | Google Cloud project ID (Vertex AI only — not needed with `ANTHROPIC_API_KEY`) |
@@ -47,7 +48,7 @@ Security posture: CloudCLI runs **on demand only** — the systemd user service
 starts at SSH login and stops at last logout (no linger), with a 10-hour
 runtime cap. When not demoing, nothing listens on port 3001.
 
-## 1. Installation on the TRA VM (as `aaptra`)
+## 1. Installation on the TRA VM (as `AGENT_USER`)
 
 Requires Node.js v22+.
 
@@ -83,7 +84,7 @@ Environment=ANTHROPIC_API_KEY=sk-ant-...
 #Environment=CLOUD_ML_REGION=global
 RuntimeMaxSec=10h
 Restart=on-failure
-WorkingDirectory=/home/aaptra/claude-wd
+WorkingDirectory=/home/AGENT_USER/claude-wd
 
 [Install]
 WantedBy=default.target
@@ -116,8 +117,8 @@ systemctl --user start cloudcli
 - **`RuntimeMaxSec=10h`** — hard cap: the service stops 10 hours after start
   regardless of session state. A clean stop, not a failure, so
   `Restart=on-failure` does not resurrect it.
-- **No linger** (`loginctl show-user aaptra -p Linger` → `no`) — the user
-  systemd instance, and with it CloudCLI, is torn down when the last aaptra
+- **No linger** (`loginctl show-user AGENT_USER -p Linger` → `no`) — the user
+  systemd instance, and with it CloudCLI, is torn down when the last AGENT_USER
   session ends. Combined with `WantedBy=default.target` + `enable`, the
   lifecycle is: starts at first SSH login, survives across parallel sessions,
   dies at last logout.
@@ -133,7 +134,7 @@ systemctl --user start cloudcli
   `loginctl list-sessions`, reap with `loginctl terminate-session <ID>`.
 - `status=200/CHDIR` on start means `WorkingDirectory=` points at a
   nonexistent path.
-- An Ansible `become_user: aaptra` with `become_flags: '--login'` does **not**
+- An Ansible `become_user: AGENT_USER` with `become_flags: '--login'` does **not**
   start the service: sudo creates a login *shell*, not a PAM/logind login
   *session*, so `user@.service` is never triggered. EDA-driven headless runs
   therefore don't wake the web UI.
@@ -247,7 +248,7 @@ Also required on the TRA VM: firewalld allowing 3001 from the internal network.
   Hand over (start in terminal, resume in web or vice versa), but do not
   drive one session from both concurrently.
 - **Headless runs stream live**: `claude -p` invocations — including
-  EDA-triggered ones running as `aaptra` in the same working directory —
+  EDA-triggered ones running as `AGENT_USER` in the same working directory —
   appear in the UI in real time. CloudCLI does not distinguish who spawned
   the process; same user + same host + same project directory is all that
   matters.

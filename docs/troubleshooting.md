@@ -67,26 +67,26 @@ Before restarting anything, capture:
     200  nginx is stripping the upgrade headers
     502  backend died between shell load and socket open
 
-And on tra:
+And on the TRA VM:
 
     ss -tnp | grep :3001
-    systemctl --machine=aaptra@.host --user status cloudcli
-    journalctl --machine=aaptra@.host --user -u cloudcli -n 100 --no-pager
+    systemctl --machine=AGENT_USER@.host --user status cloudcli
+    journalctl --machine=AGENT_USER@.host --user -u cloudcli -n 100 --no-pager
 
 A restart usually clears it, but restarting first destroys the evidence.
 
 ### systemd linger (required)
 
-**`cloudcli` runs as a systemd user service under `aaptra`.**
+**`cloudcli` runs as a systemd user service under `AGENT_USER`.**
 Without linger the user manager is torn down at logout, taking the service
 with it — the service works while you are SSHed in and dies when you disconnect.
 
-    sudo loginctl enable-linger aaptra
-    loginctl show-user aaptra | grep -i linger    # expect Linger=yes
+    sudo loginctl enable-linger AGENT_USER
+    loginctl show-user AGENT_USER | grep -i linger    # expect Linger=yes
 
 Enabling linger does not restart anything; it only prevents future teardown.
 
-Verify unattended: log out completely, then from hactar:
+Verify unattended: log out completely, then from the hypervisor host:
 
     curl -sS -o /dev/null -w '%{http_code}\n' http://TRA_VM_IP:3001/
 
@@ -96,7 +96,7 @@ Verify unattended: log out completely, then from hactar:
 `curl 127.0.0.1:3001` will refuse — expected, not a fault.
 
 **Root cannot use `systemctl --user` against another user's manager.**
-Use `--machine=aaptra@.host --user`.
+Use `--machine=AGENT_USER@.host --user`.
 
 **Settings → Agents → Claude may show "Disconnected" and "Failed to check authentication status" while the CLI works normally.**
 Cosmetic; verify by sending a prompt.

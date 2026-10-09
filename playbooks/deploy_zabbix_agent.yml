@@ -1,12 +1,20 @@
 ---
 - name: Install and configure Zabbix agent
   hosts: all
-  vars_files:
-    # Create your own 'myvars' vault file with: ansible-vault create myvars
-    # See myvars.example for required variables.
-    - myvars
 
   tasks:
+    # No default on purpose — a play-level var would outrank the inventory
+    # and silently shadow whatever AAP supplies.
+    - name: Require the Zabbix server address
+      ansible.builtin.assert:
+        that:
+          - zabbix_server is defined
+          - zabbix_server | length > 0
+        fail_msg: >-
+          zabbix_server is not set. Supply it from the AAP inventory, a job
+          template extra variable, or -e zabbix_server=... on the CLI.
+        quiet: true
+
     - name: Install Zabbix repo
       ansible.builtin.dnf:
         name: https://repo.zabbix.com/zabbix/7.4/release/rhel/9/noarch/zabbix-release-latest.el9.noarch.rpm

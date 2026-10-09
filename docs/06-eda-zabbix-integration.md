@@ -338,9 +338,9 @@ File: [`playbooks/run_claude_analyse_fix.yml`](../playbooks/run_claude_analyse_f
         incident report and suggested further steps."
         --dangerously-skip-permissions
       args:
-        chdir: /home/aaptra/claude-wd
+        chdir: "{{ claude_agent_workdir | default('/home/' ~ claude_agent_user ~ '/claude-wd') }}"
       become: true
-      become_user: aaptra
+      become_user: "{{ claude_agent_user }}"
       register: claude_output
 
     - name: Display incident report
@@ -352,7 +352,8 @@ The job template in AAP should:
 
 - Point to the project containing this playbook
 - Target the TRA VM (where Claude Code CLI is installed)
-- Use credentials that allow `become_user: aaptra` on the TRA VM
+- Use credentials that allow becoming the agent user on the TRA VM
+- Supply `claude_agent_user` (inventory variable or job template extra variable)
 
 ## 11. End-to-end flow
 
@@ -375,7 +376,7 @@ EDA rulebook matches condition --> run_job_template
 AAP Controller launches "Run Claude to analyse and fix"
     |
     v
-Playbook runs on TRA VM as aaptra
+Playbook runs on TRA VM as the agent user
     |
     v
 Claude Code CLI diagnoses via MCP servers, remediates via AAP
