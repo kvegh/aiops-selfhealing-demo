@@ -194,11 +194,14 @@
 }
 
 .rh-vault h2 {
-    font-size: clamp(30px, 6.4vw, 56px);
+    /* 45 characters at weight 900 need roughly 26x the font size in width;
+       the container gives 1140px, so anything above ~40px wraps. Capped
+       there so the heading holds one line on a laptop. */
+    font-size: clamp(24px, 3.2vw, 40px);
     font-weight: 900;
     margin-bottom: 12px;
-    /* Split the heading into even lines rather than stranding the last
-       word on its own. Ignored by older browsers, which just wrap. */
+    /* Below ~640px it has to wrap regardless — balance it evenly rather
+       than stranding the last word. Older browsers just wrap. */
     text-wrap: balance;
 }
 
