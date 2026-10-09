@@ -10,16 +10,24 @@
   back on its own. content.html is the file that actually disappears, and
   it carries its own styling -- the shell only styles the 404 state.
 -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@400;700;900&family=Red+Hat+Text:wght@400;500;700&display=swap">
 <style>
+    /* No webfonts on purpose: every byte is served from this host, so the
+       page renders identically on a phone with no internet beyond the venue
+       wifi. The system stack is close enough to Red Hat Text in weight and
+       proportion that the look survives. */
+    :root {
+        --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+                Arial, "Noto Sans", sans-serif;
+        --mono: ui-monospace, SFMono-Regular, Menlo, Consolas,
+                "Liberation Mono", monospace;
+    }
+
     * { box-sizing: border-box; }
 
     html, body { margin: 0; padding: 0; }
 
     body {
-        font-family: "Red Hat Text", Helvetica, Arial, sans-serif;
+        font-family: var(--sans);
         background: #fff;
         color: #151515;
         -webkit-text-size-adjust: 100%;
@@ -33,14 +41,14 @@
         display: none;
         padding: 17vh 24px;
         text-align: center;
-        font-family: "Red Hat Mono", Menlo, Consolas, monospace;
+        font-family: var(--mono);
     }
 
     #notfound.is-shown { display: block; }
 
     #notfound h1 {
         margin: 0 0 10px;
-        font-family: "Red Hat Display", Helvetica, Arial, sans-serif;
+        font-family: var(--sans);
         font-size: clamp(56px, 16vw, 128px);
         font-weight: 900;
         letter-spacing: -0.04em;
@@ -114,7 +122,7 @@
         place-items: center;
         background: rgba(0, 0, 0, 0.86);
         color: #fff;
-        font-family: "Red Hat Display", Helvetica, Arial, sans-serif;
+        font-family: var(--sans);
         font-weight: 900;
         font-size: clamp(22px, 6vw, 40px);
         text-align: center;

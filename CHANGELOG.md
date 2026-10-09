@@ -33,6 +33,10 @@ templates, and the status page are still outstanding.
 - `playbooks/demo_website.yml` — switches the site on and off around a
   demo session. Disabling swaps the page rather than deleting the site, so
   the URL keeps answering.
+- `playbooks/publish_dns_record.yml` — publishes a DNS A record through the
+  GoDaddy API, restricted to an allowlist of sanctioned names. The allowlist
+  is the control, not the caller: a job template wired to this playbook can
+  only ever publish a name already in the list.
 
 ### Changed
 
@@ -45,6 +49,9 @@ templates, and the status page are still outstanding.
   Removes `playbooks/myvars.example`.
 - Docs — remaining environment-specific identifiers replaced with
   placeholders (`AGENT_USER`, role names for hypervisor and TRA hosts).
+- `demo-web/` — dropped the Google Fonts dependency for a system font
+  stack. All three pages now make zero external requests, so they render
+  identically on an audience phone with nothing but venue wifi.
 
 ## [1.0.0] — 2026-10-05
 
