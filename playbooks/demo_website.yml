@@ -83,18 +83,6 @@
       when: demo_website_state == 'enabled'
       block:
 
-        - name: Stop the jail for the duration of the demo
-          ansible.builtin.command:
-            argv:
-              - fail2ban-client
-              - stop
-              - "{{ demo_website_fail2ban_jail }}"
-          when:
-            - demo_website_manage_fail2ban | bool
-            - demo_f2b_bin.stat.exists | default(false)
-            - demo_f2b_status.rc | default(1) == 0
-          changed_when: true
-
         - name: Deploy the shell and the button page
           ansible.builtin.copy:
             src: "{{ playbook_dir }}/../demo-web/{{ item }}"
@@ -110,18 +98,6 @@
     - name: Disable the demo
       when: demo_website_state == 'disabled'
       block:
-
-        - name: Start the jail again
-          ansible.builtin.command:
-            argv:
-              - fail2ban-client
-              - start
-              - "{{ demo_website_fail2ban_jail }}"
-          when:
-            - demo_website_manage_fail2ban | bool
-            - demo_f2b_bin.stat.exists | default(false)
-            - demo_f2b_status.rc | default(0) != 0
-          changed_when: true
 
         - name: Serve the placeholder as the index
           ansible.builtin.copy:
@@ -143,6 +119,51 @@
           loop:
             - content.html
             - content.html.disabled
+
+    # Deliberately after the content tasks: a fail2ban problem must not stop
+    # the site being put into the state that was asked for.
+    - name: Stop the jail for the duration of the demo
+      ansible.builtin.command:
+        argv:
+          - fail2ban-client
+          - stop
+          - "{{ demo_website_fail2ban_jail }}"
+      when:
+        - demo_website_state == 'enabled'
+        - demo_website_manage_fail2ban | bool
+        - demo_f2b_bin.stat.exists | default(false)
+        - demo_f2b_status.rc | default(1) == 0
+      changed_when: true
+
+    # `stop` removes the jail outright, so `start` cannot bring it back
+    # ("the jail does not exist"). A reload re-reads the configuration and
+    # recreates every enabled jail, which is the only reliable way back.
+    # It is a no-op for the jails that are already running.
+    - name: Restore the jail after the demo
+      ansible.builtin.command:
+        argv:
+          - fail2ban-client
+          - reload
+      when:
+        - demo_website_state == 'disabled'
+        - demo_website_manage_fail2ban | bool
+        - demo_f2b_bin.stat.exists | default(false)
+        - demo_f2b_status.rc | default(0) != 0
+      changed_when: true
+
+    - name: Confirm the jail is back
+      ansible.builtin.command:
+        argv:
+          - fail2ban-client
+          - status
+          - "{{ demo_website_fail2ban_jail }}"
+      when:
+        - demo_website_state == 'disabled'
+        - demo_website_manage_fail2ban | bool
+        - demo_f2b_bin.stat.exists | default(false)
+      changed_when: false
+      retries: 3
+      delay: 2
 
     - name: Confirm the expected page is served
       ansible.builtin.command:
