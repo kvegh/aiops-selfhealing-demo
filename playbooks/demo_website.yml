@@ -26,6 +26,13 @@
 
   vars:
     demo_website_root: /var/www/redhat
+    # The nginx-444 jail bans any address that hits the box with an unknown
+    # Host header twice in 10 minutes, for an hour. An audience member who
+    # types the IP instead of the hostname would trip it — and because the
+    # room shares one NAT address, that bans everyone. Stopped for the demo,
+    # restored afterwards. Stopping also drops the jail's existing bans.
+    demo_website_manage_fail2ban: true
+    demo_website_fail2ban_jail: nginx-444
 
   tasks:
     # No default on purpose — a play-level var would outrank the inventory
@@ -52,9 +59,41 @@
         # looks nothing like the fault we are demonstrating.
         setype: httpd_sys_content_t
 
+    - name: Look for fail2ban
+      ansible.builtin.stat:
+        path: /usr/bin/fail2ban-client
+      register: demo_f2b_bin
+      when: demo_website_manage_fail2ban | bool
+
+    - name: Check whether the jail is currently running
+      ansible.builtin.command:
+        argv:
+          - fail2ban-client
+          - status
+          - "{{ demo_website_fail2ban_jail }}"
+      register: demo_f2b_status
+      changed_when: false
+      # Non-zero simply means "not running"; that is information, not failure.
+      failed_when: false
+      when:
+        - demo_website_manage_fail2ban | bool
+        - demo_f2b_bin.stat.exists | default(false)
+
     - name: Enable the demo
       when: demo_website_state == 'enabled'
       block:
+
+        - name: Stop the jail for the duration of the demo
+          ansible.builtin.command:
+            argv:
+              - fail2ban-client
+              - stop
+              - "{{ demo_website_fail2ban_jail }}"
+          when:
+            - demo_website_manage_fail2ban | bool
+            - demo_f2b_bin.stat.exists | default(false)
+            - demo_f2b_status.rc | default(1) == 0
+          changed_when: true
 
         - name: Deploy the shell and the button page
           ansible.builtin.copy:
@@ -71,6 +110,18 @@
     - name: Disable the demo
       when: demo_website_state == 'disabled'
       block:
+
+        - name: Start the jail again
+          ansible.builtin.command:
+            argv:
+              - fail2ban-client
+              - start
+              - "{{ demo_website_fail2ban_jail }}"
+          when:
+            - demo_website_manage_fail2ban | bool
+            - demo_f2b_bin.stat.exists | default(false)
+            - demo_f2b_status.rc | default(0) != 0
+          changed_when: true
 
         - name: Serve the placeholder as the index
           ansible.builtin.copy:
