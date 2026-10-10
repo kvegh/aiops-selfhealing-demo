@@ -1,5 +1,31 @@
 # Demo Design — TODO
 
+## Fault-injection template — naming and permissions
+
+`Inject Website Fault` currently sits in the same project, inventory and
+organization as the remediation templates, which means it appears in the
+catalog the agent reads when choosing a fix. Nothing stops it being
+selected *as* a remediation except its name and description — which is
+prompting, not enforcement, and therefore the opposite of this demo's
+central claim.
+
+Shipped as-is deliberately: the obvious name is the right one for a live
+audience, and the separation is a refinement rather than a blocker.
+
+To refine:
+
+- **Separate the catalogs.** Put fault injection in its own project or
+  organization so the agent's credential cannot see it at all. Then
+  "the agent cannot inject faults" is a property of the architecture
+  rather than a line in a description.
+- **Scope the webhook's reach.** The template is reachable from the
+  internet through the `/api/panic` endpoint. The webhook key already
+  limits that to this one template; confirm nothing else widens it.
+- **Decide what the agent should see.** There is a case for the agent
+  seeing the fault injector and being expected *not* to use it — it
+  makes the guardrail demonstrable. That is a deliberate experiment,
+  not the default.
+
 ## Level 0 → Level 1 escalation scenario
 
 Add a demo scenario where a known-issue fix (Level 0) fails, causing automatic escalation to Level 1 (AI agent). To keep the demo snappy, shorten Zabbix check intervals on the relevant items to 10-30 seconds — EDA reacts near-instantly once the event re-fires.
