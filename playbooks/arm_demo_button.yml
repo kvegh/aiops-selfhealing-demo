@@ -1,0 +1,54 @@
+---
+# Arms the audience button.
+#
+# "Armed" is server-side state, not something each browser decides. A
+# marker file must exist for nginx to accept /api/panic at all; without
+# it the endpoint answers 423 and every open page greys its button out
+# within one poll.
+#
+# Why this exists as its own template: after the agent has healed the
+# site, the button must stay dead until the presenter deliberately hands
+# the room another go. Otherwise a phone still holding the page open
+# breaks the site again midway through explaining the recovery.
+#
+# The marker holds a fresh nonce each time. The page reads it and sends
+# it as the request body, which also makes every webhook delivery unique
+# — AAP derives its delivery GUID from a hash of the body and silently
+# drops repeats, so a constant body means the button fires exactly once
+# in the lifetime of the installation.
+
+- name: Arm the demo button
+  hosts: all
+  become: true
+
+  vars:
+    demo_website_root: /var/www/redhat
+    demo_button_marker: /var/www/redhat/.armed
+
+  tasks:
+    - name: Write a fresh nonce to the marker
+      ansible.builtin.copy:
+        content: "{{ lookup('ansible.builtin.password', '/dev/null', length=32, chars=['ascii_letters', 'digits']) }}"
+        dest: "{{ demo_button_marker }}"
+        owner: root
+        group: root
+        mode: "0644"
+        setype: httpd_sys_content_t
+
+    - name: Confirm the endpoint accepts presses again
+      ansible.builtin.command:
+        argv:
+          - curl
+          - -sS
+          - -o/dev/null
+          - -w%{http_code}
+          - --resolve
+          - redhat.supercorp.at:443:127.0.0.1
+          - https://redhat.supercorp.at/armed
+      register: demo_armed_check
+      changed_when: false
+      failed_when: demo_armed_check.stdout != "200"
+
+    - name: Report
+      ansible.builtin.debug:
+        msg: Button armed. One press will disarm it again.

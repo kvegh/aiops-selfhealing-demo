@@ -173,7 +173,9 @@
     var flashText = document.getElementById("flash-text");
 
     var up = null;                  // null = unknown, true/false once polled
-    var clickedThisOutage = false;
+    var armed = null;               // server-side state, not this tab's opinion
+    var nonce = null;               // read from the marker, sent as the body
+    var inFlight = false;
 
     function showFlash(msg, ms) {
         flashText.textContent = msg;
@@ -183,31 +185,77 @@
         }
     }
 
+    // Whether the button is live is decided by the server, not by whether
+    // this particular tab has clicked. One press disarms it for the whole
+    // room, so nobody can break the site again while the recovery is being
+    // explained. The presenter re-arms deliberately.
+    function applyArmedState() {
+        var btn = document.getElementById("panic-button");
+        if (!btn) { return; }
+
+        var big = btn.querySelector(".pb-big");
+        var small = btn.querySelector(".pb-small");
+
+        if (armed === false) {
+            btn.disabled = true;
+            if (big) { big.innerHTML = "DISARMED"; }
+            if (small) { small.textContent = "Ask the presenter"; }
+        } else if (armed === true && !inFlight) {
+            btn.disabled = false;
+            if (big) { big.innerHTML = "DO NOT<br>PUSH!"; }
+            if (small) { small.textContent = "Secret Red Hat Button"; }
+        }
+    }
+
     // Must be re-bound every time content.html is re-injected.
     function bindButton() {
         var btn = document.getElementById("panic-button");
         if (!btn) { return; }
 
         btn.addEventListener("click", function () {
-            if (clickedThisOutage) { return; }
-            clickedThisOutage = true;
+            if (inFlight || armed !== true) { return; }
+            inFlight = true;
             btn.disabled = true;
 
             showFlash("You pushed it.");
 
-            // nginx proxies this to the AAP job template launch endpoint and
-            // injects the token, so no credentials ever reach the browser.
-            fetch("/api/panic", { method: "POST", cache: "no-store" })
+            // nginx holds the webhook key and pins the job template, so no
+            // credential reaches the browser. The nonce makes each delivery
+            // unique: AAP hashes the body to deduplicate and would silently
+            // drop a repeat.
+            fetch("/api/panic", {
+                method: "POST",
+                cache: "no-store",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ nonce: nonce })
+            })
                 .then(function (r) {
                     if (!r.ok) { throw new Error("HTTP " + r.status); }
                     showFlash("You pushed it.", 2200);
+                    armed = false;          // the poll will confirm it
+                    applyArmedState();
                 })
                 .catch(function (err) {
-                    clickedThisOutage = false;
-                    btn.disabled = false;
                     showFlash("Fault injection failed: " + err.message, 4000);
-                });
+                })
+                .then(function () { inFlight = false; });
         });
+
+        applyArmedState();
+    }
+
+    // 200 = armed, body is the nonce. 404 = the marker is gone.
+    function pollArmed() {
+        fetch("armed?t=" + Date.now(), { cache: "no-store" })
+            .then(function (r) {
+                if (!r.ok) { armed = false; return null; }
+                return r.text();
+            })
+            .then(function (t) {
+                if (t !== null) { nonce = t.trim(); armed = true; }
+                applyArmedState();
+            })
+            .catch(function () { armed = false; applyArmedState(); });
     }
 
     function render(state, html) {
@@ -218,7 +266,8 @@
             stage.innerHTML = html;
             stage.classList.remove("is-gone");
             notfound.classList.remove("is-shown");
-            clickedThisOutage = false;      // rearmed once the site is back
+            // Deliberately does NOT re-arm. Recovery of the site is not
+            // permission to break it again — that is the server's call.
             bindButton();
         } else {
             stage.classList.add("is-gone");
@@ -239,7 +288,9 @@
     }
 
     poll();
+    pollArmed();
     setInterval(poll, POLL_MS);
+    setInterval(pollArmed, POLL_MS);
 }());
 </script>
 

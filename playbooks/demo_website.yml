@@ -26,6 +26,7 @@
 
   vars:
     demo_website_root: /var/www/redhat
+    demo_button_marker: /var/www/redhat/.armed
     # The nginx-444 jail bans any address that hits the box with an unknown
     # Host header twice in 10 minutes, for an hour. An audience member who
     # types the IP instead of the hostname would trip it — and because the
@@ -95,6 +96,19 @@
             - index.html
             - content.html
 
+        # A fresh nonce every time the demo is stood up. The page reads it
+        # and sends it as the request body, so each arming produces a
+        # distinct webhook delivery — AAP hashes the body to deduplicate
+        # and silently drops repeats.
+        - name: Arm the button
+          ansible.builtin.copy:
+            content: "{{ lookup('ansible.builtin.password', '/dev/null', length=32, chars=['ascii_letters', 'digits']) }}"
+            dest: "{{ demo_button_marker }}"
+            owner: root
+            group: root
+            mode: "0644"
+            setype: httpd_sys_content_t
+
     - name: Disable the demo
       when: demo_website_state == 'disabled'
       block:
@@ -119,6 +133,7 @@
           loop:
             - content.html
             - content.html.disabled
+            - .armed
 
     # Deliberately after the content tasks: a fail2ban problem must not stop
     # the site being put into the state that was asked for.
