@@ -253,6 +253,8 @@ nonce. Waiting for the recovered Zabbix state prevents a rapid second press
 from arriving while the original problem is still open. The web check should
 be active only during an enabled demo, so the intentionally disabled site does
 not generate a repair event.
+The Zabbix HTTP check runs every **four seconds** for faster detection and
+recovery confirmation.
 
 Zabbix sends the event value as a number (`1` for problem, `0` for recovery).
 The rule conditions use numeric comparisons; comparing these values with

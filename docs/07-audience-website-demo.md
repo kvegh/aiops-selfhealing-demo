@@ -160,7 +160,7 @@ Add this item:
 | URL | `https://demo.example.com/content.html` |
 | Method | GET |
 | Information type | Numeric unsigned (`3`) |
-| Update interval | `20s` |
+| Update interval | `4s` |
 | Timeout | `10s` |
 | Retrieve mode | Headers (`1`) |
 | Output format | Raw (`0`) |
@@ -178,7 +178,9 @@ Output:  \1
 
 Leaving required status codes at the default `200` makes a 404 sample
 unsupported instead of recording 404, so the intended trigger cannot fire.
-The interval was changed to 20 seconds at the user's request.
+The initial rehearsal used 20 seconds at the user's request. The user later
+requested four seconds for faster detection and recovery confirmation; the
+live item and this recreation setting now use `4s`.
 
 Create a single-problem trigger named **Demo website content unavailable**,
 severity High, with normal expression-based recovery:
@@ -349,7 +351,7 @@ To rehearse again, run **Enable Demo Website** and wait for success, then open
 the demo URL. Refresh a previously loaded disabled placeholder once. Keep the
 enabled tab open for subsequent rounds: press, observe failure, wait for repair
 and the button to rearm, and press again. The two-second browser polls show
-state changes automatically; the twenty-second Zabbix sampling interval and
+state changes automatically; the four-second Zabbix sampling interval and
 controller job queue add their own delay. End with **Disable Demo Website**
 and verify it succeeds. Manual monitoring switches or a separate manual arm
 job are no longer required during normal rounds.
