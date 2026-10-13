@@ -77,3 +77,17 @@ still need and consistent labels for easier browsing. No deployed template
 was changed during the current repair-flow setup.
 
 Backlog commit: `aab1238`.
+
+## Rearm after monitoring confirms recovery
+
+The audience should be able to repeat the fault-and-repair cycle without a
+presenter running Enable between presses. Rearming immediately when the repair
+job finishes could let a second press happen before Zabbix closes the first
+problem, so that press would create no new problem event. The website rulebook
+now distinguishes problem and recovery event values: the former restores
+content, while the latter launches the existing arm playbook through a job
+template. A separate action scoped to the website trigger sends recovery
+events to the same Event Stream. The arm playbook checks the content endpoint
+before issuing a fresh nonce.
+
+Implementation commit: `044bd41`.
