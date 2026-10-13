@@ -69,3 +69,11 @@ maintenance, without changing credentials during the current repair-flow
 setup. This is recorded in the design backlog.
 
 Backlog commit: `427a9a5`.
+
+## Deferred job template catalog review
+
+The user requested a later review of which templates the different demos
+still need and consistent labels for easier browsing. No deployed template
+was changed during the current repair-flow setup.
+
+Backlog commit: `aab1238`.
