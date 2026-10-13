@@ -160,6 +160,8 @@ flowchart TD
 | [`docs/todo/`](docs/todo/) | Backlog and design notes |
 | [`playbooks/`](playbooks/) | AAP project content used by the remediation templates |
 | [`assets/nginx/`](assets/nginx/) | Generic vhost example and panic-delivery cache snippets; private headers stay on the host |
+| [`assets/zabbix/`](assets/zabbix/) | Green/red/grey website status icons and a portable native-map request template |
+| [`src/`](src/) | Dependency-free status-icon generator |
 | [`extensions/eda/rulebooks/`](extensions/eda/rulebooks/) | EDA rulebooks (level routing) |
 | [`AI_Instructions_Guardrails/`](AI_Instructions_Guardrails/) | Agent guardrails (CLAUDE.md) |
 
@@ -237,6 +239,11 @@ syntax check passed; the separate local lint launcher could not import Ansible.
 
 ### Website monitoring and repair
 
+The audience button launches **Simulate Website Outage**, whose description
+is **Inject Website Fault**. The template keeps its existing ID and
+`playbooks/inject_website_fault.yml` path. Renaming it requires no change to
+nginx's ID-based webhook URL or to the repair/rearm rulebook.
+
 The website host has a static, source-restricted firewalld rule allowing the
 monitoring VM to reach TCP 443 through its VM-facing zone. This is one-time
 host networking setup, not a demo job template. Keep the monitoring address
@@ -255,6 +262,23 @@ be active only during an enabled demo, so the intentionally disabled site does
 not generate a repair event.
 The Zabbix HTTP check runs every **four seconds** for faster detection and
 recovery confirmation.
+
+For a continuous green → red → green display, open **Monitoring → Maps →
+Big Bad Button - Live Website**. This private presenter map links its green,
+red, and grey icons to the website trigger's healthy, problem, and disabled
+states. The presenter's frontend refresh is four seconds. The Problems list
+can show only recovery if its display refresh misses the short outage; the
+trigger configuration table is not the live presentation view. The website
+host's visible name is its website hostname, so it is easy to identify under
+**Monitoring → Hosts**. Its HTTP check uses the Problems column rather than a
+Zabbix-agent availability indicator.
+
+The recreation guide includes the map and frontend settings. Regenerate its
+PNG icons and matching SVG sources using Python's standard library:
+
+```bash
+python3 src/generate_status_icons.py
+```
 
 Zabbix sends the event value as a number (`1` for problem, `0` for recovery).
 The rule conditions use numeric comparisons; comparing these values with

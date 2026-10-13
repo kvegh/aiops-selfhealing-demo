@@ -2,15 +2,16 @@
 
 ## Fault-injection template — naming and permissions
 
-`Inject Website Fault` currently sits in the same project, inventory and
+`Simulate Website Outage` (description: `Inject Website Fault`) currently
+sits in the same project, inventory and
 organization as the remediation templates, which means it appears in the
 catalog the agent reads when choosing a fix. Nothing stops it being
 selected *as* a remediation except its name and description — which is
 prompting, not enforcement, and therefore the opposite of this demo's
 central claim.
 
-Shipped as-is deliberately: the obvious name is the right one for a live
-audience, and the separation is a refinement rather than a blocker.
+The audience-facing name identifies its demo role. Catalog separation remains
+a refinement for later review after the conference.
 
 To refine:
 

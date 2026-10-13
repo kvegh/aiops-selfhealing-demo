@@ -48,7 +48,7 @@ Configure a hostname-based HTTPS vhost with:
 - `/armed` as an alias to `.armed`, with a `Cache-Control: no-store` response;
 - an exact `/api/panic` location that accepts POST only, returns 423 when the
   arm marker is missing, and proxies the request body unchanged to the
-  controller's GitLab webhook URL for **Inject Website Fault**;
+  controller's GitLab webhook URL for **Simulate Website Outage**;
 - the private GitLab webhook-token header injected by nginx, with the event
   header `X-Gitlab-Event: Push Hook` and JSON content type;
 - the existing TLS and access settings for this deployment, preserved while
@@ -150,6 +150,10 @@ diagnostic packages on the appliance.
 ## 4. Create the dedicated Zabbix HTTP agent item and trigger
 
 Create a dedicated website host in a demo group, without an agent interface.
+Set its visible name to the website hostname, for example `demo.example.com`.
+The existing live host initially appeared as **Demo Website** and was renamed
+to its website hostname for easier discovery; its technical name and monitoring
+identity were retained. There was no duplicate host or additional agent.
 Add this item:
 
 | Setting | Value |
@@ -196,6 +200,61 @@ In the UI, edit the check under **Data collection → Hosts → Items**. It is a
 HTTP agent item, not a web scenario. View samples under **Monitoring → Latest
 data** and the alert under **Monitoring → Problems**. Disabled items can retain
 their last stored value; inspect their enabled/disabled status too.
+
+### Show the live green → red → green cycle
+
+For the host row, use **Monitoring → Hosts**, clear stale name/group filters,
+and find the website's visible hostname. The HTTP check contributes to its
+**Problems** column. Agent availability badges such as ZBX describe agent
+interfaces; this HTTP-only host has no agent interface.
+
+The trigger configuration list shows a snapshot. In **Monitoring → Problems**,
+select **Show: Recent problems** to retain green recovery records. A short
+outage can be repaired between slow frontend refreshes: observed follow-up
+problems lasted twelve seconds, while the presenter's refresh was thirty
+seconds. A red state can therefore be missed even though Zabbix detected it.
+For example, the EDA activation log explicitly recorded launching repair job
+1717, and that job succeeded; monitoring samples and events confirmed the
+404 → problem → 200 → recovery sequence.
+
+Use the native **Monitoring → Maps → Big Bad Button - Live Website** view for
+a persistent status indicator. The live setup is private to the presenter:
+
+1. Upload the three PNGs from [`assets/zabbix/`](../assets/zabbix/) in
+   **Administration → General → Images**, as icons named **BBB Website
+   Healthy**, **BBB Website Problem**, and **BBB Website Disabled**.
+2. Create a 900 × 480 map named **Big Bad Button - Live Website**. Make the
+   presenter its owner and keep it private.
+3. Add one **Trigger** element linked to **Demo website content unavailable**.
+   Use the green icon for the default/OK state, red for the problem state, and
+   grey for the disabled state. Disable automatic icon mapping, highlighting,
+   and recent-change blinking; keep the current color continuously visible.
+4. Place the element at x=322, y=100. Add the **WEBSITE HEALTH** title and the
+   green/red/grey legend. The portable
+   [`map.create` request template](../assets/zabbix/website-status-map.json.j2)
+   records the exact element and shape configuration. Substitute the generated
+   icon IDs and the dedicated trigger ID; keep authentication separate.
+5. Under **User settings → Profile**, set **Refresh** to `4s` and update. This
+   is a frontend setting, separate from the item's sampling interval. The live
+   change affected the presenter account's display refresh, not permissions.
+6. Open the map as a standalone view, press the audience button, and observe
+   green → red → green. Disable monitoring produces the grey state.
+
+The map and icon bindings, private ownership, and four-second profile refresh
+were read back and verified through the API. Its native screen renderer uses
+the profile refresh interval. Standard dashboard widgets offer a ten-second
+minimum refresh, so embedding the map in a dashboard widget can again miss a
+short outage. Use the standalone map for the conference presentation.
+See [map element icons](https://www.zabbix.com/documentation/7.4/en/manual/api/reference/map/object#map-element),
+[profile refresh](https://www.zabbix.com/documentation/7.4/en/manual/web_interface/user_profile),
+and [dashboard widget refresh choices](https://www.zabbix.com/documentation/7.4/en/manual/api/reference/dashboard/widget_fields/item_value).
+
+Bundled SVGs are the native geometric sources; the PNGs are used by Zabbix.
+To recreate them without installing dependencies:
+
+```bash
+python3 src/generate_status_icons.py
+```
 
 ## 5. Preserve and extend the Zabbix media integration
 
@@ -258,9 +317,15 @@ Create or reuse these normal job templates in the same organization:
 | --- | --- | --- |
 | Enable Demo Website | `playbooks/demo_website.yml` | `demo_website_state: enabled`; machine and Vault credentials |
 | Disable Demo Website | `playbooks/demo_website.yml` | `demo_website_state: disabled`; machine and Vault credentials |
-| Inject Website Fault | `playbooks/inject_website_fault.yml` | Machine credential; GitLab webhook enabled |
+| Simulate Website Outage | `playbooks/inject_website_fault.yml` | Description: `Inject Website Fault`; machine credential; GitLab webhook enabled |
 | Restore Website Content | `playbooks/restore_website_content.yml` | Machine credential |
 | Arm Demo Button | `playbooks/arm_demo_button.yml` | Machine credential |
+
+The outage template was renamed from **Inject Website Fault** to **Simulate
+Website Outage**, with **Inject Website Fault** as its description. Its existing
+ID, webhook settings, and playbook path were retained. The nginx webhook URL
+targets the template by ID; the EDA rulebook references only the repair and
+arm template names. Neither needs an update for this rename.
 
 Use the inventory host serving nginx, with the same explicit host limit and
 machine credential on all five templates. Supply deployment-specific site

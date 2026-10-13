@@ -1,0 +1,51 @@
+{
+  "name": "Big Bad Button - Live Website",
+  "width": 900,
+  "height": 480,
+  "private": 1,
+  "label_type": 0,
+  "label_location": 0,
+  "show_element_label": 0,
+  "highlight": 0,
+  "markelements": 0,
+  "selements": [
+    {
+      "elementtype": 2,
+      "elements": [{"triggerid": "{{ demo_zabbix_trigger_id }}"}],
+      "iconid_off": "{{ website_healthy_icon_id }}",
+      "iconid_on": "{{ website_problem_icon_id }}",
+      "iconid_disabled": "{{ website_disabled_icon_id }}",
+      "use_iconmap": 0,
+      "x": 322,
+      "y": 100,
+      "label": "Website",
+      "show_label": 0
+    }
+  ],
+  "shapes": [
+    {
+      "type": 0,
+      "x": 40,
+      "y": 15,
+      "width": 820,
+      "height": 65,
+      "text": "WEBSITE HEALTH",
+      "font_size": 32,
+      "font_color": "222222",
+      "border_type": 0,
+      "background_color": "FFFFFF"
+    },
+    {
+      "type": 0,
+      "x": 40,
+      "y": 410,
+      "width": 820,
+      "height": 50,
+      "text": "GREEN = OK    |    RED = PROBLEM    |    GREY = DISABLED",
+      "font_size": 20,
+      "font_color": "444444",
+      "border_type": 0,
+      "background_color": "FFFFFF"
+    }
+  ]
+}
