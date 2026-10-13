@@ -8,9 +8,8 @@
 # / "Disable Demo Website"), each pinning the state as an extra variable.
 #
 # Runs against the hypervisor, where nginx serves the site directly from
-# demo_website_root. The vhost, certificate and firewall are not managed
-# here — they are part of the host's own configuration. This playbook only
-# owns the content.
+# demo_website_root. The host owns the vhost, certificate and firewall.
+# This playbook owns the content and an isolated nginx rate-limit include.
 #
 # Disabling swaps the page rather than removing the site, so the URL keeps
 # answering 200. A deleted site looks broken to anyone holding the link and
@@ -27,6 +26,7 @@
   vars:
     demo_website_root: /var/www/redhat
     demo_button_marker: /var/www/redhat/.armed
+    demo_website_rate_limit_file: /etc/nginx/demo-website-rate-limit.conf
     # The nginx-444 jail bans any address that hits the box with an unknown
     # Host header twice in 10 minutes, for an hour. An audience member who
     # types the IP instead of the hostname would trip it — and because the
@@ -47,6 +47,12 @@
           demo_website_state must be 'enabled' or 'disabled'. Supply it from
           the job template or -e demo_website_state=... on the CLI.
         quiet: true
+
+    # The dedicated vhost includes this file in its button location.
+    # All other locations already have no limits. Emptying the include
+    # therefore removes rate limiting for the whole demo site.
+    - name: Set the demo site's rate limiting for this session
+      ansible.builtin.include_tasks: tasks/demo_website_rate_limit.yml
 
     - name: Ensure the site directory exists
       ansible.builtin.file:

@@ -1,0 +1,89 @@
+---
+- name: Read the current dedicated rate-limit include
+  ansible.builtin.slurp:
+    src: "{{ demo_website_rate_limit_file }}"
+  register: demo_previous_rate_limit
+
+- name: Disable site rate limiting while enabled, restore it while disabled
+  ansible.builtin.copy:
+    content: >-
+      {{ '# Demo enabled: no rate limiting for this site.\n'
+         if demo_website_state == 'enabled'
+         else 'limit_req zone=redhat_panic burst=1 nodelay;\nlimit_req_status 429;\n' }}
+    dest: "{{ demo_website_rate_limit_file }}"
+    owner: root
+    group: root
+    mode: "0644"
+    setype: httpd_config_t
+  register: demo_rate_limit_update
+
+- name: Apply and verify the rate-limit change
+  when: demo_rate_limit_update is changed
+  block:
+    - name: Validate the complete nginx configuration
+      ansible.builtin.command: nginx -t
+      changed_when: false
+
+    - name: Read the running nginx master PID
+      ansible.builtin.slurp:
+        src: /run/nginx.pid
+      register: demo_nginx_pid
+
+    - name: Record the current nginx workers
+      ansible.builtin.command:
+        argv:
+          - ps
+          - -o
+          - pid=
+          - --ppid
+          - "{{ demo_nginx_pid.content | b64decode | trim }}"
+      register: demo_nginx_workers_before
+      changed_when: false
+
+    - name: Reload nginx
+      ansible.builtin.systemd_service:
+        name: nginx
+        state: reloaded
+
+    # A successful reload command only proves that the signal was sent.
+    # New workers prove the master accepted the new configuration.
+    - name: Confirm nginx started workers with the new configuration
+      ansible.builtin.command:
+        argv:
+          - ps
+          - -o
+          - pid=
+          - --ppid
+          - "{{ demo_nginx_pid.content | b64decode | trim }}"
+      register: demo_nginx_workers_after
+      changed_when: false
+      until: >-
+        (demo_nginx_workers_after.stdout.split()
+         | difference(demo_nginx_workers_before.stdout.split()) | length) > 0
+      retries: 10
+      delay: 1
+
+  rescue:
+    - name: Restore the previous rate-limit include after failure
+      ansible.builtin.copy:
+        content: "{{ demo_previous_rate_limit.content | b64decode }}"
+        dest: "{{ demo_website_rate_limit_file }}"
+        owner: root
+        group: root
+        mode: "0644"
+        setype: httpd_config_t
+
+    - name: Validate the restored nginx configuration
+      ansible.builtin.command: nginx -t
+      changed_when: false
+
+    - name: Reload the restored configuration
+      ansible.builtin.systemd_service:
+        name: nginx
+        state: reloaded
+
+    - name: Report the failed rate-limit change
+      ansible.builtin.fail:
+        msg: >-
+          nginx did not apply the requested rate-limit change. The previous
+          include was restored. Inspect the failed task and nginx error log.

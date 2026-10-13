@@ -164,6 +164,57 @@ flowchart TD
 
 ## Status
 
+### Audience website lifecycle
+
+The **Enable Demo Website** and **Disable Demo Website** templates share
+`playbooks/demo_website.yml`, with `demo_website_state` pinned to `enabled`
+or `disabled`. Enable serves and arms the audience page, stops the demo's
+fail2ban jail, and removes nginx rate limiting for the entire demo site.
+Disable serves the placeholder, disarms the button, restores the jail,
+and restores the button's previous limit of two requests per minute per
+non-exempt client IP, with one additional burst request. Page loads and
+polling have no rate limit in either state. Other virtual hosts are unaffected.
+
+The host-owned demo vhost must define its dedicated `redhat_panic` zone
+using its existing client exemption map and include the following inside
+the exact `/api/panic` location, replacing the inline rate-limit directives:
+
+```nginx
+include /etc/nginx/demo-website-rate-limit.conf;
+```
+
+Create that include before running the templates. Its default disabled
+contents are:
+
+```nginx
+limit_req zone=redhat_panic burst=1 nodelay;
+limit_req_status 429;
+```
+
+Use `demo_website_rate_limit_file` to override the include path if needed.
+Keep the server-side arm-marker guard and webhook forwarding in the vhost;
+the lifecycle playbook does not replace that configuration or handle its
+secret. The rate-limit file contains no credentials. Host-specific addresses
+and credentials belong in inventory or encrypted configuration.
+
+Each changed include is validated with `nginx -t`, followed by a reload
+and a check for new worker processes. A failed change restores the previous
+include and fails the job. Changing a live shared-memory zone's key requires
+a new zone name or a restart; a successful reload command alone does not
+prove nginx accepted the change.
+
+Validate locally with the existing Ansible toolchain; no new dependencies:
+
+```bash
+ansible-playbook --syntax-check -i localhost, playbooks/demo_website.yml
+ansible-lint playbooks/tasks/demo_website_rate_limit.yml
+git diff --check
+```
+
+Validate deployed behavior by running Disable and Enable in AAP and checking
+the include's contents, worker replacement, and each template's HTTP check.
+Keep the final demo state appropriate for the next session.
+
 Working demo; documentation in progress. Failure modes and design decisions are documented deliberately — real behavior over polished success.
 
 Pull requests are welcome. For questions or ideas, open a [GitHub Issue](https://github.com/kvegh/aiops-selfhealing-demo/issues) or reach out via [GitHub](https://github.com/kvegh).

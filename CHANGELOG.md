@@ -36,6 +36,10 @@ templates, and the status page are still outstanding.
 
 ### Changed
 
+- `playbooks/demo_website.yml` — Enable removes rate limiting for the whole
+  audience site; Disable restores its previous button limit through a
+  dedicated nginx include. Reloads verify actual worker replacement.
+
 - `playbooks/run_claude_analyse_fix.yml` — the user Claude Code runs as is
   now `claude_agent_user` from inventory instead of being hardcoded.
   **Breaking:** the job template fails its assert until that variable is
