@@ -33,3 +33,12 @@ new workers because this session found that nginx can reject a configuration
 while the reload command still reports success.
 
 Implementation commit: `798dc3d916c411bec405892cc2baa9c953454d26`.
+
+## Rate-limit rendering correction
+
+The first live Disable test rejected the generated nginx include because
+escaped newline strings did not become directive separators in the controller
+execution environment. The rollback restored the prior include. Literal YAML
+newlines now separate directives, avoiding reliance on escape interpretation.
+
+Fix commit: `be885755105dab94e9f4a4153f77ba1abfe6323a`.
