@@ -241,6 +241,10 @@ from arriving while the original problem is still open. The web check should
 be active only during an enabled demo, so the intentionally disabled site does
 not generate a repair event.
 
+Zabbix sends the event value as a number (`1` for problem, `0` for recovery).
+The rule conditions use numeric comparisons; comparing these values with
+quoted strings causes an EDA rule-evaluation error and prevents repair.
+
 The live fault rehearsal passed: one audience-button POST queued the fault
 job, the monitored response changed from 200 to 404, Zabbix sent the problem
 through the existing media type and Event Stream, the new rule fired once,

@@ -8,14 +8,14 @@
         port: 5000
   rules:
     - name: Demo website content unavailable - restore content
-      condition: event.payload.event_name is search("Demo website content unavailable", ignorecase=true) and event.payload.event_value == "1"
+      condition: event.payload.event_name is search("Demo website content unavailable", ignorecase=true) and event.payload.event_value == 1
       action:
         run_job_template:
           name: "Restore Website Content"
           organization: "Default"
 
     - name: Demo website recovered - rearm button
-      condition: event.payload.event_name is search("Demo website content unavailable", ignorecase=true) and event.payload.event_value == "0"
+      condition: event.payload.event_name is search("Demo website content unavailable", ignorecase=true) and event.payload.event_value == 0
       action:
         run_job_template:
           name: "Arm Demo Button"
