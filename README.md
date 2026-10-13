@@ -194,7 +194,8 @@ limit_req_status 429;
 Use `demo_website_rate_limit_file` to override the include path if needed.
 Keep the server-side arm-marker guard and webhook forwarding in the vhost;
 the lifecycle playbook does not replace that configuration or handle its
-secret. The rate-limit file contains no credentials. Host-specific addresses
+secret. The rate-limit file contains no credentials. Its directives use
+literal YAML newlines so each occupies its own line. Host-specific addresses
 and credentials belong in inventory or encrypted configuration.
 
 Each changed include is validated with `nginx -t`, followed by a reload

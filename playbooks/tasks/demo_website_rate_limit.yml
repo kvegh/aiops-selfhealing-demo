@@ -6,10 +6,13 @@
 
 - name: Disable site rate limiting while enabled, restore it while disabled
   ansible.builtin.copy:
-    content: >-
-      {{ '# Demo enabled: no rate limiting for this site.\n'
-         if demo_website_state == 'enabled'
-         else 'limit_req zone=redhat_panic burst=1 nodelay;\nlimit_req_status 429;\n' }}
+    content: |
+      {% if demo_website_state == 'enabled' %}
+      # Demo enabled: no rate limiting for this site.
+      {% else %}
+      limit_req zone=redhat_panic burst=1 nodelay;
+      limit_req_status 429;
+      {% endif %}
     dest: "{{ demo_website_rate_limit_file }}"
     owner: root
     group: root
