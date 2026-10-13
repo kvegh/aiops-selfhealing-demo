@@ -222,6 +222,22 @@ arm-status HTTP responses, and demo fail2ban jail state. The initial malformed
 include test also exercised automatic rollback successfully. The local
 syntax check passed; the separate local lint launcher could not import Ansible.
 
+### Website monitoring and repair
+
+`playbooks/allow_demo_monitor_https.yml` installs a narrow firewalld rich
+rule on the website host: only the monitoring VM's IPv4 address may enter
+TCP 443 through the `libvirt` zone. Set `demo_monitor_source_ipv4` in the
+one-time AAP job template; do not store the address in this repository. The
+playbook checks both runtime and permanent state, adds only missing rules,
+and verifies both after applying them.
+
+`extensions/eda/rulebooks/demo-website-restore.yml` matches the dedicated
+website-content Zabbix problem event on the existing Event Stream and launches
+the existing **Restore Website Content** job template. Its trigger name is
+`Demo website content unavailable`. The web check should be active only
+during an enabled demo, so the intentionally disabled site does not generate
+a repair event.
+
 Working demo; documentation in progress. Failure modes and design decisions are documented deliberately — real behavior over polished success.
 
 Pull requests are welcome. For questions or ideas, open a [GitHub Issue](https://github.com/kvegh/aiops-selfhealing-demo/issues) or reach out via [GitHub](https://github.com/kvegh).
