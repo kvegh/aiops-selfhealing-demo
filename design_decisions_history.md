@@ -101,3 +101,19 @@ script's problem-only guard to accept recovery, while preserving the established
 Event Stream destination, authentication header, and payload handling.
 
 Rulebook fix commit: `fc075c7`.
+
+## Tie monitoring to the website lifecycle
+
+Disable now pauses the dedicated trigger and item before removing content.
+Enable waits for a fresh healthy sample before enabling the trigger and arming
+the audience button. This prevents intentional shutdown from starting a repair
+and prevents audience presses before monitoring is ready. Live lifecycle jobs
+1550 and 1552 verified the execution environment's API access and Vault setup.
+
+At the user's request, encrypted project-root `myvars` supplies the monitoring
+settings using the existing Vault credential. A standalone project checkout
+cannot read the parent repository's shared Vault. The project file contains
+only its monitoring settings. Vault-structure cleanup, token rotation, and
+template catalog review are deferred until after the conference.
+
+Implementation and integration-documentation commit: `b20aaa9`.

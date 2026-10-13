@@ -159,12 +159,16 @@ flowchart TD
 | [`docs/`](docs/) | Build guide (00 through 06), troubleshooting |
 | [`docs/todo/`](docs/todo/) | Backlog and design notes |
 | [`playbooks/`](playbooks/) | AAP project content used by the remediation templates |
+| [`assets/nginx/`](assets/nginx/) | Static panic-delivery cache snippets; private vhost headers stay on the host |
 | [`extensions/eda/rulebooks/`](extensions/eda/rulebooks/) | EDA rulebooks (level routing) |
 | [`AI_Instructions_Guardrails/`](AI_Instructions_Guardrails/) | Agent guardrails (CLAUDE.md) |
 
 ## Status
 
 ### Audience website lifecycle
+
+Use [the recreation guide](docs/07-audience-website-demo.md) for the complete
+nginx, firewall, Zabbix, Vault, controller, and EDA setup and today's test evidence.
 
 The **Enable Demo Website** and **Disable Demo Website** templates share
 `playbooks/demo_website.yml`, with `demo_website_state` pinned to `enabled`
@@ -207,7 +211,8 @@ prove nginx accepted the change.
 Validate locally with the existing Ansible toolchain; no new dependencies:
 
 ```bash
-ansible-playbook --syntax-check -i localhost, playbooks/demo_website.yml
+ansible-playbook --syntax-check --vault-password-file /path/to/vault-password -i localhost, playbooks/demo_website.yml
+node tests/browser_polling.test.js
 ansible-lint playbooks/tasks/demo_website_rate_limit.yml
 git diff --check
 ```
@@ -215,6 +220,14 @@ git diff --check
 Validate deployed behavior by running Disable and Enable in AAP and checking
 the include's contents, worker replacement, and each template's HTTP check.
 Keep the final demo state appropriate for the next session.
+
+Simultaneous presses also require the static nginx delivery-cache snippets in
+`assets/nginx/`. AAP's sequential webhook deduplication allowed a live
+concurrency race; nginx now locks delivery by POST body and shares the accepted
+202 response. Each arming has a fresh nonce, so the next round is independent.
+The ten-press rounds each produced one fault job after this fix. Keep the arm
+guard and private webhook headers when installing the snippets; the recreation
+guide has the required paths and checks.
 
 The deployed Disable → Enable → Disable sequence passed after the newline
 fix. Each state was checked for the expected rate-limit include, page and

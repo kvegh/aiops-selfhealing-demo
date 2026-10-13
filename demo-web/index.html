@@ -199,7 +199,7 @@
         if (armed === false) {
             btn.disabled = true;
             if (big) { big.innerHTML = "DISARMED"; }
-            if (small) { small.textContent = "Ask the presenter"; }
+            if (small) { small.textContent = "Waiting for recovery"; }
         } else if (armed === true && !inFlight) {
             btn.disabled = false;
             if (big) { big.innerHTML = "DO NOT<br>PUSH!"; }
@@ -230,6 +230,14 @@
                 body: JSON.stringify({ nonce: nonce })
             })
                 .then(function (r) {
+                    // Another participant may disarm the server between
+                    // this tab's last poll and its press. That is expected.
+                    if (r.status === 423) {
+                        armed = false;
+                        applyArmedState();
+                        showFlash("Someone beat you to it.", 2200);
+                        return;
+                    }
                     if (!r.ok) { throw new Error("HTTP " + r.status); }
                     showFlash("You pushed it.", 2200);
                     armed = false;          // the poll will confirm it

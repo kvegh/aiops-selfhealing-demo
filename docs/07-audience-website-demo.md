@@ -1,0 +1,350 @@
+# Recreate the audience website demo
+
+This guide records the implementation and findings from 2026-10-13. Actual
+addresses, API tokens, webhook keys, and account details belong in encrypted
+configuration or the platform's credential stores. Replace example domains,
+paths, and IDs for your deployment.
+
+## 1. What happens in one round
+
+1. Enable deploys the shell and content, starts monitoring, and arms the button.
+2. Every browser polls `/content.html` and `/armed` every two seconds.
+3. `/armed` publishes a random nonce, shared by everyone in that round.
+4. The browser POSTs `{"nonce":"<current-nonce>"}` to `/api/panic`.
+5. nginx forwards one accepted delivery for that body to the fault template.
+6. The fault job removes `.armed` and moves `content.html` aside. nginx really
+   returns 404; already-open browsers display the failure automatically.
+7. Zabbix samples the 404 and sends a problem event to the existing EDA stream.
+8. EDA launches **Restore Website Content**, which restores and verifies HTTP 200.
+9. Zabbix samples 200 and sends a recovery event to the same stream.
+10. EDA launches **Arm Demo Button**, which verifies the content and publishes
+    a fresh nonce. Open browsers enable their button again without refreshing.
+
+Content recovery and rearming are distinct steps. Rearming immediately in the
+repair job would allow a second press before Zabbix closed the first problem;
+that second outage could then produce no new problem event. Waiting for the
+Zabbix recovery event avoids this race.
+
+## 2. Static nginx host setup
+
+The demo is served directly by nginx on the hypervisor. Its dedicated vhost,
+certificate, and AAP webhook secret remain host-owned configuration. The
+lifecycle jobs manage content and a dedicated rate-limit include.
+
+Configure a hostname-based HTTPS vhost with:
+
+- the web root used by `demo_website_root`;
+- a valid certificate for that hostname, using webroot renewal so renewal does
+  not rewrite nginx configuration;
+- `/armed` as an alias to `.armed`, with a `Cache-Control: no-store` response;
+- an exact `/api/panic` location that accepts POST only, returns 423 when the
+  arm marker is missing, and proxies the request body unchanged to the
+  controller's GitLab webhook URL for **Inject Website Fault**;
+- the private GitLab webhook-token header injected by nginx, with the event
+  header `X-Gitlab-Event: Push Hook` and JSON content type;
+- the existing TLS and access settings for this deployment, preserved while
+  changing the demo location.
+
+Obtain the webhook URL and key from the fault template after enabling its
+GitLab webhook. Keep the key on the host; it must never reach the browser or
+appear in a plaintext repository export. Do not configure a constant
+`proxy_set_body`: every round needs a distinct body.
+
+### Rate-limit lifecycle
+
+Keep the existing exemption map and `redhat_panic` zone definition in the
+vhost. Replace the button's inline enforcement directives with:
+
+```nginx
+include /etc/nginx/demo-website-rate-limit.conf;
+```
+
+Create the include before the first lifecycle job. Disabled contents are:
+
+```nginx
+limit_req zone=redhat_panic burst=1 nodelay;
+limit_req_status 429;
+```
+
+Enable empties enforcement for the entire demo site. Page loads and polling
+already have no limits; other virtual hosts retain their existing limits.
+Disable restores the original button limit. This matters when conference
+participants share a single NAT address.
+
+The jobs also stop the configured demo fail2ban jail while enabled and restore
+it when disabled. Use `fail2ban-client reload` to restore a stopped jail:
+`start <jail>` cannot recreate a jail removed by `stop`. Check the jail with
+root privileges; a socket-permission error is not evidence that it is stopped.
+
+### Concurrent presses: one upstream delivery
+
+AAP's sequential webhook deduplication did not prevent simultaneous identical
+requests from creating multiple jobs in the live ten-press test. The fault
+playbook's idempotent move prevented some repeated damage, but queued duplicate
+jobs could run after recovery. Deduplicate delivery at nginx as well.
+
+Install the versioned snippets:
+
+- [`demo-website-panic-cache-http.conf`](../assets/nginx/demo-website-panic-cache-http.conf)
+  in the nginx `http` context, such as its `conf.d/` directory;
+- [`demo-website-panic-cache-location.conf`](../assets/nginx/demo-website-panic-cache-location.conf)
+  at `/etc/nginx/demo-website-panic-cache-location.conf`.
+
+Create `/var/cache/nginx/demo-website-panic`, owned by the nginx worker account,
+with mode 0750 and the appropriate SELinux cache context. Add this inside the
+existing exact panic location:
+
+```nginx
+include /etc/nginx/demo-website-panic-cache-location.conf;
+```
+
+Preserve the arm-marker guard and private forwarding headers. The cache key
+includes the POST body, and the cache lock shares a successful HTTP 202 response
+across identical simultaneous presses. Only accepted responses are cached.
+The next arm nonce makes a different key, so the next round reaches AAP.
+This is independent of client IP and request-rate enforcement. Upstream
+timeouts are shorter than the cache lock timeout to avoid normal requests
+escaping the lock before the first delivery completes.
+
+See the official [nginx proxy-cache reference](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_cache_lock)
+for lock and POST caching behavior. Back up private configuration with protected
+permissions, run `nginx -t`, reload, and verify new workers actually appear.
+The live installation used a root-only backup and rollback on validation or
+reload failure.
+
+## 3. Allow monitoring through the hypervisor's VM-facing firewall zone
+
+The monitoring VM reaches the public hostname through the VM bridge, so its
+traffic is evaluated by the hypervisor's VM-facing zone rather than its public
+zone. Public HTTPS access alone is insufficient.
+
+Add a static rich rule restricted to the monitoring VM's source address and
+TCP 443, in both runtime and permanent configuration. For example, after
+replacing placeholders:
+
+```bash
+firewall-cmd --zone=<vm-facing-zone> --add-rich-rule='rule family="ipv4" source address="<monitoring-ip>/32" port port="443" protocol="tcp" accept'
+firewall-cmd --permanent --zone=<vm-facing-zone> --add-rich-rule='rule family="ipv4" source address="<monitoring-ip>/32" port port="443" protocol="tcp" accept'
+```
+
+Query both copies of the rule, then test HTTPS from the monitoring VM. Use the
+real hostname for TLS SNI; an IP URL with only a Host header can fail before
+nginx processes HTTP. A temporary firewall job template was removed: this is
+static host setup, not a step in the demo lifecycle.
+
+On the Rocky Linux monitoring appliance, `host`, `firewall-cmd`, and `nft` were
+unavailable. Existing `iptables -S OUTPUT` and `ip route get <destination-ip>`
+showed permitted outbound traffic and the route through the hypervisor. The
+connection refusal was traced to the hypervisor zone, not fixed by installing
+diagnostic packages on the appliance.
+
+## 4. Create the dedicated Zabbix HTTP agent item and trigger
+
+Create a dedicated website host in a demo group, without an agent interface.
+Add this item:
+
+| Setting | Value |
+| --- | --- |
+| Name | `Demo website content HTTP status` |
+| Type | HTTP agent (`19` in the API) |
+| Key | `demo.website.http_status` |
+| URL | `https://demo.example.com/content.html` |
+| Method | GET |
+| Information type | Numeric unsigned (`3`) |
+| Update interval | `20s` |
+| Timeout | `10s` |
+| Retrieve mode | Headers (`1`) |
+| Output format | Raw (`0`) |
+| Required status codes | **Empty** |
+| Follow redirects | Enabled |
+| Verify peer and host | Enabled |
+| History / trends | `31d` / `365d` |
+
+Add regular-expression preprocessing to extract the status code:
+
+```text
+Pattern: ^HTTP/\S+[ \t]+([0-9]{3})
+Output:  \1
+```
+
+Leaving required status codes at the default `200` makes a 404 sample
+unsupported instead of recording 404, so the intended trigger cannot fire.
+The interval was changed to 20 seconds at the user's request.
+
+Create a single-problem trigger named **Demo website content unavailable**,
+severity High, with normal expression-based recovery:
+
+```text
+last(/<website-host>/demo.website.http_status)<>200
+```
+
+Record the generated item and trigger IDs in encrypted `myvars`. Confirm a
+healthy sample is 200 before enabling the trigger.
+
+In the UI, edit the check under **Data collection → Hosts → Items**. It is an
+HTTP agent item, not a web scenario. View samples under **Monitoring → Latest
+data** and the alert under **Monitoring → Problems**. Disabled items can retain
+their last stored value; inspect their enabled/disabled status too.
+
+## 5. Preserve and extend the Zabbix media integration
+
+Use the existing **Event-Driven Ansible** media type and the existing AAP Event
+Stream. The complete modifications are in
+[integration guide section 7](06-eda-zabbix-integration.md#update-media-type-parameters-for-event-streams):
+
+1. Set `endpoint` to the gateway Event Stream path; user media **Send to** holds
+   only the base URL.
+2. Retain the added `eda_username` and `eda_password` parameters and Basic Auth
+   header in `sendMessage`.
+3. Extend the stock event-value guard to accept both problem `1` and recovery
+   `0`, retaining the trigger-source restriction and existing payload handling.
+
+The stock problem-only guard initially rejected recovery with “Only
+trigger-based events of problem are supported.” Changing only that validation
+preserved the previous Event Stream patch. Verify delivery using Zabbix alert
+status: sent with no error, rather than merely finding the alert record.
+Alerts that exhausted their retries before the change require a fresh cycle
+for validation. Reimporting a stock media type can overwrite these changes.
+
+Keep the existing problem action. Add a separate action filtered by the
+website's trigger ID with a recovery operation sending a message to the same
+Zabbix user through this media type. A recovery-only action was verified to
+deliver successfully; it needs no extra duplicate problem operation.
+
+Zabbix MCP access in this deployment is read-only. Setup writes use the
+authenticated Zabbix JSON-RPC API. The appliance reported version 7.4.12.
+The API token worked; a UI filter initially hid it from the user. No token was
+rotated during this work.
+
+## 6. Vault and AAP controller setup
+
+Create `myvars` in this repository's root as a fully Ansible Vault-encrypted
+file containing:
+
+```yaml
+demo_zabbix_api_url: "http://monitoring.example.com/api_jsonrpc.php"
+demo_zabbix_api_token: "<api-token>"
+demo_zabbix_item_id: "<created-item-id>"
+demo_zabbix_trigger_id: "<created-trigger-id>"
+```
+
+Use the existing Vault password convention and attach the existing Vault
+credential to the two lifecycle templates. This repo's standalone AAP checkout
+cannot load the shared `myvars` from its parent repository. The project-specific
+file contains only monitoring settings, not a copy of every shared secret.
+Do not commit a decrypted file. A custom credential type was considered, then
+replaced with this Vault approach at the user's request; none was created.
+
+The local Vault password file was verified against the shared Vault and used
+to encrypt the project file without printing either secret. A local Ansible
+temporary-directory error occurred before decryption; using a private writable
+temporary directory resolved it. Use the installed RPM Ansible binaries.
+
+Create or reuse these normal job templates in the same organization:
+
+| Template | Playbook | Fixed variables / credentials |
+| --- | --- | --- |
+| Enable Demo Website | `playbooks/demo_website.yml` | `demo_website_state: enabled`; machine and Vault credentials |
+| Disable Demo Website | `playbooks/demo_website.yml` | `demo_website_state: disabled`; machine and Vault credentials |
+| Inject Website Fault | `playbooks/inject_website_fault.yml` | Machine credential; GitLab webhook enabled |
+| Restore Website Content | `playbooks/restore_website_content.yml` | Machine credential |
+| Arm Demo Button | `playbooks/arm_demo_button.yml` | Machine credential |
+
+Use the inventory host serving nginx, with the same explicit host limit and
+machine credential on all five templates. Supply deployment-specific site
+settings through inventory or encrypted configuration. The supplied content
+checks use the deployed demo's hostname; adapt their `curl --resolve` hostname
+and URL together for another deployment. Loopback resolution avoids relying
+on NAT hairpin access from the web server itself.
+
+Sync the project before assigning a newly added playbook to a template:
+controller validates against its last synced file list. Verify sync completion
+and revision. Agent-side Git operations use SSH; AAP's SCM URL remains HTTPS.
+Existing credential attachment and project sync used controller REST where the
+MCP lacked the required operation; job launches and results used AAP MCP.
+
+Disable disarms first, disables the trigger and item, then puts the page away
+and restores rate limiting and fail2ban. Enable disarms during transition,
+pauses the trigger, deploys and verifies content, resumes the item, waits for
+a **fresh** 200 sample, enables the trigger, and finally arms. API calls run
+inside the execution environment with `no_log: true`. Both paths were tested
+through AAP, confirming the execution environment can reach the API and
+decrypt the Vault file.
+
+## 7. Import and activate the website rulebook
+
+Commit and push [`demo-website-restore.yml`](../extensions/eda/rulebooks/demo-website-restore.yml),
+sync the EDA project, and verify the imported rulebook contains both rules.
+Create its activation using the existing decision environment, controller
+credential, organization, and Event Stream. Map the single source to the same
+stream already used by Zabbix. The webhook source declaration is a placeholder
+replaced by AAP's Event Stream mapping at runtime.
+
+The two rules match the fixed website trigger name and numeric event values:
+
+- `1`: **Restore Website Content**;
+- `0`: **Arm Demo Button**.
+
+Quoted values (`"1"` and `"0"`) caused live EDA errors comparing `int` with
+`str`; changing to numeric comparisons fixed them. Activation summary counters
+were insufficient to diagnose this failure: the event had arrived, and the
+activation-instance logs contained the actual evaluation error. After changing
+a rulebook, sync its project and restart its activation, then check the new
+instance is running and has the current rules. Inspect launch logs and actual
+controller job outcomes.
+
+## 8. Validation and observed results
+
+Local checks use existing binaries and no installed dependencies:
+
+```bash
+ansible-playbook --syntax-check --vault-password-file /path/to/vault-password -i localhost, playbooks/demo_website.yml
+node tests/browser_polling.test.js
+git diff --check
+```
+
+The Node harness runs the actual page script with simulated DOM and HTTP
+responses. It verifies two-second polling, failure and recovery transitions,
+waiting for server rearming, fresh nonces across rounds, and a benign message
+for HTTP 423. It checks behavior, not browser rendering. The user also observed
+the live page switching to failure without refreshing.
+
+| Live rehearsal | Result |
+| --- | --- |
+| nginx body forwarding, jobs 1486 / 1488 | Distinct JSON bodies returned 202 and both fault jobs completed |
+| Rate-limit lifecycle, jobs 1494 / 1496 / 1498 | Disable → Enable → Disable passed; initial malformed include was rolled back and corrected |
+| Initial Zabbix → EDA repair, jobs 1504 / 1506 | Actual 200 → 404 → 200 and successful repair |
+| Automatic rounds 1537 / 1539 / 1541 and 1543 / 1545 / 1547 | Fault → repair → recovery-driven rearm passed twice |
+| Monitoring lifecycle, jobs 1550 / 1552 | Disabled item/trigger and restored healthy enabled state verified |
+| First simultaneous ten-press test | Nine fault jobs were created; three completed and six queued duplicates were cancelled; repair/rearm completed |
+| nginx cache-lock rounds 1568 / 1570 / 1572 and 1574 / 1576 / 1578 | Ten HTTP 202 responses per round; exactly one fault, one repair, and one rearm job per round |
+
+The final sequence with the updated browser messages is pending. It must run
+Disable → Enable → two ten-press automatic rounds → Disable. Check monitoring
+status, content and arm HTTP responses, rate-limit include, fail2ban jail,
+Zabbix sent alerts, EDA launch logs, and completed job results. Leave the demo
+disabled after rehearsal as requested.
+
+## 9. Operational lessons and deferred work
+
+- `nginx -t` and a successful reload command do not prove the running master
+  accepted a change. A live zone-key change was rejected by the master while
+  the reload command succeeded; a restart was required. Prefer a new zone name
+  for changed keys, and inspect worker replacement and the error log.
+- The missing panic file-test guard was restored. A disarmed endpoint returned
+  423. A late concurrent press now gets a benign browser message rather than
+  an injection-failed message.
+- Repair verifies content and can redeploy it when the aside copy is missing.
+  Fault injection removes the marker before moving content; repeated moves
+  safely do nothing when content is already absent.
+- The disabled placeholder is intentionally inert. After Enable, refresh a
+  previously loaded placeholder once. Keep the enabled tab open for repeated
+  automatic failure/recovery rounds.
+- Raw-content CDN caching can delay visible Git changes; verify AAP's synced
+  commit rather than assuming an unpinned raw URL is current.
+- Rotate integration tokens later; review and label the job-template catalog
+  later; clean up the shared/project-specific Vault structure later.
+- Status UI enhancements, full nginx configuration management, and the parent
+  repo's stale submodule pointer remain deferred after the conference.
+
+These follow-ups are tracked in [the design backlog](todo/demo-design.md).
