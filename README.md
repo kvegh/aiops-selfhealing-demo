@@ -263,6 +263,8 @@ repair jobs 1539 and 1545, and recovery-driven arm jobs 1541 and 1547 all
 succeeded. Both problem and recovery notifications were delivered successfully.
 The shell polls content and arm state every two seconds, so open browsers
 show failure, recovery, and the rearmed button without a page refresh.
+The outage view displays a large **OMG, PANIC, it is KAPUTT!!!** message
+and retains the detection timestamp.
 
 The Zabbix media script needs the Event Stream endpoint, Basic Auth header,
 and recovery-event validation documented in

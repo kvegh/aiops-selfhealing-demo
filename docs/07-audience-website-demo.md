@@ -14,6 +14,8 @@ paths, and IDs for your deployment.
 5. nginx forwards one accepted delivery for that body to the fault template.
 6. The fault job removes `.armed` and moves `content.html` aside. nginx really
    returns 404; already-open browsers display the failure automatically.
+   The outage view says **OMG, PANIC, it is KAPUTT!!!** in large letters and
+   keeps the **Outage detected at …** timestamp.
 7. Zabbix samples the 404 and sends a problem event to the existing EDA stream.
 8. EDA launches **Restore Website Content**, which restores and verifies HTTP 200.
 9. Zabbix samples 200 and sends a recovery event to the same stream.

@@ -39,7 +39,7 @@
 
     #notfound {
         display: none;
-        padding: 17vh 24px;
+        padding: 10vh 24px;
         text-align: center;
         font-family: var(--mono);
     }
@@ -81,10 +81,12 @@
         color: #ee0000;
     }
 
-    #notfound .hr code {
-        font-family: var(--mono);
-        font-size: 0.92em;
-        word-break: break-all;
+    #notfound .hr .panic {
+        font-family: var(--sans);
+        font-size: clamp(36px, 7vw, 96px);
+        font-weight: 900;
+        letter-spacing: -0.025em;
+        line-height: 1.1;
     }
 
     #notfound .server {
@@ -151,7 +153,7 @@
     <h1>404</h1>
     <p class="sub">Not Found</p>
     <div class="hr">
-        <p>The requested URL <code>/redhat/content.html</code> was not found on this server.</p>
+        <p class="panic">OMG, PANIC, it is KAPUTT!!!</p>
         <p id="nf-note">&nbsp;</p>
     </div>
     <p class="watching"><span class="dot"></span>Monitoring has been notified</p>
