@@ -266,8 +266,8 @@
             stage.innerHTML = html;
             stage.classList.remove("is-gone");
             notfound.classList.remove("is-shown");
-            // Deliberately does NOT re-arm. Recovery of the site is not
-            // permission to break it again — that is the server's call.
+            // Recovery alone does not re-arm. The server publishes a fresh
+            // nonce after monitoring confirms the site is healthy.
             bindButton();
         } else {
             stage.classList.add("is-gone");

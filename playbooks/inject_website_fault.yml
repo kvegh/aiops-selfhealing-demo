@@ -20,10 +20,9 @@
   tasks:
     # First, and deliberately so. Removing the marker makes nginx answer
     # 423 on /api/panic, which disarms every phone in the room at once —
-    # including the ones still holding the page open after the agent has
-    # healed the site. Without this, the audience can break it again
-    # while the recovery is being explained. Re-arming is a separate,
-    # presenter-initiated job template.
+    # including the ones still holding the page open. Without this, the
+    # audience could break it again while Zabbix still has an open problem.
+    # EDA rearms only after Zabbix observes recovery.
     - name: Disarm the button
       ansible.builtin.file:
         path: "{{ demo_button_marker }}"

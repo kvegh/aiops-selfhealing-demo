@@ -232,17 +232,22 @@ out of this repository.
 `extensions/eda/rulebooks/demo-website-restore.yml` matches the dedicated
 website-content Zabbix problem event on the existing Event Stream and launches
 the existing **Restore Website Content** job template. Its trigger name is
-`Demo website content unavailable`. The web check should be active only
-during an enabled demo, so the intentionally disabled site does not generate
-a repair event.
+`Demo website content unavailable`. A separate Zabbix action restricted to
+that trigger sends the recovery event to the same stream. The rulebook routes
+only the problem event to repair and only the recovery event to **Arm Demo
+Button**. That job confirms the content is still served, then writes a fresh
+nonce. Waiting for the recovered Zabbix state prevents a rapid second press
+from arriving while the original problem is still open. The web check should
+be active only during an enabled demo, so the intentionally disabled site does
+not generate a repair event.
 
 The live fault rehearsal passed: one audience-button POST queued the fault
 job, the monitored response changed from 200 to 404, Zabbix sent the problem
 through the existing media type and Event Stream, the new rule fired once,
 and **Restore Website Content** completed. The check then returned to 200 and
-the Zabbix problem recovered. The button remains disarmed after repair until
-the next deliberate arming. Monitoring enable/disable is still manual around
-the website lifecycle.
+the Zabbix problem recovered. This rehearsal preceded automatic rearming;
+the recovery-to-arm path must be validated separately. Monitoring
+enable/disable is still manual around the website lifecycle.
 
 Working demo; documentation in progress. Failure modes and design decisions are documented deliberately — real behavior over polished success.
 
