@@ -113,3 +113,9 @@ Open question: AAP would gate *starting* CloudCLI, not *using* it. Once running,
 - **Indented code blocks** should be fenced with language tags, as everywhere else in the docs.
 - **The WS status code list** could be a table, matching the triage table directly above it.
 - **No links into doc 05** — cross-references to the architecture, the split-auth table for the `401` row, and the `HOST=` rationale for the bind note would save readers re-deriving what is already documented.
+
+## Rotate integration tokens
+
+Later, rotate all tokens used by the demo integrations, then update the
+corresponding secret stores and verify each connection. Do this as a planned
+maintenance task; do not interrupt the current monitoring and repair setup.
