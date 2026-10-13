@@ -236,6 +236,14 @@ the existing **Restore Website Content** job template. Its trigger name is
 during an enabled demo, so the intentionally disabled site does not generate
 a repair event.
 
+The live fault rehearsal passed: one audience-button POST queued the fault
+job, the monitored response changed from 200 to 404, Zabbix sent the problem
+through the existing media type and Event Stream, the new rule fired once,
+and **Restore Website Content** completed. The check then returned to 200 and
+the Zabbix problem recovered. The button remains disarmed after repair until
+the next deliberate arming. Monitoring enable/disable is still manual around
+the website lifecycle.
+
 Working demo; documentation in progress. Failure modes and design decisions are documented deliberately — real behavior over polished success.
 
 Pull requests are welcome. For questions or ideas, open a [GitHub Issue](https://github.com/kvegh/aiops-selfhealing-demo/issues) or reach out via [GitHub](https://github.com/kvegh).
