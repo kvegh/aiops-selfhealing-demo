@@ -165,3 +165,14 @@ end-to-end rehearsal. Deployment uses the existing Enable template.
 Enable job 1616 deployed the change successfully from revision `ce0b102`.
 
 Implementation commit: `1e7bcfd`.
+
+## Shorten website monitoring to four seconds
+
+The user requested faster website checks after the twenty-second rehearsal.
+The dedicated HTTP agent item's interval was changed through the Zabbix API to
+`4s`, retaining its enabled status. Readback confirmed the setting, and five
+recent HTTP 200 samples were recorded four seconds apart. The recreation guide
+and README now specify the new interval; earlier rehearsal results remain
+historical evidence of the twenty-second configuration.
+
+Configuration documentation commit: `4b447fd`.
