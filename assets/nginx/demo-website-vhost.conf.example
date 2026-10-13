@@ -1,0 +1,60 @@
+# Deployment example, not a file to load unchanged. Replace example domains,
+# certificate paths, template ID, and webhook key in protected host config.
+# Install the HTTP cache snippet separately in nginx's http context.
+geo $redhat_panic_exempt {
+    default 0;
+    127.0.0.0/8 1;
+    # Preserve your existing trusted subnet exemptions here.
+}
+map $redhat_panic_exempt $redhat_panic_key {
+    1 "";
+    0 $binary_remote_addr;
+}
+limit_req_zone $redhat_panic_key zone=redhat_panic:10m rate=2r/m;
+
+server {
+    listen 80;
+    server_name demo.example.com;
+    location /.well-known/acme-challenge/ {
+        root /var/lib/letsencrypt;
+    }
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    server_name demo.example.com;
+    ssl_certificate /etc/letsencrypt/live/demo.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/demo.example.com/privkey.pem;
+    add_header Strict-Transport-Security "max-age=300" always;
+    root /var/www/redhat;
+    index index.html;
+
+    location = /favicon.ico {
+        access_log off;
+        log_not_found off;
+    }
+    location = /armed {
+        alias /var/www/redhat/.armed;
+        default_type text/plain;
+        add_header Cache-Control "no-store" always;
+        add_header Strict-Transport-Security "max-age=300" always;
+    }
+    location = /api/panic {
+        include /etc/nginx/demo-website-rate-limit.conf;
+        include /etc/nginx/demo-website-panic-cache-location.conf;
+        if (!-f /var/www/redhat/.armed) { return 423; }
+        limit_except POST { deny all; }
+        proxy_set_header X-Gitlab-Token "<private-webhook-key>";
+        proxy_set_header X-Gitlab-Event "Push Hook";
+        proxy_set_header Content-Type "application/json";
+        proxy_http_version 1.1;
+        proxy_pass https://automation.example.com/api/controller/v2/job_templates/<fault-template-id>/gitlab/;
+        # Use a hostname matching the upstream certificate and trusted CA.
+        proxy_ssl_server_name on;
+        proxy_ssl_verify on;
+        proxy_ssl_trusted_certificate /etc/pki/tls/certs/ca-bundle.crt;
+    }
+}

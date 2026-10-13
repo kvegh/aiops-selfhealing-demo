@@ -31,6 +31,13 @@ The demo is served directly by nginx on the hypervisor. Its dedicated vhost,
 certificate, and AAP webhook secret remain host-owned configuration. The
 lifecycle jobs manage content and a dedicated rate-limit include.
 
+Use the [generic vhost example](../assets/nginx/demo-website-vhost.conf.example)
+as a deployment reference. Substitute your values in protected host
+configuration, provision the certificate and cache includes, and validate
+before loading it. The example uses verified upstream TLS with a matching
+controller hostname; the live cache change preserved the existing upstream
+TLS settings. It is a reference, not a replacement for other host vhosts.
+
 Configure a hostname-based HTTPS vhost with:
 
 - the web root used by `demo_website_root`;
@@ -214,7 +221,8 @@ deliver successfully; it needs no extra duplicate problem operation.
 Zabbix MCP access in this deployment is read-only. Setup writes use the
 authenticated Zabbix JSON-RPC API. The appliance reported version 7.4.12.
 The API token worked; a UI filter initially hid it from the user. No token was
-rotated during this work.
+rotated during this work. The API and the user confirmed three active tokens
+after removing the UI filter.
 
 ## 6. Vault and AAP controller setup
 
@@ -309,6 +317,10 @@ waiting for server rearming, fresh nonces across rounds, and a benign message
 for HTTP 423. It checks behavior, not browser rendering. The user also observed
 the live page switching to failure without refreshing.
 
+Stress requests used SSH and loopback hostname resolution on the web server;
+the Zabbix check used the actual monitoring VM's HTTPS route. This verifies
+webhook concurrency and the monitoring chain rather than Wi-Fi throughput.
+
 | Live rehearsal | Result |
 | --- | --- |
 | nginx body forwarding, jobs 1486 / 1488 | Distinct JSON bodies returned 202 and both fault jobs completed |
@@ -318,12 +330,26 @@ the live page switching to failure without refreshing.
 | Monitoring lifecycle, jobs 1550 / 1552 | Disabled item/trigger and restored healthy enabled state verified |
 | First simultaneous ten-press test | Nine fault jobs were created; three completed and six queued duplicates were cancelled; repair/rearm completed |
 | nginx cache-lock rounds 1568 / 1570 / 1572 and 1574 / 1576 / 1578 | Ten HTTP 202 responses per round; exactly one fault, one repair, and one rearm job per round |
+| Final Disable 1581 → Enable 1583 | Both succeeded with the deployed browser update and Vault-backed monitoring lifecycle |
+| Final rounds 1585 / 1587 / 1589 and 1591 / 1593 / 1595 | Ten concurrent 202 responses in each round; one fault, repair, and automatic rearm per round; fresh nonce in the second round; late presses returned 423 |
+| Final Disable 1597 | Successful; placeholder 200, content/arm 404, panic 423, marker absent, item/trigger disabled, rate limit restored, jail running |
 
-The final sequence with the updated browser messages is pending. It must run
-Disable → Enable → two ten-press automatic rounds → Disable. Check monitoring
-status, content and arm HTTP responses, rate-limit include, fail2ban jail,
-Zabbix sent alerts, EDA launch logs, and completed job results. Leave the demo
-disabled after rehearsal as requested.
+The complete final sequence passed and the demo was left disabled as requested.
+Zabbix alerts 77–80 were sent with no errors for the two final problem/recovery
+pairs. Activation-instance logs confirmed EDA launched jobs 1587, 1589, 1593,
+and 1595; all completed successfully. Final monitoring status was disabled and
+the trigger was healthy. The last stored 200 remains visible while the item
+is disabled; it does not mean the intentionally removed content is being
+sampled.
+
+To rehearse again, run **Enable Demo Website** and wait for success, then open
+the demo URL. Refresh a previously loaded disabled placeholder once. Keep the
+enabled tab open for subsequent rounds: press, observe failure, wait for repair
+and the button to rearm, and press again. The two-second browser polls show
+state changes automatically; the twenty-second Zabbix sampling interval and
+controller job queue add their own delay. End with **Disable Demo Website**
+and verify it succeeds. Manual monitoring switches or a separate manual arm
+job are no longer required during normal rounds.
 
 ## 9. Operational lessons and deferred work
 
@@ -334,6 +360,8 @@ disabled after rehearsal as requested.
 - The missing panic file-test guard was restored. A disarmed endpoint returned
   423. A late concurrent press now gets a benign browser message rather than
   an injection-failed message.
+- The panic endpoint expects JSON containing the nonce. A test posting only
+  the raw nonce returned 400; the correct browser-format JSON returned 202.
 - Repair verifies content and can redeploy it when the aside copy is missing.
   Fault injection removes the marker before moving content; repeated moves
   safely do nothing when content is already absent.
@@ -344,6 +372,9 @@ disabled after rehearsal as requested.
   commit rather than assuming an unpinned raw URL is current.
 - Rotate integration tokens later; review and label the job-template catalog
   later; clean up the shared/project-specific Vault structure later.
+- A diagnostic configuration dump exposed the private webhook header in tool
+  output earlier in the session. Its value is omitted from this guide; rotate
+  it together with its nginx setting during the planned token maintenance.
 - Status UI enhancements, full nginx configuration management, and the parent
   repo's stale submodule pointer remain deferred after the conference.
 

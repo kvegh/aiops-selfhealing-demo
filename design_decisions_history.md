@@ -117,3 +117,39 @@ only its monitoring settings. Vault-structure cleanup, token rotation, and
 template catalog review are deferred until after the conference.
 
 Implementation and integration-documentation commit: `b20aaa9`.
+
+## Share concurrent audience deliveries at nginx
+
+Ten simultaneous requests with the same arming nonce created nine fault jobs
+despite AAP's sequential deduplication. Queued duplicates could outlive the
+outage and inject another fault after recovery, so six queued test jobs were
+cancelled. A dedicated nginx POST cache and cache lock now share one accepted
+upstream delivery for each request body. Each automatic rearm produces a new
+nonce and cache key. Two subsequent ten-request rounds each created exactly
+one successful fault job, repair job, and rearm job.
+
+The nginx snippets are versioned without private vhost headers. Live deployment
+preserved existing access restrictions and forwarding, used a private backup,
+validated nginx, and verified worker replacement. The browser now treats a 423
+race as another participant pressing first and displays an automatic-recovery
+message. A test of the actual page script verifies repeated transitions and
+nonce changes without a page refresh. The recreation guide records today's
+setup, troubleshooting, and validation, with environment-specific values kept
+in encrypted configuration.
+
+Implementation commit: `b49a988`.
+
+## Final conference reliability rehearsal
+
+The deployed lifecycle and concurrency fixes passed Disable 1581, Enable 1583,
+two ten-request automatic rounds (1585/1587/1589 and 1591/1593/1595), and final
+Disable 1597. Each round created one fault, repair, and recovery-driven rearm
+job. Twenty simultaneous-round requests returned 202; late presses returned
+the expected 423. Zabbix sent both event types without error and EDA logs
+confirmed the repair and arm launches. The final placeholder, disarmed panic
+endpoint, disabled monitoring, restored limit, and restored jail were verified.
+
+The recreation guide includes the integration patches, protected Vault setup,
+source-controlled cache snippets, a generic vhost example, operational lessons,
+and test evidence. Optional improvements remain deferred after the conference.
+Validated implementation commits: `fc075c7`, `b20aaa9`, and `b49a988`.

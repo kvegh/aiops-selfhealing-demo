@@ -159,7 +159,7 @@ flowchart TD
 | [`docs/`](docs/) | Build guide (00 through 06), troubleshooting |
 | [`docs/todo/`](docs/todo/) | Backlog and design notes |
 | [`playbooks/`](playbooks/) | AAP project content used by the remediation templates |
-| [`assets/nginx/`](assets/nginx/) | Static panic-delivery cache snippets; private vhost headers stay on the host |
+| [`assets/nginx/`](assets/nginx/) | Generic vhost example and panic-delivery cache snippets; private headers stay on the host |
 | [`extensions/eda/rulebooks/`](extensions/eda/rulebooks/) | EDA rulebooks (level routing) |
 | [`AI_Instructions_Guardrails/`](AI_Instructions_Guardrails/) | Agent guardrails (CLAUDE.md) |
 
@@ -287,7 +287,14 @@ Disable disarms the button and disables the trigger and item before removing
 content. Enable holds the button disarmed, deploys and verifies the content,
 resumes sampling, waits for a fresh Zabbix 200, enables the trigger, and finally
 arms the button. A monitoring API failure fails the job with protected logging.
-The final lifecycle rehearsal is pending.
+The final Disable (1581) → Enable (1583) → two ten-press rounds → Disable
+(1597) rehearsal passed. The rounds produced exactly one fault/repair/rearm
+chain each: 1585/1587/1589 and 1591/1593/1595. All twenty concurrent requests
+returned 202, and late presses while disarmed returned the expected 423.
+Zabbix delivered both problem and recovery notifications for each round, and
+EDA logs confirmed all repair and rearm launches. Final checks found the
+placeholder at 200, content and arm endpoints at 404, panic at 423, monitoring
+disabled, rate limiting restored, and the fail2ban jail running.
 
 Working demo; documentation in progress. Failure modes and design decisions are documented deliberately — real behavior over polished success.
 
