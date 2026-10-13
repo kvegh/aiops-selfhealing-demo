@@ -42,3 +42,7 @@ execution environment. The rollback restored the prior include. Literal YAML
 newlines now separate directives, avoiding reliance on escape interpretation.
 
 Fix commit: `be885755105dab94e9f4a4153f77ba1abfe6323a`.
+
+The corrected live Disable → Enable → Disable sequence passed. nginx accepted
+the include changes, the expected HTTP and arm-state checks passed, and the
+demo-specific fail2ban jail was restored at the end. The site was left disabled.

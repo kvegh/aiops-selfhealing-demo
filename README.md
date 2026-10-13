@@ -216,6 +216,12 @@ Validate deployed behavior by running Disable and Enable in AAP and checking
 the include's contents, worker replacement, and each template's HTTP check.
 Keep the final demo state appropriate for the next session.
 
+The deployed Disable → Enable → Disable sequence passed after the newline
+fix. Each state was checked for the expected rate-limit include, page and
+arm-status HTTP responses, and demo fail2ban jail state. The initial malformed
+include test also exercised automatic rollback successfully. The local
+syntax check passed; the separate local lint launcher could not import Ansible.
+
 Working demo; documentation in progress. Failure modes and design decisions are documented deliberately — real behavior over polished success.
 
 Pull requests are welcome. For questions or ideas, open a [GitHub Issue](https://github.com/kvegh/aiops-selfhealing-demo/issues) or reach out via [GitHub](https://github.com/kvegh).
