@@ -176,3 +176,36 @@ and README now specify the new interval; earlier rehearsal results remain
 historical evidence of the twenty-second configuration.
 
 Configuration documentation commit: `4b447fd`.
+
+## Make website health visible throughout the demo
+
+The user needed a persistent green → red → green indicator. Short outages
+were detected and repaired in twelve seconds, while a thirty-second frontend
+refresh could miss the problem and show only the recovered record. A private
+native Zabbix map now links one trigger element to green healthy, red problem,
+and grey disabled icons. The presenter's profile refresh was changed to four
+seconds. Standard dashboard widgets have a ten-second minimum refresh, so
+the standalone map is the presentation view.
+
+The existing website host's visible name was changed to its website hostname
+for easier discovery under Monitoring → Hosts. Its technical identity and
+HTTP check were retained. Map bindings, ownership, and profile refresh were
+verified through API readback. The user confirmed the live-map icons looked
+good. The repository includes the PNGs, matching SVGs, a standard-library
+generator, and a generic map-create template with recreation instructions.
+The generator and JSON template validation completed successfully.
+
+Configuration documentation and asset commit: `964f666`.
+
+## Rename the audience outage job template
+
+At the user's request, the fault template is now named Simulate Website
+Outage, with Inject Website Fault as its exact description. Only its name
+and description were changed through the controller API. Readback confirmed
+the rename and retained template ID, playbook path, webhook service, and
+execution settings. The button's webhook references the ID, and the EDA
+rulebook names only the repair and arm templates, so no nginx or rulebook
+change was required. Current documentation and backlog references use the
+new name; the original playbook filename is retained.
+
+Configuration documentation commit: `964f666`.
