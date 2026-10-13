@@ -91,3 +91,13 @@ events to the same Event Stream. The arm playbook checks the content endpoint
 before issuing a fresh nonce.
 
 Implementation commit: `044bd41`.
+
+## Compare numeric Zabbix event values
+
+Live EDA logs showed that comparing a numeric event value with a quoted string
+prevented both website rules from firing. Numeric comparisons restored problem
+handling. Recovery delivery also required extending the existing Zabbix media
+script's problem-only guard to accept recovery, while preserving the established
+Event Stream destination, authentication header, and payload handling.
+
+Rulebook fix commit: `fc075c7`.

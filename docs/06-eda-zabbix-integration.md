@@ -2,11 +2,10 @@
 
 This section connects Zabbix to Event-Driven Ansible so that alerts
 automatically trigger the Claude agent via AAP. Zabbix ships a native
-**Event-Driven Ansible** media type -- no custom scripts or JavaScript
-required. However, Zabbix's built-in EDA media type does not yet
-support AAP 2.7 Event Streams directly, so we tune the existing media
-type and media settings to post to an Event Stream endpoint instead of
-a raw webhook listener.
+**Event-Driven Ansible** media type. We customize its existing script and
+parameters for AAP 2.7 Event Stream authentication and for website recovery
+events. The destination is an Event Stream endpoint rather than a raw webhook
+listener.
 
 AAP 2.7 uses **Event Streams** -- authenticated, gateway-managed
 endpoints that replace raw `ansible.eda.webhook` port listeners. No
@@ -245,7 +244,31 @@ Add this line immediately **before** it:
 request.addHeader('Authorization: Basic ' + btoa(Eda.params.eda_username + ':' + Eda.params.eda_password));
 ```
 
-Save the media type.
+**c) Accept recovery events for automatic website rearming.**
+
+The stock script rejects trigger events whose `event_value` is not `1`.
+That prevents recovery notifications (`0`) from reaching EDA. In `setParams`,
+replace the problem-only event-value check with:
+
+```javascript
+if (params.event_source == 0 && params.event_value != 0 && params.event_value != 1) {
+    throw ('Incorrect "event_value" parameter given: "' + params.event_value
+        + '".\nOnly trigger-based problem and recovery events are supported');
+}
+```
+
+Keep the separate trigger-source check, Event Stream endpoint parameter,
+Basic Auth header, and payload handling. Save the media type. Reimporting a
+stock media type can overwrite these customizations; reapply all three changes
+when redeploying and verify both problem and recovery delivery.
+
+The website uses a separate action restricted to its content trigger, with a
+recovery operation sending through this same media type to the same Event
+Stream. Existing problem actions continue to send problem events. The website
+rulebook compares the numeric payload values: `1` launches **Restore Website
+Content**, and `0` launches **Arm Demo Button** after Zabbix has observed HTTP
+200. The script converts these fields to numbers, so quoted rulebook
+comparisons cause EDA type errors.
 
 > **URL split:** The script concatenates the user media's **Send to**
 > field with the media type's `endpoint` parameter. The **Send to**

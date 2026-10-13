@@ -187,8 +187,8 @@
 
     // Whether the button is live is decided by the server, not by whether
     // this particular tab has clicked. One press disarms it for the whole
-    // room, so nobody can break the site again while the recovery is being
-    // explained. The presenter re-arms deliberately.
+    // room. EDA re-arms only after monitoring confirms recovery, so the
+    // next press creates a fresh incident.
     function applyArmedState() {
         var btn = document.getElementById("panic-button");
         if (!btn) { return; }

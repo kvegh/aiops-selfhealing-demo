@@ -126,3 +126,11 @@ Later, review all AAP job templates against the different demo scenarios.
 Identify templates that are still needed, retire obsolete ones after review,
 and apply consistent labels so the catalog is easier to browse. Do not alter
 the templates during the current monitoring and repair setup.
+
+## Clean up the Vault structure after the conference
+
+Review the shared parent-repository `myvars` and project-specific Vault files.
+Decide which settings belong in each place, simplify duplication, and document
+how updates and rotations stay consistent while standalone AAP project
+checkouts remain deployable. Keep the working conference configuration until
+this review is done.

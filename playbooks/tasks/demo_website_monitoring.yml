@@ -1,0 +1,193 @@
+---
+# The project-root myvars is Vault encrypted. AAP supplies its password through
+# the existing Vault credential. All API calls run in the execution environment
+# and hide credentials and API responses from job output.
+
+- name: Require the Zabbix monitoring configuration
+  ansible.builtin.assert:
+    that:
+      - demo_zabbix_item_id is defined
+      - demo_zabbix_trigger_id is defined
+      - demo_zabbix_api_url is defined
+      - demo_zabbix_api_url | length > 0
+      - demo_zabbix_api_token is defined
+      - demo_zabbix_api_token | length > 0
+    quiet: true
+  no_log: true
+
+- name: Disable the content trigger during the website transition
+  ansible.builtin.uri:
+    url: "{{ demo_zabbix_api_url }}"
+    method: POST
+    body_format: json
+    headers:
+      Authorization: "Bearer {{ demo_zabbix_api_token }}"
+      Content-Type: application/json-rpc
+    body:
+      jsonrpc: "2.0"
+      method: trigger.update
+      params:
+        triggerid: "{{ demo_zabbix_trigger_id }}"
+        status: 1
+      id: 1
+  delegate_to: localhost
+  become: false
+  register: demo_trigger_disabled
+  no_log: true
+  when: demo_monitoring_step == 'before'
+
+- name: Confirm the content trigger was disabled
+  ansible.builtin.assert:
+    that:
+      - demo_trigger_disabled.json.result.triggerids | default([]) | length == 1
+    quiet: true
+  no_log: true
+  when: demo_monitoring_step == 'before'
+
+- name: Disable content sampling while the demo is put away
+  ansible.builtin.uri:
+    url: "{{ demo_zabbix_api_url }}"
+    method: POST
+    body_format: json
+    headers:
+      Authorization: "Bearer {{ demo_zabbix_api_token }}"
+      Content-Type: application/json-rpc
+    body:
+      jsonrpc: "2.0"
+      method: item.update
+      params:
+        itemid: "{{ demo_zabbix_item_id }}"
+        status: 1
+      id: 2
+  delegate_to: localhost
+  become: false
+  register: demo_item_disabled
+  no_log: true
+  when:
+    - demo_monitoring_step == 'before'
+    - demo_website_state == 'disabled'
+
+- name: Confirm content sampling was disabled
+  ansible.builtin.assert:
+    that:
+      - demo_item_disabled.json.result.itemids | default([]) | length == 1
+    quiet: true
+  no_log: true
+  when:
+    - demo_monitoring_step == 'before'
+    - demo_website_state == 'disabled'
+
+- name: Resume monitoring only after the live site passes its HTTP check
+  when: demo_monitoring_step == 'after'
+  block:
+    - name: Capture the last sample time before resuming
+      ansible.builtin.uri:
+        url: "{{ demo_zabbix_api_url }}"
+        method: POST
+        body_format: json
+        headers:
+          Authorization: "Bearer {{ demo_zabbix_api_token }}"
+          Content-Type: application/json-rpc
+        body:
+          jsonrpc: "2.0"
+          method: item.get
+          params:
+            itemids:
+              - "{{ demo_zabbix_item_id }}"
+            output:
+              - lastclock
+          id: 3
+      delegate_to: localhost
+      become: false
+      register: demo_previous_sample
+      no_log: true
+
+    - name: Confirm the content item exists
+      ansible.builtin.assert:
+        that:
+          - demo_previous_sample.json.result | default([]) | length == 1
+        quiet: true
+      no_log: true
+
+    - name: Resume content sampling
+      ansible.builtin.uri:
+        url: "{{ demo_zabbix_api_url }}"
+        method: POST
+        body_format: json
+        headers:
+          Authorization: "Bearer {{ demo_zabbix_api_token }}"
+          Content-Type: application/json-rpc
+        body:
+          jsonrpc: "2.0"
+          method: item.update
+          params:
+            itemid: "{{ demo_zabbix_item_id }}"
+            status: 0
+          id: 4
+      delegate_to: localhost
+      become: false
+      register: demo_item_enabled
+      no_log: true
+
+    - name: Confirm content sampling resumed
+      ansible.builtin.assert:
+        that:
+          - demo_item_enabled.json.result.itemids | default([]) | length == 1
+        quiet: true
+      no_log: true
+
+    - name: Wait for Zabbix to record a fresh healthy sample
+      ansible.builtin.uri:
+        url: "{{ demo_zabbix_api_url }}"
+        method: POST
+        body_format: json
+        headers:
+          Authorization: "Bearer {{ demo_zabbix_api_token }}"
+          Content-Type: application/json-rpc
+        body:
+          jsonrpc: "2.0"
+          method: item.get
+          params:
+            itemids:
+              - "{{ demo_zabbix_item_id }}"
+            output:
+              - lastclock
+              - lastvalue
+          id: 5
+      delegate_to: localhost
+      become: false
+      register: demo_fresh_sample
+      until:
+        - demo_fresh_sample.json.result | default([]) | length == 1
+        - demo_fresh_sample.json.result[0].lastvalue == '200'
+        - demo_fresh_sample.json.result[0].lastclock | int > demo_previous_sample.json.result[0].lastclock | default(0) | int
+      retries: 12
+      delay: 5
+      no_log: true
+
+    - name: Reenable the trigger after the healthy sample
+      ansible.builtin.uri:
+        url: "{{ demo_zabbix_api_url }}"
+        method: POST
+        body_format: json
+        headers:
+          Authorization: "Bearer {{ demo_zabbix_api_token }}"
+          Content-Type: application/json-rpc
+        body:
+          jsonrpc: "2.0"
+          method: trigger.update
+          params:
+            triggerid: "{{ demo_zabbix_trigger_id }}"
+            status: 0
+          id: 6
+      delegate_to: localhost
+      become: false
+      register: demo_trigger_enabled
+      no_log: true
+
+    - name: Confirm the content trigger is enabled
+      ansible.builtin.assert:
+        that:
+          - demo_trigger_enabled.json.result.triggerids | default([]) | length == 1
+        quiet: true
+      no_log: true

@@ -23,6 +23,9 @@
   hosts: all
   become: true
 
+  vars_files:
+    - "{{ playbook_dir }}/../myvars"
+
   vars:
     demo_website_root: /var/www/redhat
     demo_button_marker: /var/www/redhat/.armed
@@ -47,6 +50,16 @@
           demo_website_state must be 'enabled' or 'disabled'. Supply it from
           the job template or -e demo_website_state=... on the CLI.
         quiet: true
+
+    - name: Disarm the button during the lifecycle transition
+      ansible.builtin.file:
+        path: "{{ demo_button_marker }}"
+        state: absent
+
+    - name: Pause monitoring before changing the website
+      ansible.builtin.include_tasks: tasks/demo_website_monitoring.yml
+      vars:
+        demo_monitoring_step: before
 
     # The dedicated vhost includes this file in its button location.
     # All other locations already have no limits. Emptying the include
@@ -101,19 +114,6 @@
           loop:
             - index.html
             - content.html
-
-        # A fresh nonce every time the demo is stood up. The page reads it
-        # and sends it as the request body, so each arming produces a
-        # distinct webhook delivery — AAP hashes the body to deduplicate
-        # and silently drops repeats.
-        - name: Arm the button
-          ansible.builtin.copy:
-            content: "{{ lookup('ansible.builtin.password', '/dev/null', length=32, chars=['ascii_letters', 'digits']) }}"
-            dest: "{{ demo_button_marker }}"
-            owner: root
-            group: root
-            mode: "0644"
-            setype: httpd_sys_content_t
 
     - name: Disable the demo
       when: demo_website_state == 'disabled'
@@ -206,10 +206,28 @@
       delay: 2
       until: demo_check is succeeded
 
+    - name: Resume monitoring after the enabled site is healthy
+      ansible.builtin.include_tasks: tasks/demo_website_monitoring.yml
+      vars:
+        demo_monitoring_step: after
+      when: demo_website_state == 'enabled'
+
+    # Each arming needs a fresh body for AAP webhook deduplication. Keep the
+    # audience disarmed until Zabbix has a fresh 200 and the trigger is on.
+    - name: Arm the button after monitoring is ready
+      ansible.builtin.copy:
+        content: "{{ lookup('ansible.builtin.password', '/dev/null', length=32, chars=['ascii_letters', 'digits']) }}"
+        dest: "{{ demo_button_marker }}"
+        owner: root
+        group: root
+        mode: "0644"
+        setype: httpd_sys_content_t
+      when: demo_website_state == 'enabled'
+
     - name: Report
       ansible.builtin.debug:
         msg: >-
           Demo website {{ demo_website_state }}.
           {{ 'Shell at /, fault target /content.html.'
              if demo_website_state == 'enabled'
-             else 'Placeholder served at / — disable the Zabbix web scenario too.' }}
+             else 'Placeholder served at /; Zabbix content monitoring disabled.' }}

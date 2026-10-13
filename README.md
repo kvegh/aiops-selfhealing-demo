@@ -245,13 +245,36 @@ Zabbix sends the event value as a number (`1` for problem, `0` for recovery).
 The rule conditions use numeric comparisons; comparing these values with
 quoted strings causes an EDA rule-evaluation error and prevents repair.
 
-The live fault rehearsal passed: one audience-button POST queued the fault
-job, the monitored response changed from 200 to 404, Zabbix sent the problem
-through the existing media type and Event Stream, the new rule fired once,
-and **Restore Website Content** completed. The check then returned to 200 and
-the Zabbix problem recovered. This rehearsal preceded automatic rearming;
-the recovery-to-arm path must be validated separately. Monitoring
-enable/disable is still manual around the website lifecycle.
+The live automatic loop passed twice in succession: fault jobs 1537 and 1543,
+repair jobs 1539 and 1545, and recovery-driven arm jobs 1541 and 1547 all
+succeeded. Both problem and recovery notifications were delivered successfully.
+The shell polls content and arm state every two seconds, so open browsers
+show failure, recovery, and the rearmed button without a page refresh.
+
+The Zabbix media script needs the Event Stream endpoint, Basic Auth header,
+and recovery-event validation documented in
+[the integration guide](docs/06-eda-zabbix-integration.md#update-media-type-parameters-for-event-streams).
+Preserve these changes when redeploying the media type.
+
+**Enable Demo Website** and **Disable Demo Website** load the project-root
+`myvars`, an Ansible Vault-encrypted file containing only these monitoring
+settings:
+
+- `demo_zabbix_api_url`
+- `demo_zabbix_api_token`
+- `demo_zabbix_item_id`
+- `demo_zabbix_trigger_id`
+
+Attach the existing Vault credential to both templates alongside their machine
+credential. The standalone AAP project cannot read the parent repo's shared
+Vault file. Edit this project's file with `ansible-vault edit myvars` using
+the existing password file; never commit a decrypted copy.
+
+Disable disarms the button and disables the trigger and item before removing
+content. Enable holds the button disarmed, deploys and verifies the content,
+resumes sampling, waits for a fresh Zabbix 200, enables the trigger, and finally
+arms the button. A monitoring API failure fails the job with protected logging.
+The final lifecycle rehearsal is pending.
 
 Working demo; documentation in progress. Failure modes and design decisions are documented deliberately — real behavior over polished success.
 
