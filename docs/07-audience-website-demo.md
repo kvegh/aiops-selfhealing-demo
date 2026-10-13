@@ -335,6 +335,7 @@ webhook concurrency and the monitoring chain rather than Wi-Fi throughput.
 | Final Disable 1581 → Enable 1583 | Both succeeded with the deployed browser update and Vault-backed monitoring lifecycle |
 | Final rounds 1585 / 1587 / 1589 and 1591 / 1593 / 1595 | Ten concurrent 202 responses in each round; one fault, repair, and automatic rearm per round; fresh nonce in the second round; late presses returned 423 |
 | Final Disable 1597 | Successful; placeholder 200, content/arm 404, panic 423, marker absent, item/trigger disabled, rate limit restored, jail running |
+| Later panic-message update, Enable 1616 | Successfully deployed the larger OMG message and retained the timestamp; no repeat rehearsal, as requested |
 
 The complete final sequence passed and the demo was left disabled as requested.
 Zabbix alerts 77–80 were sent with no errors for the two final problem/recovery

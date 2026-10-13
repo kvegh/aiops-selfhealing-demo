@@ -162,4 +162,6 @@ is retained, and reduced vertical padding leaves room for the larger message.
 This is a presentation change; the user explicitly requested no repeated
 end-to-end rehearsal. Deployment uses the existing Enable template.
 
+Enable job 1616 deployed the change successfully from revision `ce0b102`.
+
 Implementation commit: `1e7bcfd`.
