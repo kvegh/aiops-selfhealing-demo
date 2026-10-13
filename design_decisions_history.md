@@ -52,9 +52,12 @@ demo-specific fail2ban jail was restored at the end. The site was left disabled.
 The website monitor needs to reach HTTPS on the web host from an internal VM.
 The host's VM-facing firewall zone rejects that incoming connection even
 though internet-facing HTTPS and outbound VM web access work. A source-restricted
-TCP 443 rule admits only the monitoring VM. Its address stays in the AAP job
-template, not this repository. A separate EDA rulebook routes the dedicated
-website-content problem event to the existing deterministic restoration
-template; this avoids sending a known repair through the agent diagnosis path.
+TCP 443 rule admits only the monitoring VM. The user clarified that this is
+static host networking setup, so the initial one-time AAP playbook and template
+were removed; the address remains outside this repository. A separate EDA
+rulebook routes the dedicated website-content problem event to the existing
+deterministic restoration template.
 
 Implementation commit: `1ead8a2`.
+
+Static-firewall correction commit: `f0d3176`.
