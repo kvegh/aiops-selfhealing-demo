@@ -119,3 +119,10 @@ Open question: AAP would gate *starting* CloudCLI, not *using* it. Once running,
 Later, rotate all tokens used by the demo integrations, then update the
 corresponding secret stores and verify each connection. Do this as a planned
 maintenance task; do not interrupt the current monitoring and repair setup.
+
+## Review and label demo job templates
+
+Later, review all AAP job templates against the different demo scenarios.
+Identify templates that are still needed, retire obsolete ones after review,
+and apply consistent labels so the catalog is easier to browse. Do not alter
+the templates during the current monitoring and repair setup.
