@@ -61,3 +61,11 @@ deterministic restoration template.
 Implementation commit: `1ead8a2`.
 
 Static-firewall correction commit: `f0d3176`.
+
+## Deferred token maintenance
+
+The user asked to track rotation of all demo integration tokens for later
+maintenance, without changing credentials during the current repair-flow
+setup. This is recorded in the design backlog.
+
+Backlog commit: `427a9a5`.
