@@ -224,12 +224,10 @@ syntax check passed; the separate local lint launcher could not import Ansible.
 
 ### Website monitoring and repair
 
-`playbooks/allow_demo_monitor_https.yml` installs a narrow firewalld rich
-rule on the website host: only the monitoring VM's IPv4 address may enter
-TCP 443 through the `libvirt` zone. Set `demo_monitor_source_ipv4` in the
-one-time AAP job template; do not store the address in this repository. The
-playbook checks both runtime and permanent state, adds only missing rules,
-and verifies both after applying them.
+The website host has a static, source-restricted firewalld rule allowing the
+monitoring VM to reach TCP 443 through its VM-facing zone. This is one-time
+host networking setup, not a demo job template. Keep the monitoring address
+out of this repository.
 
 `extensions/eda/rulebooks/demo-website-restore.yml` matches the dedicated
 website-content Zabbix problem event on the existing Event Stream and launches
