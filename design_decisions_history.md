@@ -153,3 +153,13 @@ The recreation guide includes the integration patches, protected Vault setup,
 source-controlled cache snippets, a generic vhost example, operational lessons,
 and test evidence. Optional improvements remain deferred after the conference.
 Validated implementation commits: `fc075c7`, `b20aaa9`, and `b49a988`.
+
+## Make the outage message visible to the audience
+
+At the user's request, the technical missing-file sentence was replaced with
+"OMG, PANIC, it is KAPUTT!!!" in larger bold letters. The detection timestamp
+is retained, and reduced vertical padding leaves room for the larger message.
+This is a presentation change; the user explicitly requested no repeated
+end-to-end rehearsal. Deployment uses the existing Enable template.
+
+Implementation commit: `1e7bcfd`.
