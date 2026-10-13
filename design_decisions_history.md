@@ -32,4 +32,4 @@ location; other virtual hosts retain their limits. Reload verification checks
 new workers because this session found that nginx can reject a configuration
 while the reload command still reports success.
 
-Implementation commit: to be recorded after the implementation commit exists.
+Implementation commit: `798dc3d916c411bec405892cc2baa9c953454d26`.
