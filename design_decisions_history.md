@@ -209,3 +209,23 @@ change was required. Current documentation and backlog references use the
 new name; the original playbook filename is retained.
 
 Configuration documentation commit: `964f666`.
+
+## Refresh the EDA delivery display automatically
+
+The user confirmed that filtering Reports → Action log made new deliveries
+easier to identify, but that the report did not refresh automatically. A
+private presenter dashboard now uses a native Action log widget with a
+supported ten-second refresh, five newest-first entries, and a rolling
+five-minute window. Its filters follow the existing problem and recovery
+actions and Event-Driven Ansible media type. This retains pending and failed
+notifications as well as successful deliveries. The problem action remains
+shared, so other demo incidents can also appear in this view.
+
+The standalone health map keeps its four-second profile refresh. The delivery
+widget has its own refresh setting, and recent notification records remain
+visible after the website has recovered. API readback verified private
+ownership, no sharing entries, and every saved widget field. Browser refresh
+behavior was not independently observed during creation. A portable request
+template and the README/recreation guide record how to rebuild the dashboard.
+
+Configuration documentation and dashboard-template commit: `8179c7a`.
