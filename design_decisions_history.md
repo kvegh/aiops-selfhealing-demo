@@ -229,3 +229,19 @@ behavior was not independently observed during creation. A portable request
 template and the README/recreation guide record how to rebuild the dashboard.
 
 Configuration documentation and dashboard-template commit: `8179c7a`.
+
+## Combine website health and event deliveries
+
+The user requested the existing green/red health indicator on the custom
+delivery dashboard. A native Map widget now shows the existing live website
+map on the left, with the Action log on the right. It reuses the map, trigger,
+and icons. The existing log widget, its filters, and the dashboard's private
+ownership and sharing were retained.
+
+Both widgets use the supported ten-second dashboard refresh. The standalone
+map remains available with four-second profile refresh for faster health
+updates. API readback verified both map and log bindings, the side-by-side
+geometry, widget refresh settings, and preserved access settings. The portable
+dashboard template and recreation instructions now include both widgets.
+
+Configuration documentation and dashboard-template commit: `e00f8a0`.
