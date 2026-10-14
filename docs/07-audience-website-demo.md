@@ -256,6 +256,49 @@ To recreate them without installing dependencies:
 python3 src/generate_status_icons.py
 ```
 
+### Show live deliveries to EDA
+
+The filtered **Reports → Action log** view helped identify new notifications,
+but did not refresh automatically. Use a private dashboard named **Big Bad
+Button - EDA Deliveries**, owned by the same presenter as the live map. Add
+one full-width **Action log** widget with these settings:
+
+| Setting | Value |
+| --- | --- |
+| Widget name | Zabbix to EDA - latest deliveries |
+| Refresh interval | 10 seconds |
+| Actions | EDA self-healing; Demo website recovery to EDA |
+| Media types | Event-Driven Ansible |
+| Time period | Custom: From `now-5m`, To `now` |
+| Sort entries by | Time, descending |
+| Show lines | 5 |
+| Status | No restriction; retain successful, pending, and failed deliveries |
+
+The portable [dashboard-create template](../assets/zabbix/website-deliveries-dashboard.json.j2)
+records the exact widget fields and layout. Substitute the presenter user ID,
+the two existing action IDs, and the existing media type ID before calling
+`dashboard.create`. Keep API authentication separate and preserve private
+ownership. The deployed configuration, owner, empty sharing lists, filters,
+refresh interval, and rolling time period were verified through API readback.
+No browser-based refresh verification was performed during creation.
+
+Open **Dashboards → Big Bad Button - EDA Deliveries**. New notifications
+appear at the top on the next refresh, and entries age out after five minutes.
+An empty table is expected between demonstration rounds. **Sent** reports
+successful notification delivery; it is separate from the website's problem
+or recovery state. The problem action is shared with other demo incidents, so
+this action/media filter can also include those notifications. For website-
+specific receipt and repair evidence, use **Automation Decisions → Rule
+Audit** and find **Demo website content unavailable - restore content** or
+**Demo website recovered - rearm button**. Events shows the matching payload,
+and Actions shows the corresponding repair or arm job.
+
+Ten seconds is the minimum supported refresh for this widget. The presenter's
+four-second profile setting does not override it. Keep the live health map in
+its standalone view to retain four-second updates while the delivery widget
+retains recent event records. See the official [Action log widget settings](https://www.zabbix.com/documentation/7.4/en/manual/api/reference/dashboard/widget_fields/action_log)
+and [EDA Rule Audit guide](https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.7/administer-assembly_eda_rule_audit).
+
 ## 5. Preserve and extend the Zabbix media integration
 
 Use the existing **Event-Driven Ansible** media type and the existing AAP Event

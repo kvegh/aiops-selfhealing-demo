@@ -1,0 +1,32 @@
+{
+  "name": "Big Bad Button - EDA Deliveries",
+  "userid": "{{ demo_zabbix_presenter_user_id }}",
+  "private": 1,
+  "auto_start": 0,
+  "pages": [
+    {
+      "name": "Live deliveries",
+      "widgets": [
+        {
+          "type": "actionlog",
+          "name": "Zabbix to EDA - latest deliveries",
+          "x": 0,
+          "y": 0,
+          "width": 72,
+          "height": 8,
+          "view_mode": 0,
+          "fields": [
+            {"type": 0, "name": "rf_rate", "value": 10},
+            {"type": 0, "name": "show_lines", "value": 5},
+            {"type": 0, "name": "sort_triggers", "value": 4},
+            {"type": 12, "name": "actionids.0", "value": "{{ demo_zabbix_problem_action_id }}"},
+            {"type": 12, "name": "actionids.1", "value": "{{ demo_zabbix_recovery_action_id }}"},
+            {"type": 13, "name": "mediatypeids.0", "value": "{{ demo_zabbix_media_type_id }}"},
+            {"type": 1, "name": "time_period.from", "value": "now-5m"},
+            {"type": 1, "name": "time_period.to", "value": "now"}
+          ]
+        }
+      ]
+    }
+  ]
+}

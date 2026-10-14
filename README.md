@@ -160,7 +160,7 @@ flowchart TD
 | [`docs/todo/`](docs/todo/) | Backlog and design notes |
 | [`playbooks/`](playbooks/) | AAP project content used by the remediation templates |
 | [`assets/nginx/`](assets/nginx/) | Generic vhost example and panic-delivery cache snippets; private headers stay on the host |
-| [`assets/zabbix/`](assets/zabbix/) | Green/red/grey website status icons and a portable native-map request template |
+| [`assets/zabbix/`](assets/zabbix/) | Green/red/grey status icons and portable map/dashboard request templates |
 | [`src/`](src/) | Dependency-free status-icon generator |
 | [`extensions/eda/rulebooks/`](extensions/eda/rulebooks/) | EDA rulebooks (level routing) |
 | [`AI_Instructions_Guardrails/`](AI_Instructions_Guardrails/) | Agent guardrails (CLAUDE.md) |
@@ -279,6 +279,15 @@ PNG icons and matching SVG sources using Python's standard library:
 ```bash
 python3 src/generate_status_icons.py
 ```
+
+To show new notifications sent to EDA, open **Dashboards → Big Bad Button -
+EDA Deliveries**. Its private Action log widget refreshes every ten seconds,
+shows five entries newest first, and uses a rolling five-minute window with
+the existing action and media-type filters. Reports → Action log needs a
+manual refresh. Use the standalone four-second map alongside this delivery
+dashboard. The [recreation guide](docs/07-audience-website-demo.md#show-live-deliveries-to-eda)
+and [dashboard request template](assets/zabbix/website-deliveries-dashboard.json.j2)
+record the setup.
 
 Zabbix sends the event value as a number (`1` for problem, `0` for recovery).
 The rule conditions use numeric comparisons; comparing these values with
