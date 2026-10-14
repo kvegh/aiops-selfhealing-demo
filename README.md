@@ -283,9 +283,11 @@ python3 src/generate_status_icons.py
 To show new notifications sent to EDA, open **Dashboards → Big Bad Button -
 EDA Deliveries**. Its private Action log widget refreshes every ten seconds,
 shows five entries newest first, and uses a rolling five-minute window with
-the existing action and media-type filters. Reports → Action log needs a
-manual refresh. Use the standalone four-second map alongside this delivery
-dashboard. The [recreation guide](docs/07-audience-website-demo.md#show-live-deliveries-to-eda)
+the existing action and media-type filters. The existing green/red/grey
+health map is displayed on the left, beside the delivery log on the right.
+Both dashboard widgets refresh every ten seconds. Reports → Action log needs
+a manual refresh; the standalone health map remains available for faster
+four-second updates. The [recreation guide](docs/07-audience-website-demo.md#show-live-deliveries-to-eda)
 and [dashboard request template](assets/zabbix/website-deliveries-dashboard.json.j2)
 record the setup.
 

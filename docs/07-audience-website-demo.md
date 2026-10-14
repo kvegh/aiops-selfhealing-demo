@@ -261,7 +261,10 @@ python3 src/generate_status_icons.py
 The filtered **Reports → Action log** view helped identify new notifications,
 but did not refresh automatically. Use a private dashboard named **Big Bad
 Button - EDA Deliveries**, owned by the same presenter as the live map. Add
-one full-width **Action log** widget with these settings:
+two widgets side by side. On the left, add a **Map** widget named **Website
+health - green OK / red outage / grey disabled**, linked to the existing
+**Big Bad Button - Live Website** map. Set its refresh to ten seconds. On the
+right, add an **Action log** widget with these settings:
 
 | Setting | Value |
 | --- | --- |
@@ -275,12 +278,16 @@ one full-width **Action log** widget with these settings:
 | Status | No restriction; retain successful, pending, and failed deliveries |
 
 The portable [dashboard-create template](../assets/zabbix/website-deliveries-dashboard.json.j2)
-records the exact widget fields and layout. Substitute the presenter user ID,
-the two existing action IDs, and the existing media type ID before calling
+records the exact widget fields and layout: each widget is 36 columns wide
+and eight rows high. The map starts at x=0, and the log at x=36. The map's
+unique widget reference is `BBBHL`. Substitute the presenter user ID,
+the existing website map ID, the two existing action IDs, and the existing media type ID before calling
 `dashboard.create`. Keep API authentication separate and preserve private
-ownership. The deployed configuration, owner, empty sharing lists, filters,
-refresh interval, and rolling time period were verified through API readback.
-No browser-based refresh verification was performed during creation.
+ownership. The health widget reuses the existing map, trigger, and icons. When
+adding it to the existing live dashboard, the existing log widget and all its
+filters were retained. Readback verified the map binding, side-by-side layout,
+both refresh intervals, unchanged owner/sharing, and the log fields. No
+browser-based refresh verification was performed during configuration.
 
 Open **Dashboards → Big Bad Button - EDA Deliveries**. New notifications
 appear at the top on the next refresh, and entries age out after five minutes.
@@ -293,10 +300,12 @@ Audit** and find **Demo website content unavailable - restore content** or
 **Demo website recovered - rearm button**. Events shows the matching payload,
 and Actions shows the corresponding repair or arm job.
 
-Ten seconds is the minimum supported refresh for this widget. The presenter's
-four-second profile setting does not override it. Keep the live health map in
-its standalone view to retain four-second updates while the delivery widget
-retains recent event records. See the official [Action log widget settings](https://www.zabbix.com/documentation/7.4/en/manual/api/reference/dashboard/widget_fields/action_log)
+Ten seconds is the minimum supported refresh for both native dashboard
+widgets. The presenter's four-second profile setting does not override them.
+The combined view is convenient for showing website health and notifications
+together. For faster health updates, the standalone map retains its four-second
+refresh. See the official [Map widget settings](https://www.zabbix.com/documentation/7.4/en/manual/api/reference/dashboard/widget_fields/map),
+[Action log widget settings](https://www.zabbix.com/documentation/7.4/en/manual/api/reference/dashboard/widget_fields/action_log),
 and [EDA Rule Audit guide](https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.7/administer-assembly_eda_rule_audit).
 
 ## 5. Preserve and extend the Zabbix media integration

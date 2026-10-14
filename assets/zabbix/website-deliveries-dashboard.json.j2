@@ -8,11 +8,25 @@
       "name": "Live deliveries",
       "widgets": [
         {
-          "type": "actionlog",
-          "name": "Zabbix to EDA - latest deliveries",
+          "type": "map",
+          "name": "Website health - green OK / red outage / grey disabled",
           "x": 0,
           "y": 0,
-          "width": 72,
+          "width": 36,
+          "height": 8,
+          "view_mode": 0,
+          "fields": [
+            {"type": 0, "name": "rf_rate", "value": 10},
+            {"type": 8, "name": "sysmapid.0", "value": "{{ demo_zabbix_website_map_id }}"},
+            {"type": 1, "name": "reference", "value": "BBBHL"}
+          ]
+        },
+        {
+          "type": "actionlog",
+          "name": "Zabbix to EDA - latest deliveries",
+          "x": 36,
+          "y": 0,
+          "width": 36,
           "height": 8,
           "view_mode": 0,
           "fields": [
