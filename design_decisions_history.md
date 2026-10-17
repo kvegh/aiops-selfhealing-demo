@@ -245,3 +245,30 @@ geometry, widget refresh settings, and preserved access settings. The portable
 dashboard template and recreation instructions now include both widgets.
 
 Configuration documentation and dashboard-template commit: `e00f8a0`.
+
+## Preserve the unfinished AAP dashboard extension for another session
+
+The user requested the selected EDA Event Stream's received count and recent
+and currently running Big Bad Button jobs on the existing Zabbix dashboard.
+The job queries are restricted to the demo templates. A gateway read-scope
+token supplies API access; environment values remain in the project Vault,
+the Zabbix token macro is secret, and preprocessing retains only the fields
+needed for the display. Existing service health and notification widgets are
+retained in the expanded six-widget layout.
+
+The configuration was created and read back during the earlier session, but
+metric collection failed because the Zabbix poller could not validate the AAP
+certificate issuer. The issuing CA needs to be checked and trusted on the
+poller; TLS verification remains enabled. This is an unfinished checkpoint,
+not a claim that the new dashboard works end to end. Local preprocessing,
+syntax, template/layout, documentation-link and Vault checks passed.
+
+The user cancelled the extra ten-second repair pause after confirming that
+the existing job works well live. The uncommitted pause was removed before
+deployment; the repair playbook is unchanged. On 2026-10-17 the user requested
+a committed handoff so another chat can resume from Git and the existing
+Vault password file. The README, recreation guide, backlog and dated handoff
+record the scope, blocker, external access prerequisites and remaining checks.
+Generated Python bytecode is excluded from version control.
+
+Checkpoint implementation and handoff commit: `f03a18f`.
