@@ -1,5 +1,14 @@
 # Demo Design — TODO
 
+## Paused Big Bad Button dashboard extension
+
+Continue the unfinished EDA Event Stream count and BBB-only recent/running
+job panels from the [dated handoff](../08-aap-monitoring-handoff.md). The last
+live collection attempt was blocked by AAP CA trust on the Zabbix poller.
+Verify fresh supported samples and the rendered dashboard after resolving it.
+The proposed extra ten-second repair pause was cancelled before deployment;
+the user confirmed that the existing repair timing works well live.
+
 ## Fault-injection template — naming and permissions
 
 `Simulate Website Outage` (description: `Inject Website Fault`) currently

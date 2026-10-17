@@ -258,6 +258,12 @@ python3 src/generate_status_icons.py
 
 ### Show live deliveries to EDA
 
+The two-widget setup below is the verified baseline. The current request
+template now describes an unfinished six-widget extension with AAP metrics;
+see the [dashboard handoff](08-aap-monitoring-handoff.md) for its prerequisites,
+current layout, certificate-trust blocker, and remaining checks. Do not treat
+the extended template as a drop-in two-widget baseline.
+
 The filtered **Reports → Action log** view helped identify new notifications,
 but did not refresh automatically. Use a private dashboard named **Big Bad
 Button - EDA Deliveries**, owned by the same presenter as the live map. Add
@@ -277,12 +283,14 @@ right, add an **Action log** widget with these settings:
 | Show lines | 5 |
 | Status | No restriction; retain successful, pending, and failed deliveries |
 
-The portable [dashboard-create template](../assets/zabbix/website-deliveries-dashboard.json.j2)
-records the exact widget fields and layout: each widget is 36 columns wide
-and eight rows high. The map starts at x=0, and the log at x=36. The map's
+In the original two-widget layout, each widget was 36 columns wide and eight
+rows high. The map started at x=0, and the log at x=36. The map's
 unique widget reference is `BBBHL`. Substitute the presenter user ID,
-the existing website map ID, the two existing action IDs, and the existing media type ID before calling
-`dashboard.create`. Keep API authentication separate and preserve private
+the existing website map ID, the two existing action IDs, and the existing
+media type ID when recreating that baseline. The current
+[dashboard request template](../assets/zabbix/website-deliveries-dashboard.json.j2)
+also needs the AAP item IDs described in the handoff. Keep API authentication
+separate and preserve private
 ownership. The health widget reuses the existing map, trigger, and icons. When
 adding it to the existing live dashboard, the existing log widget and all its
 filters were retained. Readback verified the map binding, side-by-side layout,

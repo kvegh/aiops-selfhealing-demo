@@ -156,12 +156,13 @@ flowchart TD
 
 | Path | Content |
 |---|---|
-| [`docs/`](docs/) | Build guide (00 through 06), troubleshooting |
+| [`docs/`](docs/) | Build/recreation guides (00 through 07), paused dashboard handoff (08), troubleshooting |
 | [`docs/todo/`](docs/todo/) | Backlog and design notes |
 | [`playbooks/`](playbooks/) | AAP project content used by the remediation templates |
 | [`assets/nginx/`](assets/nginx/) | Generic vhost example and panic-delivery cache snippets; private headers stay on the host |
 | [`assets/zabbix/`](assets/zabbix/) | Green/red/grey status icons and portable map/dashboard request templates |
-| [`src/`](src/) | Dependency-free status-icon generator |
+| [`src/`](src/) | Status-icon generator and unfinished AAP dashboard configuration helper/preprocessing |
+| [`tests/`](tests/) | Browser lifecycle and AAP dashboard preprocessing checks |
 | [`extensions/eda/rulebooks/`](extensions/eda/rulebooks/) | EDA rulebooks (level routing) |
 | [`AI_Instructions_Guardrails/`](AI_Instructions_Guardrails/) | Agent guardrails (CLAUDE.md) |
 
@@ -283,9 +284,13 @@ python3 src/generate_status_icons.py
 To show new notifications sent to EDA, open **Dashboards → Big Bad Button -
 EDA Deliveries**. Its private Action log widget refreshes every ten seconds,
 shows five entries newest first, and uses a rolling five-minute window with
-the existing action and media-type filters. The existing green/red/grey
-health map is displayed on the left, beside the delivery log on the right.
-Both dashboard widgets refresh every ten seconds. Reports → Action log needs
+the existing action and media-type filters. The original two-widget dashboard
+combined the green/red/grey health map with the delivery log. The unfinished
+extension adds an EDA event counter and recent/running BBB job panels; its
+metrics were blocked by AAP certificate trust at the last live check.
+All dashboard widgets refresh every ten seconds. See the
+[dashboard handoff](docs/08-aap-monitoring-handoff.md) before changing or
+recreating this extended configuration. Reports → Action log needs
 a manual refresh; the standalone health map remains available for faster
 four-second updates. The [recreation guide](docs/07-audience-website-demo.md#show-live-deliveries-to-eda)
 and [dashboard request template](assets/zabbix/website-deliveries-dashboard.json.j2)
@@ -309,13 +314,17 @@ and recovery-event validation documented in
 Preserve these changes when redeploying the media type.
 
 **Enable Demo Website** and **Disable Demo Website** load the project-root
-`myvars`, an Ansible Vault-encrypted file containing only these monitoring
+`myvars`, an Ansible Vault-encrypted file containing these lifecycle monitoring
 settings:
 
 - `demo_zabbix_api_url`
 - `demo_zabbix_api_token`
 - `demo_zabbix_item_id`
 - `demo_zabbix_trigger_id`
+
+The same encrypted file now also holds the unfinished dashboard's AAP
+read token and integration settings. The [handoff](docs/08-aap-monitoring-handoff.md#encrypted-settings)
+lists their names without disclosing their values.
 
 Attach the existing Vault credential to both templates alongside their machine
 credential. The standalone AAP project cannot read the parent repo's shared
@@ -334,6 +343,20 @@ Zabbix delivered both problem and recovery notifications for each round, and
 EDA logs confirmed all repair and rearm launches. Final checks found the
 placeholder at 200, content and arm endpoints at 404, panic at 423, monitoring
 disabled, rate limiting restored, and the fail2ban jail running.
+
+### Paused AAP dashboard extension
+
+The working website fault → Zabbix → EDA repair → recovery-driven rearm loop
+remains the baseline. The user cancelled the proposed extra ten-second pause;
+it was removed locally before deployment, and the repair playbook is unchanged.
+The user reported successful live operation with its existing timing.
+
+Resume the unfinished Event Stream count and BBB-only job monitoring from
+[the dated handoff](docs/08-aap-monitoring-handoff.md). It records the prepared
+files, last observed certificate-trust blocker, safe configuration command,
+local validation, and remaining live verification. This checkpoint does not
+claim that the new metrics are collecting data or that a new end-to-end test
+has passed.
 
 Working demo; documentation in progress. Failure modes and design decisions are documented deliberately — real behavior over polished success.
 
