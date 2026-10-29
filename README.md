@@ -205,6 +205,20 @@ secret. The rate-limit file contains no credentials. Its directives use
 literal YAML newlines so each occupies its own line. Host-specific addresses
 and credentials belong in inventory or encrypted configuration.
 
+The enable/disable, content-restore and button-rearm playbooks use
+`demo_website_public_hostname` for their HTTPS checks. Its default is the
+existing production hostname, now stored as `vault_demo_website_public_hostname`
+in the encrypted project-root `myvars`. Inventory or job extra variables can
+select a different hostname, such as `demo.test.example.com`. Both TLS SNI and
+the URL use that hostname while connecting to loopback; certificate verification,
+HTTP status checks and the demo lifecycle are retained.
+
+Before deploying this revision, attach the existing project Vault credential
+to **Restore Website Content** and **Arm Demo Button**, as well as Enable and
+Disable. The restore and rearm playbooks now load `myvars` too. Make this
+credential association before syncing the new revision into a live project.
+The source change does not itself sync AAP or alter its deployed templates.
+
 Each changed include is validated with `nginx -t`, followed by a reload
 and a check for new worker processes. A failed change restores the previous
 include and fails the job. Changing a live shared-memory zone's key requires
@@ -215,6 +229,9 @@ Validate locally with the existing Ansible toolchain; no new dependencies:
 
 ```bash
 ansible-playbook --syntax-check --vault-password-file /path/to/vault-password -i localhost, playbooks/demo_website.yml
+ansible-playbook --syntax-check --vault-password-file /path/to/vault-password -i localhost, playbooks/restore_website_content.yml
+ansible-playbook --syntax-check --vault-password-file /path/to/vault-password -i localhost, playbooks/arm_demo_button.yml
+ANSIBLE_LOCAL_TEMP=/tmp/aiops-hostname-local python3.12 -m unittest discover -s tests -p test_website_hostname.py -v
 node tests/browser_polling.test.js
 ansible-lint playbooks/tasks/demo_website_rate_limit.yml
 git diff --check
@@ -313,10 +330,12 @@ and recovery-event validation documented in
 [the integration guide](docs/06-eda-zabbix-integration.md#update-media-type-parameters-for-event-streams).
 Preserve these changes when redeploying the media type.
 
-**Enable Demo Website** and **Disable Demo Website** load the project-root
-`myvars`, an Ansible Vault-encrypted file containing these lifecycle monitoring
-settings:
+**Enable Demo Website**, **Disable Demo Website**, **Restore Website Content**
+and **Arm Demo Button** load the project-root `myvars`, an Ansible Vault-encrypted
+file containing the production website hostname default and these lifecycle
+monitoring settings:
 
+- `vault_demo_website_public_hostname`
 - `demo_zabbix_api_url`
 - `demo_zabbix_api_token`
 - `demo_zabbix_item_id`
@@ -326,7 +345,7 @@ The same encrypted file now also holds the unfinished dashboard's AAP
 read token and integration settings. The [handoff](docs/08-aap-monitoring-handoff.md#encrypted-settings)
 lists their names without disclosing their values.
 
-Attach the existing Vault credential to both templates alongside their machine
+Attach the existing Vault credential to all four templates alongside their machine
 credential. The standalone AAP project cannot read the parent repo's shared
 Vault file. Edit this project's file with `ansible-vault edit myvars` using
 the existing password file; never commit a decrypted copy.

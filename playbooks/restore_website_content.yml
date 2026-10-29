@@ -12,7 +12,11 @@
   hosts: all
   become: true
 
+  vars_files:
+    - "{{ playbook_dir }}/../myvars"
+
   vars:
+    demo_website_check_hostname: "{{ demo_website_public_hostname | default(vault_demo_website_public_hostname) }}"
     demo_website_root: /var/www/redhat
 
   tasks:
@@ -65,8 +69,8 @@
           # this host's external address, which it cannot reach from here
           # (no NAT hairpin).
           - --resolve
-          - redhat.supercorp.at:443:127.0.0.1
-          - https://redhat.supercorp.at/content.html
+          - "{{ demo_website_check_hostname }}:443:127.0.0.1"
+          - https://{{ demo_website_check_hostname }}/content.html
       register: demo_check
       changed_when: false
       failed_when: demo_check.stdout != "200"

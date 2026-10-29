@@ -378,8 +378,8 @@ Create or reuse these normal job templates in the same organization:
 | Enable Demo Website | `playbooks/demo_website.yml` | `demo_website_state: enabled`; machine and Vault credentials |
 | Disable Demo Website | `playbooks/demo_website.yml` | `demo_website_state: disabled`; machine and Vault credentials |
 | Simulate Website Outage | `playbooks/inject_website_fault.yml` | Description: `Inject Website Fault`; machine credential; GitLab webhook enabled |
-| Restore Website Content | `playbooks/restore_website_content.yml` | Machine credential |
-| Arm Demo Button | `playbooks/arm_demo_button.yml` | Machine credential |
+| Restore Website Content | `playbooks/restore_website_content.yml` | Machine and Vault credentials |
+| Arm Demo Button | `playbooks/arm_demo_button.yml` | Machine and Vault credentials |
 
 The outage template was renamed from **Inject Website Fault** to **Simulate
 Website Outage**, with **Inject Website Fault** as its description. Its existing
@@ -389,10 +389,20 @@ arm template names. Neither needs an update for this rename.
 
 Use the inventory host serving nginx, with the same explicit host limit and
 machine credential on all five templates. Supply deployment-specific site
-settings through inventory or encrypted configuration. The supplied content
-checks use the deployed demo's hostname; adapt their `curl --resolve` hostname
-and URL together for another deployment. Loopback resolution avoids relying
-on NAT hairpin access from the web server itself.
+settings through inventory or encrypted configuration. All three lifecycle
+playbooks load the project-root `myvars`; keep its default production hostname
+in `vault_demo_website_public_hostname`. For a parallel deployment, set
+`demo_website_public_hostname` in that environment's inventory or job extra
+variables. The same value supplies the URL and `curl --resolve` TLS hostname.
+Loopback resolution avoids relying on NAT hairpin access from the web server
+itself, and certificate verification remains enabled.
+
+For an existing deployment, attach its existing project Vault credential to
+Restore Website Content and Arm Demo Button **before** syncing this revision.
+Enable and Disable already require that credential. Keep the production Vault
+default when deploying to the existing host; set the test hostname and test
+monitoring configuration on a cloned controller before running its lifecycle.
+These source changes do not modify or sync the deployed controller.
 
 Sync the project before assigning a newly added playbook to a template:
 controller validates against its last synced file list. Verify sync completion
