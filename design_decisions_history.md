@@ -272,3 +272,27 @@ record the scope, blocker, external access prerequisites and remaining checks.
 Generated Python bytecode is excluded from version control.
 
 Checkpoint implementation and handoff commit: `f03a18f`.
+
+## Select the website hostname per environment
+
+The hypervisor rebuild needs production and test copies to run separately.
+The enable/disable, content-restore and button-rearm checks now use an
+environment hostname instead of a literal production name. The existing
+production value is preserved in the encrypted project Vault; inventory or
+job extra variables can override it. HTTPS verification, loopback resolution,
+expected status codes and all other lifecycle tasks are retained.
+
+Restore and rearm now load the same Vault file as enable/disable. Their
+existing machine-only templates must receive the existing project Vault
+credential before this revision is synced into a deployed controller. This
+requirement is recorded in the README and recreation guide. No controller
+settings, project syncs or live website changes were made for this change.
+
+Three local Ansible tests use synthetic encrypted settings and a curl recorder
+to cover the production default, an inventory-selected test hostname and a
+job override. They exercise argument rendering without contacting services.
+Syntax and lint pass. Comparison with the preceding revision confirms the
+other tasks and existing Vault settings are unchanged; a live lifecycle
+rehearsal remains part of replacement-host validation.
+
+Implementation and documentation commit: `89e113f`.
