@@ -296,3 +296,19 @@ other tasks and existing Vault settings are unchanged; a live lifecycle
 rehearsal remains part of replacement-host validation.
 
 Implementation and documentation commit: `89e113f`.
+
+## Prepare the hostname revision for main — 2026-10-30
+
+The user prefers working on main and explicitly approved attaching the
+existing project Vault credential to the restore and rearm templates before
+merging the hostname change. Both associations were applied through the
+controller API and verified by readback, preserving their machine credentials.
+The MCP credential-association tool's request schema could not express an
+existing credential association, so the normal authenticated API was used
+with TLS verification. No credential was created and no lifecycle job was launched.
+
+The generic recreation instructions continue to require Vault on all four
+lifecycle templates. The current deployment's association is complete;
+cloned-controller setup and a live recovery rehearsal remain separate work.
+The source implementation remains `89e113f`, with its production hostname
+default encrypted and inventory/job overrides covered by three local tests.

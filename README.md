@@ -219,6 +219,12 @@ Disable. The restore and rearm playbooks now load `myvars` too. Make this
 credential association before syncing the new revision into a live project.
 The source change does not itself sync AAP or alter its deployed templates.
 
+On 2026-10-30, the existing project Vault credential was associated with the
+existing Restore Website Content and Arm Demo Button templates and read back.
+Their machine credentials were retained. This prepares the existing deployment
+for the hostname revision on `main`; it does not prove a test-host recovery.
+New cloned deployments must still attach the credential before using the code.
+
 Each changed include is validated with `nginx -t`, followed by a reload
 and a check for new worker processes. A failed change restores the previous
 include and fails the job. Changing a live shared-memory zone's key requires
