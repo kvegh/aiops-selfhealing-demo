@@ -222,7 +222,7 @@
             inFlight = true;
             btn.disabled = true;
 
-            showFlash("You pushed it.\nNow bear the consequences.");
+            showFlash("You pushed it.\nWhy did you have to do that?\nNow bear the consequences.");
 
             // nginx holds the webhook key and pins the job template, so no
             // credential reaches the browser. The nonce makes each delivery
@@ -244,7 +244,7 @@
                         return;
                     }
                     if (!r.ok) { throw new Error("HTTP " + r.status); }
-                    showFlash("You pushed it.\nNow bear the consequences.", 4000);
+                    showFlash("You pushed it.\nWhy did you have to do that?\nNow bear the consequences.", 6000);
                     armed = false;          // the poll will confirm it
                     applyArmedState();
                 })
