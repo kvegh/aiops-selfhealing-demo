@@ -138,6 +138,9 @@
         font-weight: 900;
         font-size: clamp(22px, 6vw, 40px);
         text-align: center;
+        /* flash messages are set with textContent, so \n needs pre-line
+           to render as a line break */
+        white-space: pre-line;
         padding: 24px;
         z-index: 10;
     }
@@ -219,7 +222,7 @@
             inFlight = true;
             btn.disabled = true;
 
-            showFlash("You pushed it.");
+            showFlash("You pushed it.\nNow bear the consequences.");
 
             // nginx holds the webhook key and pins the job template, so no
             // credential reaches the browser. The nonce makes each delivery
@@ -241,7 +244,7 @@
                         return;
                     }
                     if (!r.ok) { throw new Error("HTTP " + r.status); }
-                    showFlash("You pushed it.", 2200);
+                    showFlash("You pushed it.\nNow bear the consequences.", 4000);
                     armed = false;          // the poll will confirm it
                     applyArmedState();
                 })
