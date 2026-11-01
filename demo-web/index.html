@@ -203,7 +203,7 @@
 
         if (armed === false) {
             btn.disabled = true;
-            if (big) { big.innerHTML = "DISARMED"; }
+            if (big) { big.innerHTML = "BUTTON<br>DISARMED"; }
             if (small) { small.textContent = "Waiting for recovery"; }
         } else if (armed === true && !inFlight) {
             btn.disabled = false;
