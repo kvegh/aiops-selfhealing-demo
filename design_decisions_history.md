@@ -1,5 +1,31 @@
 # Design decisions history
 
+## Deploy the versioned website on its selected hypervisor — 2026-11-03
+
+Implementation `73d6b08` extends the existing Enable playbook rather than
+introducing another dispatcher or Job Template. The selected AAP allocation
+determines both AAP and website public names. Strict hypervisor SSH pins and
+machine identity are checked before remote changes. Per-version nginx, content
+and cache paths allow separate deployments without overwriting unrelated sites.
+DNS changes refuse conflicting addresses or IPv6 routes. Certificates use an
+existing approved account, webroot renewal and trusted HTTPS; the nginx webhook
+proxy also verifies the matching public AAP certificate.
+
+The owner approved an initial configuration/website scope with monitoring,
+shared fail2ban changes and button arming disabled until target-local monitoring
+and repair are ready. EDA activation definitions remain disabled. Existing
+production lifecycle defaults are retained. DNS and generated target webhook
+inputs use a protected post-import launch handoff with the existing runtime
+Vault, rather than a new credential type or store. An unattended combined
+workflow is not implemented or claimed.
+
+Nine focused tests cover identity/allocation rejection, DNS conflicts, nginx
+rendering and the actual Ansible target checks; the three existing real-Ansible
+hostname tests and browser lifecycle test pass. Nine-file production lint and
+syntax pass. The actual encrypted companion capture renders and validates for
+three allocation widths in both templating modes. Live deployment to the new
+selected instance remains a separate verification step.
+
 Historical entries below are reconstructed from the available Git history.
 Reasons are documented in the cited commit messages, unless explicitly marked
 as inference. History before the repository split is unavailable here and has
