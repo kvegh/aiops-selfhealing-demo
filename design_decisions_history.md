@@ -1,5 +1,16 @@
 # Design decisions history
 
+## Preserve the target-side content checkout across versioned deployment — 2026-11-03
+
+Implementation `cf111b2` integrates the existing upstream content-checkout
+behavior preserved by merge `d13f3e2`. The staged checkout is isolated per
+allocation alongside its content and nginx paths. Managed recovery deployments
+require the existing git package rather than installing it; legacy lifecycle
+behavior is retained. The matching public AAP name is also checked against the
+selected hypervisor's public IPv4 before its webhook is configured. All twelve
+website tests, the browser lifecycle test and nine-file production lint pass
+after integration. No live application job is launched by publication.
+
 ## Deploy the versioned website on its selected hypervisor — 2026-11-03
 
 Implementation `73d6b08` extends the existing Enable playbook rather than
