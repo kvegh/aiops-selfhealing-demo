@@ -32,6 +32,14 @@
     demo_website_root: /var/www/redhat
     demo_button_marker: /var/www/redhat/.armed
     demo_website_rate_limit_file: /etc/nginx/demo-website-rate-limit.conf
+    # Page content is checked out on the target rather than copied out of the
+    # AAP project directory. The project checkout is the controller's working
+    # copy, not a distribution channel — reaching into it couples the play to
+    # how AAP happens to lay out its private data. Public repo, so the clone
+    # needs no credential.
+    demo_web_repo: https://github.com/kvegh/aiops-selfhealing-demo.git
+    demo_web_version: main
+    demo_web_checkout: /opt/demo-web-src
     # The nginx-444 jail bans any address that hits the box with an unknown
     # Host header twice in 10 minutes, for an hour. An audience member who
     # types the IP instead of the hostname would trip it — and because the
@@ -66,6 +74,25 @@
       ansible.builtin.file:
         path: "{{ demo_button_marker }}"
         state: absent
+
+    - name: Ensure git is available for the content checkout
+      ansible.builtin.package:
+        name: git
+        state: present
+
+    # force: true so a hand-edit on the host is discarded rather than
+    # failing the clone — the repo is the only source of truth for content.
+    - name: Check out the page content on the target
+      ansible.builtin.git:
+        repo: "{{ demo_web_repo }}"
+        dest: "{{ demo_web_checkout }}"
+        version: "{{ demo_web_version }}"
+        force: true
+      register: demo_web_clone
+
+    - name: Report the checked-out revision
+      ansible.builtin.debug:
+        msg: "Serving content from {{ demo_web_version }} at {{ demo_web_clone.after | default('unknown') }}"
 
     - name: Pause monitoring before changing the website
       ansible.builtin.include_tasks: tasks/demo_website_monitoring.yml
@@ -117,7 +144,8 @@
 
         - name: Deploy the shell and the button page
           ansible.builtin.copy:
-            src: "{{ playbook_dir }}/../demo-web/{{ item }}"
+            src: "{{ demo_web_checkout }}/demo-web/{{ item }}"
+            remote_src: true
             dest: "{{ demo_website_root }}/{{ item }}"
             owner: root
             group: root
@@ -133,7 +161,8 @@
 
         - name: Serve the placeholder as the index
           ansible.builtin.copy:
-            src: "{{ playbook_dir }}/../demo-web/disabled.html"
+            src: "{{ demo_web_checkout }}/demo-web/disabled.html"
+            remote_src: true
             dest: "{{ demo_website_root }}/index.html"
             owner: root
             group: root

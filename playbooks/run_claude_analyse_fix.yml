@@ -17,12 +17,15 @@
         quiet: true
 
     - name: Run Claude Code CLI
-      # shell, not command — command breaks on quoted arguments in the CLI invocation
+      # shell, not command — command breaks on quoted arguments in the CLI invocation.
+      # Model pinned: the "opus" alias moved to Opus 5.5 with CLI 2.1.305, and
+      # inter-phase findings/conclusions stopped appearing from that run on.
       ansible.builtin.shell: >-
         claude -p
         "There is an alert on Zabbix, root cause analyse the alert and the state
         of the affected server, and fix it autonomously. Afterwards create an
         incident report and suggested further steps."
+        --model claude-opus-5
         --dangerously-skip-permissions
       args:
         # Claude Code needs a working directory with CLAUDE.md guardrails.

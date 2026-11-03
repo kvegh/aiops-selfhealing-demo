@@ -12,6 +12,33 @@ Every alert investigation must follow these phases in order. No exceptions.
 **After completing any phase:** explicitly state all findings (what was checked, what was found) before proceeding.
 **Never proceed to Phase N+1** without having stated Phase N findings out loud.
 
+**Phase findings display rule (mandatory, every phase including Phase 4):**
+At runtime — live, immediately when a phase's last check returns, as its own output message, BEFORE the next phase announcement or any further tool call — display a findings-and-conclusions block:
+
+```
+**Phase N findings — [phase name]:**
+- <item checked>: <result>
+- ...
+
+**Phase N conclusion:** <what this phase established and what it means for the next phase>
+```
+
+- Both parts are mandatory every time: findings (what was checked, what was found) AND conclusion.
+- Retroactive summaries at the end of the run do NOT satisfy this rule. The block must appear in the live output between phases.
+- Sequence is always: `Entering Phase N` → checks → Phase N findings + conclusion → `Entering Phase N+1`.
+
+- Phase 4 is no exception: after remediation verification, display the Phase 4 block (job ID/result, host state, Zabbix state, recovery timestamp, ticket action) *before* writing the report.
+- The final incident report MUST include a "Phase summaries" section repeating every phase block, in addition to root cause, evidence, remediation and next steps.
+- If a phase is repeated in cycle 2, label blocks `Phase N findings (cycle 2)`.
+
+**Phase block length (mandatory):**
+- Findings: max 8 bullets, one line each (~120 chars), format `<check>: <result>`.
+  Results only — no raw output, epochs, IDs or file listings unless needed for correlation.
+- Suspicions are wanted: one line each, prefixed `Suspicion:`.
+- Conclusion: max 2 sentences — what is established, what it means for the next phase.
+- Don't cite which rule a check satisfies ("per §3") — just give the result.
+- Phase 4 block follows the same limits; full detail belongs in the final report only.
+
 ### Phase 1 — Monitoring checks (Zabbix MCP)
 1. Note the alert onset time from Zabbix — this is the reference timestamp for all correlations.
 2. Check Zabbix agent availability (`active_available`). If `0`, call `hostinterface_get` immediately — a dead agent causes false negatives on all agent-based checks.
@@ -91,7 +118,19 @@ Treat Zabbix alert names as symptoms, not root causes. Always investigate host a
 
 ---
 
-## 7. Response Format
+## 7. Headless Runs — Phase Output Must Be Visible
+
+When Claude CLI runs non-interactively (`claude -p`, e.g. launched by EDA/AAP), the default `--output-format text` prints ONLY the final message. Phase findings/conclusion blocks emitted between phases are lost, which violates Section 1.
+
+**Rule:** Any automation that launches Claude CLI for incident investigation MUST:
+1. Use `claude -p --output-format stream-json --verbose` so every intermediate message (phase announcements, findings, conclusions) is emitted live.
+2. Render the stream into readable job output (e.g. pipe through `jq` extracting assistant `text` content) so phase blocks appear in the AAP job stdout as they happen.
+
+When creating, reviewing or modifying such a launcher (playbook, job template, EDA rulebook, wrapper script), verify these flags are present. If they are missing, flag it and fix it via the source repo / AAP — never silently accept final-only output.
+
+---
+
+## 8. Response Format
 
 Report your findings and actions concisely. Include:
 - What triggered the investigation
