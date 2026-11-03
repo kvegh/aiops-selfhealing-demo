@@ -8,8 +8,8 @@
 # / "Disable Demo Website"), each pinning the state as an extra variable.
 #
 # Runs against the hypervisor, where nginx serves the site directly from
-# demo_website_root. The host owns the vhost, certificate and firewall.
-# This playbook owns the content and an isolated nginx rate-limit include.
+# demo_website_root. Explicitly managed versioned deployments also provision
+# their DNS, certificate and isolated vhost using the existing AAP allocation.
 #
 # Disabling swaps the page rather than removing the site, so the URL keeps
 # answering 200. A deleted site looks broken to anyone holding the link and
@@ -22,6 +22,7 @@
 - name: Switch the demo corporate website on or off
   hosts: all
   become: true
+  gather_facts: false
 
   vars_files:
     - "{{ playbook_dir }}/../myvars"
@@ -36,8 +37,11 @@
     # types the IP instead of the hostname would trip it — and because the
     # room shares one NAT address, that bans everyone. Stopped for the demo,
     # restored afterwards. Stopping also drops the jail's existing bans.
-    demo_website_manage_fail2ban: true
     demo_website_fail2ban_jail: nginx-444
+
+  pre_tasks:
+    - name: Select and verify the website's hypervisor before connecting
+      ansible.builtin.include_tasks: tasks/demo_website_target.yml
 
   tasks:
     # No default on purpose — a play-level var would outrank the inventory
@@ -52,6 +56,12 @@
           the job template or -e demo_website_state=... on the CLI.
         quiet: true
 
+    - name: Prepare this version's DNS, trusted HTTPS and nginx configuration
+      ansible.builtin.include_tasks: tasks/demo_website_infrastructure.yml
+      when:
+        - demo_website_manage_infrastructure | default(false) | bool
+        - demo_website_state == 'enabled'
+
     - name: Disarm the button during the lifecycle transition
       ansible.builtin.file:
         path: "{{ demo_button_marker }}"
@@ -61,6 +71,7 @@
       ansible.builtin.include_tasks: tasks/demo_website_monitoring.yml
       vars:
         demo_monitoring_step: before
+      when: demo_website_manage_monitoring | default(true) | bool
 
     # The dedicated vhost includes this file in its button location.
     # All other locations already have no limits. Emptying the include
@@ -84,7 +95,7 @@
       ansible.builtin.stat:
         path: /usr/bin/fail2ban-client
       register: demo_f2b_bin
-      when: demo_website_manage_fail2ban | bool
+      when: demo_website_manage_fail2ban | default(true) | bool
 
     - name: Check whether the jail is currently running
       ansible.builtin.command:
@@ -97,7 +108,7 @@
       # Non-zero simply means "not running"; that is information, not failure.
       failed_when: false
       when:
-        - demo_website_manage_fail2ban | bool
+        - demo_website_manage_fail2ban | default(true) | bool
         - demo_f2b_bin.stat.exists | default(false)
 
     - name: Enable the demo
@@ -152,7 +163,7 @@
           - "{{ demo_website_fail2ban_jail }}"
       when:
         - demo_website_state == 'enabled'
-        - demo_website_manage_fail2ban | bool
+        - demo_website_manage_fail2ban | default(true) | bool
         - demo_f2b_bin.stat.exists | default(false)
         - demo_f2b_status.rc | default(1) == 0
       changed_when: true
@@ -168,7 +179,7 @@
           - reload
       when:
         - demo_website_state == 'disabled'
-        - demo_website_manage_fail2ban | bool
+        - demo_website_manage_fail2ban | default(true) | bool
         - demo_f2b_bin.stat.exists | default(false)
         - demo_f2b_status.rc | default(0) != 0
       changed_when: true
@@ -181,7 +192,7 @@
           - "{{ demo_website_fail2ban_jail }}"
       when:
         - demo_website_state == 'disabled'
-        - demo_website_manage_fail2ban | bool
+        - demo_website_manage_fail2ban | default(true) | bool
         - demo_f2b_bin.stat.exists | default(false)
       changed_when: false
       retries: 3
@@ -211,7 +222,9 @@
       ansible.builtin.include_tasks: tasks/demo_website_monitoring.yml
       vars:
         demo_monitoring_step: after
-      when: demo_website_state == 'enabled'
+      when:
+        - demo_website_state == 'enabled'
+        - demo_website_manage_monitoring | default(true) | bool
 
     # Each arming needs a fresh body for AAP webhook deduplication. Keep the
     # audience disarmed until Zabbix has a fresh 200 and the trigger is on.
@@ -223,7 +236,9 @@
         group: root
         mode: "0644"
         setype: httpd_sys_content_t
-      when: demo_website_state == 'enabled'
+      when:
+        - demo_website_state == 'enabled'
+        - demo_website_arm_on_enable | default(true) | bool
 
     - name: Report
       ansible.builtin.debug:

@@ -19,6 +19,7 @@
 - name: Arm the demo button
   hosts: all
   become: true
+  gather_facts: false
 
   vars_files:
     - "{{ playbook_dir }}/../myvars"
@@ -27,6 +28,10 @@
     demo_website_check_hostname: "{{ demo_website_public_hostname | default(vault_demo_website_public_hostname) }}"
     demo_website_root: /var/www/redhat
     demo_button_marker: /var/www/redhat/.armed
+
+  pre_tasks:
+    - name: Select and verify the website's hypervisor before connecting
+      ansible.builtin.include_tasks: tasks/demo_website_target.yml
 
   tasks:
     - name: Confirm the website is healthy before rearming

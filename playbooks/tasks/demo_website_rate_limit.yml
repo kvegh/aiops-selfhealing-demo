@@ -10,7 +10,7 @@
       {% if demo_website_state == 'enabled' %}
       # Demo enabled: no rate limiting for this site.
       {% else %}
-      limit_req zone=redhat_panic burst=1 nodelay;
+      limit_req zone={{ demo_website_rate_limit_zone | default('redhat_panic') }} burst=1 nodelay;
       limit_req_status 429;
       {% endif %}
     dest: "{{ demo_website_rate_limit_file }}"
@@ -20,7 +20,7 @@
     setype: httpd_config_t
   register: demo_rate_limit_update
 
-- name: Apply and verify the rate-limit change
+- name: Apply and verify the rate-limit change # noqa: no-handler -- Immediate reload is part of the rollback transaction.
   when: demo_rate_limit_update is changed
   block:
     - name: Validate the complete nginx configuration

@@ -21,6 +21,15 @@ templates, and the status page are still outstanding.
 
 ### Added
 
+- Versioned website infrastructure in the existing Enable job: reuse the
+  selected AAP allocation for DNS, existing-account certificates and a dedicated
+  nginx virtual host, with pinned hypervisor SSH/machine identity and verified
+  HTTPS forwarding to that AAP. Initial recovery deployments keep monitoring,
+  shared fail2ban changes and audience button arming disabled until their own
+  monitoring/repair integration is ready. Protected post-import launch inputs
+  supply DNS authorization and the target's generated webhook information.
+- Exact reviewed `community.general` collection pin for the public DNS checks.
+
 - `demo-web/index.html` — outer shell that polls `content.html` every 2s
   and renders either the site or a 404. Untouched by the fault, so every
   phone flips to the outage and back without a refresh.

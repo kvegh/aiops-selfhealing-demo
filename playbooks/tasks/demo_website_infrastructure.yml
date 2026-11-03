@@ -1,0 +1,271 @@
+---
+- name: Require the protected DNS and selected target webhook handoff
+  ansible.builtin.assert:
+    that:
+      - demo_website_dns_api_token is defined
+      - demo_website_dns_api_token | length > 0
+      - demo_website_fault_template_id | default(0) | int > 0
+      - demo_website_webhook_key | default('') is match('^[A-Za-z0-9_-]{16,256}$')
+    fail_msg: Supply the selected target's webhook and DNS inputs through the existing encrypted launch handoff.
+    quiet: true
+  no_log: true
+
+- name: Check the certificate and nginx packages already provided by Hactar base
+  ansible.builtin.command:
+    argv: [rpm, -q, nginx, certbot, python3-certbot-nginx]
+  register: demo_website_package_readiness
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Require existing base packages instead of installing dependencies
+  ansible.builtin.assert:
+    that: demo_website_package_readiness.rc == 0
+    fail_msg: Prepare nginx, certbot and python3-certbot-nginx through Hactar base before deploying this website.
+    quiet: true
+
+- name: Find an existing approved ACME registration
+  ansible.builtin.find:
+    paths: /etc/letsencrypt/accounts
+    patterns: regr.json
+    recurse: true
+    file_type: file
+  register: demo_website_acme_accounts
+  no_log: true
+
+- name: Require a previously approved certificate account
+  ansible.builtin.assert:
+    that: demo_website_acme_accounts.matched | int > 0
+    fail_msg: Register an approved ACME account separately; this playbook cannot accept legal terms.
+    quiet: true
+
+- name: Read only this versioned website's existing IPv4 DNS records
+  ansible.builtin.uri:
+    url: "https://api.godaddy.com/v1/domains/{{ demo_website_config.zone }}/records/A/{{ demo_website_config.record_name }}"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ demo_website_dns_api_token }}"
+    status_code: 200
+    follow_redirects: none
+    validate_certs: true
+  delegate_to: localhost
+  become: false
+  register: demo_website_existing_dns
+  no_log: true
+
+- name: Refuse to replace another website's DNS address
+  ansible.builtin.assert:
+    that: >-
+      demo_website_existing_dns.json | demo_website_safe_dns_records(
+        demo_website_config.hypervisor.public_ipv4)
+    fail_msg: The versioned website name has a conflicting DNS record; inspect it before continuing.
+    quiet: true
+  no_log: true
+
+- name: Read only this versioned website's IPv6 DNS records
+  ansible.builtin.uri:
+    url: "https://api.godaddy.com/v1/domains/{{ demo_website_config.zone }}/records/AAAA/{{ demo_website_config.record_name }}"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ demo_website_dns_api_token }}"
+    status_code: 200
+    follow_redirects: none
+    validate_certs: true
+  delegate_to: localhost
+  become: false
+  register: demo_website_existing_ipv6_dns
+  no_log: true
+
+- name: Refuse an alternate unpinned IPv6 website route
+  ansible.builtin.assert:
+    that: demo_website_existing_ipv6_dns.json == []
+    fail_msg: This IPv4-only website has an unexpected IPv6 DNS record.
+    quiet: true
+  no_log: true
+
+- name: Publish this versioned website at the selected hypervisor's public IPv4
+  ansible.builtin.uri:
+    url: "https://api.godaddy.com/v1/domains/{{ demo_website_config.zone }}/records/A/{{ demo_website_config.record_name }}"
+    method: PUT
+    headers:
+      Authorization: "Bearer {{ demo_website_dns_api_token }}"
+    body_format: json
+    body:
+      - data: "{{ demo_website_config.hypervisor.public_ipv4 }}"
+        ttl: 600
+    status_code: 200
+    follow_redirects: none
+    validate_certs: true
+  delegate_to: localhost
+  become: false
+  when: demo_website_existing_dns.json | length == 0
+  no_log: true
+
+- name: Inspect the version-specific nginx configuration before taking ownership
+  ansible.builtin.stat:
+    path: "{{ demo_website_config.vhost_file }}"
+  register: demo_website_existing_vhost
+
+- name: Preserve this version's existing nginx configuration for rollback
+  ansible.builtin.slurp:
+    src: "{{ demo_website_config.vhost_file }}"
+  register: demo_website_previous_vhost
+  when: demo_website_existing_vhost.stat.exists
+  no_log: true
+
+- name: Refuse to overwrite an unrelated nginx configuration
+  ansible.builtin.assert:
+    that: >-
+      not demo_website_existing_vhost.stat.exists or
+      ('# Managed by the AIOps website playbook for ' + demo_website_config.hostname + '.')
+      in (demo_website_previous_vhost.content | default('') | b64decode)
+    fail_msg: An unmanaged nginx file already occupies this version's path.
+    quiet: true
+  no_log: true
+
+- name: Prepare only the selected version's content and cache directories
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner }}"
+    group: "{{ item.owner }}"
+    mode: "{{ item.mode }}"
+    setype: "{{ item.setype }}"
+  loop:
+    - {path: /var/lib/letsencrypt, owner: root, mode: '0755', setype: httpd_sys_content_t}
+    - {path: "{{ demo_website_root }}", owner: root, mode: '0755', setype: httpd_sys_content_t}
+    - {path: "{{ demo_website_config.cache_path }}", owner: nginx, mode: '0750', setype: httpd_cache_t}
+
+- name: Inspect the exact version's existing certificate
+  ansible.builtin.stat:
+    path: "/etc/letsencrypt/live/{{ demo_website_config.hostname }}/fullchain.pem"
+  register: demo_website_existing_certificate
+
+- name: Create the dedicated rate-limit include before nginx first uses it
+  ansible.builtin.copy:
+    content: |
+      limit_req zone={{ demo_website_config.rate_limit_zone }} burst=1 nodelay;
+      limit_req_status 429;
+    dest: "{{ demo_website_rate_limit_file }}"
+    force: false
+    owner: root
+    group: root
+    mode: '0644'
+    setype: httpd_config_t
+
+- name: Provision the versioned HTTPS virtual host with rollback
+  block:
+    - name: Install the initial HTTP challenge configuration when no certificate exists
+      ansible.builtin.template:
+        src: demo-website-vhost.conf.j2
+        dest: "{{ demo_website_config.vhost_file }}"
+        owner: root
+        group: root
+        mode: '0600'
+        setype: httpd_config_t
+      vars:
+        demo_website_tls_ready: false
+      when: not demo_website_existing_certificate.stat.exists
+      no_log: true
+      diff: false
+
+    - name: Validate nginx before serving a certificate challenge
+      ansible.builtin.command:
+        argv: [/usr/sbin/nginx, -t]
+      changed_when: false
+
+    - name: Reload nginx for the HTTP challenge
+      ansible.builtin.systemd_service:
+        name: nginx
+        state: reloaded
+      when: not demo_website_existing_certificate.stat.exists
+
+    - name: Wait for public DNS to identify only the selected hypervisor
+      ansible.builtin.assert:
+        that:
+          - >-
+            query('community.general.dig', demo_website_config.hostname, '@8.8.8.8', qtype='A') |
+            unique | list == [demo_website_config.hypervisor.public_ipv4]
+          - >-
+            query('community.general.dig', demo_website_config.hostname, '@8.8.8.8', qtype='AAAA') |
+            reject('equalto', '') | list == []
+        fail_msg: Public DNS has not converged on the selected hypervisor's IPv4-only website route.
+        quiet: true
+      register: demo_website_dns_propagation
+      until: demo_website_dns_propagation is not failed
+      retries: 30
+      delay: 10
+
+    - name: Obtain the website certificate with the existing account and webroot renewal
+      ansible.builtin.command:
+        argv:
+          - certbot
+          - certonly
+          - --webroot
+          - --webroot-path
+          - /var/lib/letsencrypt
+          - --cert-name
+          - "{{ demo_website_config.hostname }}"
+          - -d
+          - "{{ demo_website_config.hostname }}"
+          - --non-interactive
+          - --keep-until-expiring
+          - --deploy-hook
+          - /usr/sbin/nginx -t && /usr/bin/systemctl reload nginx
+        creates: "/etc/letsencrypt/live/{{ demo_website_config.hostname }}/fullchain.pem"
+
+    - name: Install the versioned HTTPS site and protected target webhook
+      ansible.builtin.template:
+        src: demo-website-vhost.conf.j2
+        dest: "{{ demo_website_config.vhost_file }}"
+        owner: root
+        group: root
+        mode: '0600'
+        setype: httpd_config_t
+      vars:
+        demo_website_tls_ready: true
+      no_log: true
+      diff: false
+
+    - name: Validate the complete nginx configuration with the HTTPS site
+      ansible.builtin.command:
+        argv: [/usr/sbin/nginx, -t]
+      changed_when: false
+
+    - name: Reload nginx with the validated HTTPS site
+      ansible.builtin.systemd_service:
+        name: nginx
+        state: reloaded
+
+  rescue:
+    - name: Restore the previous managed virtual host after a failed change
+      ansible.builtin.copy:
+        content: "{{ demo_website_previous_vhost.content | b64decode }}"
+        dest: "{{ demo_website_config.vhost_file }}"
+        owner: root
+        group: root
+        mode: '0600'
+        setype: httpd_config_t
+      when: demo_website_existing_vhost.stat.exists
+      no_log: true
+      diff: false
+
+    - name: Remove only the new version's incomplete virtual host
+      ansible.builtin.file:
+        path: "{{ demo_website_config.vhost_file }}"
+        state: absent
+      when: not demo_website_existing_vhost.stat.exists
+
+    - name: Validate nginx after restoring the previous configuration
+      ansible.builtin.command:
+        argv: [/usr/sbin/nginx, -t]
+      changed_when: false
+
+    - name: Reload the restored nginx configuration
+      ansible.builtin.systemd_service:
+        name: nginx
+        state: reloaded
+
+    - name: Stop after the website infrastructure failure
+      ansible.builtin.fail:
+        msg: Website infrastructure did not complete; its previous virtual host was restored. Inspect the protected job events.

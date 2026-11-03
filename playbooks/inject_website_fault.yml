@@ -12,10 +12,15 @@
 - name: Inject the demo website fault
   hosts: all
   become: true
+  gather_facts: false
 
   vars:
     demo_website_root: /var/www/redhat
     demo_button_marker: /var/www/redhat/.armed
+
+  pre_tasks:
+    - name: Select and verify the website's hypervisor before connecting
+      ansible.builtin.include_tasks: tasks/demo_website_target.yml
 
   tasks:
     # First, and deliberately so. Removing the marker makes nginx answer

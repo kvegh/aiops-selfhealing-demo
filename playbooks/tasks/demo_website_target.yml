@@ -1,0 +1,66 @@
+---
+- name: Bind a versioned website only to its explicitly selected AAP allocation
+  when: demo_website_manage_infrastructure | default(false) | bool
+  block:
+    - name: Validate the existing instance allocation and hypervisor pins locally
+      ansible.builtin.set_fact:
+        demo_website_config: "{{ demo_website_deployment | demo_website_configuration }}"
+      no_log: true
+
+    - name: Require a single exact hypervisor target before opening SSH
+      ansible.builtin.assert:
+        that:
+          - ansible_play_hosts_all | length == 1
+          - ansible_host == demo_website_config.hypervisor.address
+          - demo_website_public_hostname == demo_website_config.hostname
+        fail_msg: The website must use the selected AAP instance's pinned hypervisor and versioned hostname.
+        quiet: true
+      no_log: true
+
+    - name: Allocate a job-local file for pinned SSH public keys
+      ansible.builtin.tempfile:
+        state: file
+        prefix: demo-website-known-hosts-
+      delegate_to: localhost
+      become: false
+      register: demo_website_known_hosts
+
+    - name: Write only the selected hypervisor's verified SSH public keys
+      ansible.builtin.copy:
+        dest: "{{ demo_website_known_hosts.path }}"
+        content: |
+          {% for key in demo_website_config.hypervisor.host_keys %}
+          {{ demo_website_config.hypervisor.address }} {{ key }}
+          [{{ demo_website_config.hypervisor.address }}]:{{ demo_website_config.hypervisor.port }} {{ key }}
+          {% endfor %}
+        mode: '0600'
+      delegate_to: localhost
+      become: false
+      no_log: true
+
+    - name: Use the selected hypervisor identity and version-specific website paths
+      ansible.builtin.set_fact:
+        ansible_user: "{{ demo_website_config.hypervisor.user }}"
+        ansible_port: "{{ demo_website_config.hypervisor.port }}"
+        ansible_password: ''
+        ansible_become_password: ''
+        ansible_host_key_checking: true
+        ansible_ssh_host_key_checking: true
+        ansible_ssh_common_args: >-
+          -o StrictHostKeyChecking=yes
+          -o UserKnownHostsFile={{ demo_website_known_hosts.path | quote }}
+          -o IdentitiesOnly=yes
+        demo_website_root: "{{ demo_website_config.root }}"
+        demo_button_marker: "{{ demo_website_config.root }}/.armed"
+        demo_website_rate_limit_file: "{{ demo_website_config.rate_limit_file }}"
+        demo_website_rate_limit_zone: "{{ demo_website_config.rate_limit_zone }}"
+      no_log: true
+
+    - name: Verify the connected hypervisor before changing the website
+      ansible.builtin.command:
+        argv: [cat, /etc/machine-id]
+      register: demo_website_live_machine_id
+      changed_when: false
+      check_mode: false
+      failed_when: demo_website_live_machine_id.stdout | trim != demo_website_config.hypervisor.machine_id
+      no_log: true

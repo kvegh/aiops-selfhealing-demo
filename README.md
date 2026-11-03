@@ -170,6 +170,33 @@ flowchart TD
 
 ### Audience website lifecycle
 
+For a new versioned recovery deployment, use the
+[versioned website procedure](docs/09-versioned-website-deployment.md).
+The existing **Enable Demo Website** job can provision DNS, trusted HTTPS and
+its nginx virtual host on the hypervisor selected for the AAP instance. Both
+`aap27.vNN.<zone>` and `redhat.vNN.<zone>` reuse that instance's existing
+allocation number. Content, nginx configuration and delivery-cache paths are
+separate for each version. Hypervisor SSH keys and machine identity are pinned;
+there is no production address or hostname fallback in this mode.
+
+The initial recovery capture disables website monitoring changes, shared
+fail2ban changes and button arming. The site can be deployed and checked while
+the button stays disarmed and EDA activation definitions stay disabled.
+Target-local monitoring and automatic repair must be configured before enabling
+the complete audience outage/recovery loop. The deployment uses an existing
+approved ACME account and base-installed packages; it accepts no legal terms
+and installs no dependencies.
+
+After the CaC import, the operator retrieves the selected target's fault-template
+ID and generated webhook key through its authenticated HTTPS API. The existing
+Enable job accepts those values and the DNS token as Vault-encrypted launch
+variables through its existing runtime Vault credential. DNS and webhook secrets
+are not stored in inventory or exposed to the browser. This is an explicit
+post-import handoff; an unattended combined deployment workflow is not claimed.
+
+The following lifecycle instructions describe an existing host whose virtual
+host is already configured. That mode retains its current defaults.
+
 Use [the recreation guide](docs/07-audience-website-demo.md) for the complete
 nginx, firewall, Zabbix, Vault, controller, and EDA setup and today's test evidence.
 
@@ -238,6 +265,7 @@ ansible-playbook --syntax-check --vault-password-file /path/to/vault-password -i
 ansible-playbook --syntax-check --vault-password-file /path/to/vault-password -i localhost, playbooks/restore_website_content.yml
 ansible-playbook --syntax-check --vault-password-file /path/to/vault-password -i localhost, playbooks/arm_demo_button.yml
 ANSIBLE_LOCAL_TEMP=/tmp/aiops-hostname-local python3.12 -m unittest discover -s tests -p test_website_hostname.py -v
+python3.12 -m unittest discover -s tests -p test_versioned_website.py -v
 node tests/browser_polling.test.js
 ansible-lint playbooks/tasks/demo_website_rate_limit.yml
 git diff --check

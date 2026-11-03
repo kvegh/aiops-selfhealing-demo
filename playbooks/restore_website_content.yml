@@ -11,6 +11,7 @@
 - name: Restore the demo website content
   hosts: all
   become: true
+  gather_facts: false
 
   vars_files:
     - "{{ playbook_dir }}/../myvars"
@@ -18,6 +19,10 @@
   vars:
     demo_website_check_hostname: "{{ demo_website_public_hostname | default(vault_demo_website_public_hostname) }}"
     demo_website_root: /var/www/redhat
+
+  pre_tasks:
+    - name: Select and verify the website's hypervisor before connecting
+      ansible.builtin.include_tasks: tasks/demo_website_target.yml
 
   tasks:
     - name: Look for the content file and the aside copy

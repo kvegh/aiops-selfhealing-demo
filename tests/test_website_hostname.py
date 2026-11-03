@@ -41,6 +41,7 @@ class WebsiteHostnameTests(unittest.TestCase):
                 for state in states:
                     play = copy.deepcopy(original)
                     play.update(hosts="all", become=False, gather_facts=False)
+                    play.pop("pre_tasks", None)
                     play["tasks"] = [
                         task for task in play["tasks"]
                         if task.get("ansible.builtin.command", {}).get("argv", [None])[0] == "curl"
