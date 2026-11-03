@@ -79,6 +79,7 @@
       ansible.builtin.package:
         name: git
         state: present
+      when: not (demo_website_manage_infrastructure | default(false) | bool)
 
     # force: true so a hand-edit on the host is discarded rather than
     # failing the clone — the repo is the only source of truth for content.

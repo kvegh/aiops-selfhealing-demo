@@ -175,9 +175,10 @@ For a new versioned recovery deployment, use the
 The existing **Enable Demo Website** job can provision DNS, trusted HTTPS and
 its nginx virtual host on the hypervisor selected for the AAP instance. Both
 `aap27.vNN.<zone>` and `redhat.vNN.<zone>` reuse that instance's existing
-allocation number. Content, nginx configuration and delivery-cache paths are
-separate for each version. Hypervisor SSH keys and machine identity are pinned;
-there is no production address or hostname fallback in this mode.
+allocation number. Content, its staged checkout, nginx configuration and
+delivery-cache paths are separate for each version. Hypervisor SSH keys and
+machine identity are pinned; there is no production address or hostname fallback
+in this mode.
 
 The initial recovery capture disables website monitoring changes, shared
 fail2ban changes and button arming. The site can be deployed and checked while

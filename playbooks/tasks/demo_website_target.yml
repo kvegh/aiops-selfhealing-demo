@@ -51,6 +51,7 @@
           -o UserKnownHostsFile={{ demo_website_known_hosts.path | quote }}
           -o IdentitiesOnly=yes
         demo_website_root: "{{ demo_website_config.root }}"
+        demo_web_checkout: "{{ demo_website_config.checkout }}"
         demo_button_marker: "{{ demo_website_config.root }}/.armed"
         demo_website_rate_limit_file: "{{ demo_website_config.rate_limit_file }}"
         demo_website_rate_limit_zone: "{{ demo_website_config.rate_limit_zone }}"

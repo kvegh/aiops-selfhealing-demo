@@ -60,6 +60,7 @@ def website_configuration(deployment):
             "hostname": f"redhat.{version}.{zone}", "aap_hostname": aap_hostname,
             "hypervisor": dict(hypervisor, address=address, public_ipv4=str(public_ip), port=port),
             "root": f"/var/www/redhat-{version}",
+            "checkout": f"/opt/demo-web-src-{version}",
             "rate_limit_file": f"/etc/nginx/{prefix}-rate-limit.conf",
             "rate_limit_zone": f"redhat_{version}_panic",
             "cache_zone": f"redhat_{version}_deliveries",

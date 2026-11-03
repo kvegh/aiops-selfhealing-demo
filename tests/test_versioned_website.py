@@ -68,7 +68,7 @@ class VersionedWebsiteTests(unittest.TestCase):
     def test_separate_allocations_use_distinct_content_cache_and_nginx_paths(self):
         first = FILTERS.website_configuration(deployment(16))
         second = FILTERS.website_configuration(deployment(17))
-        for field in ("root", "rate_limit_file", "rate_limit_zone", "cache_zone", "cache_path", "vhost_file"):
+        for field in ("root", "checkout", "rate_limit_file", "rate_limit_zone", "cache_zone", "cache_path", "vhost_file"):
             self.assertNotEqual(first[field], second[field])
 
     def test_dns_guard_allows_only_absent_or_identical_ipv4_records(self):
@@ -141,6 +141,7 @@ class ManagedTargetTaskTests(unittest.TestCase):
                     ROOT / "playbooks/tasks/demo_website_target.yml")},
                           {"ansible.builtin.assert": {"that": [
                               "demo_website_root == '/var/www/redhat-v16'",
+                              "demo_web_checkout == '/opt/demo-web-src-v16'",
                               "demo_button_marker == '/var/www/redhat-v16/.armed'",
                               "ansible_host_key_checking | bool",
                               "ansible_ssh_host_key_checking | bool",

@@ -12,7 +12,7 @@
 
 - name: Check the certificate and nginx packages already provided by Hactar base
   ansible.builtin.command:
-    argv: [rpm, -q, nginx, certbot, python3-certbot-nginx]
+    argv: [rpm, -q, nginx, certbot, python3-certbot-nginx, git]
   register: demo_website_package_readiness
   changed_when: false
   failed_when: false
@@ -21,7 +21,7 @@
 - name: Require existing base packages instead of installing dependencies
   ansible.builtin.assert:
     that: demo_website_package_readiness.rc == 0
-    fail_msg: Prepare nginx, certbot and python3-certbot-nginx through Hactar base before deploying this website.
+    fail_msg: Prepare nginx, certbot, python3-certbot-nginx and git through Hactar base before deploying this website.
     quiet: true
 
 - name: Find an existing approved ACME registration
@@ -188,6 +188,12 @@
             unique | list == [demo_website_config.hypervisor.public_ipv4]
           - >-
             query('community.general.dig', demo_website_config.hostname, '@8.8.8.8', qtype='AAAA') |
+            reject('equalto', '') | list == []
+          - >-
+            query('community.general.dig', demo_website_config.aap_hostname, '@8.8.8.8', qtype='A') |
+            unique | list == [demo_website_config.hypervisor.public_ipv4]
+          - >-
+            query('community.general.dig', demo_website_config.aap_hostname, '@8.8.8.8', qtype='AAAA') |
             reject('equalto', '') | list == []
         fail_msg: Public DNS has not converged on the selected hypervisor's IPv4-only website route.
         quiet: true

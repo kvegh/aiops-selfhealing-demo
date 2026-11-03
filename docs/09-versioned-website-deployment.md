@@ -16,7 +16,7 @@ also needs its own inventory entry containing `ansible_host`, `public_ipv4`,
 `ansible_user`, `ansible_port`, `machine_id` and `host_keys`. The private CaC
 capture derives the website's deployment dictionary from those selected entries.
 
-The hypervisor must already have nginx, certbot, python3-certbot-nginx, an
+The hypervisor must already have nginx, certbot, python3-certbot-nginx, git, an
 approved ACME account, public HTTP/HTTPS reachability and the existing base
 permissions for nginx proxying. The playbook checks package/account readiness;
 it neither installs tools nor registers an account. Prepare the reviewed
@@ -65,8 +65,11 @@ are separate decisions; this implementation does not introduce either.
 The job refuses conflicting DNS A records and any AAAA record for the versioned
 website. It creates only that exact A record when absent and waits for public
 DNS to identify the selected hypervisor. Existing DNS records at another
-address are not replaced. It creates version-specific content, nginx and
-delivery-cache paths without overwriting an unmanaged virtual host.
+address are not replaced. The matching AAP name must resolve to the same pinned
+public IPv4 address without an alternate IPv6 route. It creates version-specific
+content, nginx and delivery-cache paths without overwriting an unmanaged virtual host. The existing
+target-side public content checkout is isolated under `/opt/demo-web-src-vNN`;
+managed deployments require git to be preinstalled instead of installing it.
 
 Certificate issuance uses the existing account and webroot challenges. Renewal
 keeps the webroot method and validates/reloads nginx through a deploy hook.
