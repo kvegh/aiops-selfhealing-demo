@@ -198,6 +198,9 @@ configuration and guarded cleanup.
 The Zabbix clone places its own hostname first in the owned hosts-file entry
 for the versioned proxy URLs, and retries repair that entry before checking its
 fully qualified hostname.
+Its public frontend readiness check retries within a bounded window while
+requiring trusted HTTPS, HTTP 401 and the expected Basic authentication
+challenge. A persistent failure stops deployment.
 
 ### Audience website lifecycle
 

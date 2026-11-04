@@ -111,6 +111,10 @@ public HTTPS and the source deployment's additional Basic-auth gate. nginx uses
 The new hash file and certificate are specific to this deployment version.
 nginx is validated before reload, and its previous managed vhost is restored on
 a failed publication. No production virtual host is edited.
+After publication, the trusted HTTPS probe waits within a bounded readiness
+window for the required HTTP 401 response, then requires the Basic challenge.
+Certificate validation and refusal of redirects remain enabled on every attempt;
+an incorrect response or certificate still fails deployment.
 
 Basic authentication covers the **entire public Zabbix frontend**, including
 its public API path. No public API exception is added. Configuration API calls

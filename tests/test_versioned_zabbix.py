@@ -180,4 +180,48 @@ class QuarantineExecutionTests(unittest.TestCase):
         parameters={x['name']:x['value'] for x in media['parameters']}
         self.assertEqual(parameters['password'],'synthetic-password')
 
+class FrontendReadinessExecutionTests(unittest.TestCase):
+    def run_probe(self, statuses, challenge=True):
+        requests=[]
+        class Handler(BaseHTTPRequestHandler):
+            def log_message(self,*args):pass
+            def do_GET(self):
+                status=statuses[min(len(requests),len(statuses)-1)];requests.append(self.path)
+                self.send_response(status)
+                if status==401 and challenge:self.send_header('WWW-Authenticate','Basic realm="Synthetic monitoring"')
+                self.end_headers()
+        server=ThreadingHTTPServer(('127.0.0.1',0),Handler)
+        thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
+        try:
+            with tempfile.TemporaryDirectory(prefix='zabbix-frontend-readiness-') as temporary:
+                directory=Path(temporary)
+                tasks=yaml.safe_load((ROOT/'playbooks/tasks/demo_zabbix_frontend.yml').read_text())[-2:]
+                probe=tasks[0];arguments=probe['ansible.builtin.uri']
+                self.assertIs(arguments['validate_certs'],True)
+                self.assertEqual(arguments['follow_redirects'],'none')
+                self.assertEqual(arguments['status_code'],401)
+                self.assertGreater(probe['retries'],0)
+                arguments['url']='http://127.0.0.1:%s/'%server.server_address[1]
+                arguments['timeout']=2;probe['retries']=2;probe['delay']=0
+                play=directory/'play.yml'
+                play.write_text(yaml.safe_dump([{'hosts':'localhost','connection':'local','gather_facts':False,'tasks':tasks}],sort_keys=False))
+                config=directory/'ansible.cfg';config.write_text('[defaults]\n')
+                environment=dict(os.environ,ANSIBLE_CONFIG=str(config),ANSIBLE_LOCAL_TEMP=str(directory/'local'),ANSIBLE_REMOTE_TEMP=str(directory/'remote'))
+                result=subprocess.run([sys.executable,'-m','ansible.cli.playbook','-i','localhost,',str(play)],cwd=directory,env=environment,text=True,capture_output=True,timeout=30)
+                return result,requests
+        finally:
+            server.shutdown();server.server_close();thread.join(timeout=5)
+
+    def test_transient_frontend_response_retries_until_expected_authentication_gate(self):
+        result,requests=self.run_probe([503,401])
+        self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+        self.assertEqual(requests,['/','/'])
+
+    def test_permanent_wrong_status_or_missing_basic_challenge_remains_a_failure(self):
+        for statuses,challenge,count in (([503],True,3),([401],False,1)):
+            with self.subTest(statuses=statuses,challenge=challenge):
+                result,requests=self.run_probe(statuses,challenge)
+                self.assertNotEqual(result.returncode,0,result.stdout+result.stderr)
+                self.assertEqual(len(requests),count)
+
 if __name__=='__main__':unittest.main()

@@ -252,7 +252,11 @@
     validate_certs: true
     follow_redirects: none
     status_code: 401
+    timeout: 10
   register: demo_zabbix_public_frontend
+  until: demo_zabbix_public_frontend.status | default(0) | int == 401
+  retries: 12
+  delay: 5
   no_log: true
 - name: Require the expected authentication challenge
   ansible.builtin.assert:
