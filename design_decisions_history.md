@@ -1,5 +1,25 @@
 # Design decisions history
 
+## Require problem events before launching the agent — 2026-11-04
+
+Implementation `ba7785d` requires the agent-unavailable name and problem value
+before launching the existing remediation template. The selected live media
+script was read back: it converts Zabbix macro strings to numeric event values.
+Four focused tests execute the maintained JavaScript and evaluate the saved
+condition with native Ansible. Problem values match; recovery, missing/unknown
+values and unrelated event names do not. Offline production lint passed.
+The website's separate problem/recovery rulebook remains unchanged.
+
+Read-only inspection confirmed the existing template selects the verified TRA
+and MCP account. Its private Linux and Zabbix stdio servers initialized and
+listed tools without tool calls or image pulls. Concrete remaining prerequisites
+are the Claude executable, target-owned provider authentication, reviewed
+workspace instructions, private target AAP MCP configuration and a reviewed
+provider-egress policy. No application job, activation, model invocation,
+provider login or new fault was performed. Exact instance and inspection
+metadata is retained in the private evidence Vault; the full agent-remediation
+rehearsal remains unproved.
+
 ## Verify the published monitoring playbook through its normal job — 2026-11-04
 
 Implementation `1172d8a`, published in revision `9b83204`, has now completed the
