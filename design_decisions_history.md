@@ -1,5 +1,43 @@
 # Design decisions history
 
+## Load per-instance application settings through native Vault — 2026-11-03
+
+Implementation `ba099ef` implements the owner's approved whole-file settings
+delivery in the existing private AIOps repository. The existing application
+templates receive ordinary ciphertext strings. Native copy preserves that
+ciphertext in a private execution-environment file; native `include_vars`
+uses the already attached runtime Vault credential. A fixed schema checks
+the selected instance and reviewed setting names before binding values, and
+an `always` section removes the file after success or failure. Explicit
+literal tags keep credential contents from becoming Jinja templates.
+
+No custom decryption adapter, credential type, repository, service, dispatcher
+or additional Job Template is introduced. A private maintenance command keeps
+the existing CaC capture's opaque ciphertext equal to its encrypted runtime
+file. Target-generated webhook and Event Stream settings still require the
+initial CaC import; missing values stop dependent jobs before managed writes.
+This replaces the earlier unsupported scalar-launch proposals documented above.
+
+The private AIOps capture now owns selected guest and offline artifact data
+instead of nested application settings on the AAP inventory host. Generic
+source guest inventory ownership remains available for existing decommissioning.
+The instance naming scheme is deliberately unchanged pending the user's
+separate instruction to wait until the current import finishes.
+
+Offline runtime preparation also imports only the reviewed, installed
+release-owned vendor signing key after file hash and fingerprint checks. This
+addresses an empty RPM key database in the upstream guest image while retaining
+mandatory RPM signatures and package GPG checks; no external key is fetched.
+
+Seven real-Ansible/schema runtime tests, two private maintenance checks and
+eight MCP regressions pass. The actual private ciphertext loads in both Ansible
+modes using ordinary JSON extra variables, with no secret output and cleanup
+verified. Four application playbooks pass syntax; nineteen files pass scoped
+production lint. Both-mode capture/dependency checks pass with all central
+application fields removed from their fixture. No application, fault test or
+activation is launched by this publication; a reference token remains only a
+candidate until it authenticates on the verified new monitoring clone.
+
 ## Prepare target-local monitoring and the two requested MCP jobs — 2026-11-03
 
 Implementation `fa73fef` adds the separately requested Zabbix deployment and
