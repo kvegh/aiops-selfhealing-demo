@@ -89,6 +89,15 @@ templates, and the status page are still outstanding.
   stack. All three pages now make zero external requests, so they render
   identically on an audience phone with nothing but venue wifi.
 
+## [1.1.2] — 2026-11-04
+
+### Changed
+
+- Replaced the dominant red AAP header with deep navy and reduced red to a
+  thin brand accent. The headline returns to dark ink. The user found the
+  large red area visually harsh; blue/teal interactions and explicit
+  incident-status colors are retained.
+
 ## [1.1.1] — 2026-11-04
 
 ### Changed

@@ -1,6 +1,6 @@
 # Interactive recovery walkthrough
 
-Version: **1.1.1**. This static presenter walkthrough illustrates the existing
+Version: **1.1.2**. This static presenter walkthrough illustrates the existing
 missing-`zabbix-agent2` recovery scenario. It is separate from the live audience
 website and makes no infrastructure connections. All findings, status changes,
 and timing are simulated; a successful walkthrough is not live recovery proof.
@@ -70,8 +70,10 @@ generation, incident memory, ITSM, or audience website controls.
 
 ## Color and status
 
-AAP carries a fixed Red Hat red (`#ee0000`) header above a dark navy platform.
-Brand color does not change with the incident state. White surfaces and crisp
+AAP uses a deep navy header and platform with a thin Red Hat red (`#ee0000`)
+brand accent. The headline remains dark; red is limited to small fixed brand
+details rather than large surfaces. Brand color does not change with the
+incident state. White surfaces and crisp
 blue interactions keep the presentation light; teal identifies the AI runtime
 and the labeled AAP execution path. Diagnostic paths are dashed blue, job
 requests are solid purple, and event/job dispatch is slate.
