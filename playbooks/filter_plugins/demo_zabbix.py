@@ -171,10 +171,11 @@ def recipient_medias(existing, media_id, endpoint, stale_media_ids=None):
     return result
 
 
-def reconcile(config, snapshot):
+def reconcile(config, snapshot, monitor_testserver=False):
     """Plan only in-place changes to the known copied monitoring roles."""
     require(isinstance(snapshot, dict) and all(isinstance(snapshot.get(key), list)
             for key in ('hosts', 'items', 'triggers')), 'Read the complete copied monitoring definitions first.')
+    require(type(monitor_testserver) is bool, 'Choose selected testserver monitoring explicitly.')
     version = config['version']
     roles = {
         'website': (['demo-website-' + version], 'demo-website-' + version, config['website_hostname']),
@@ -214,7 +215,7 @@ def reconcile(config, snapshot):
         owned[str(host['hostid'])] = role
         desired = {'host':name, 'name':display, 'description':rewrite(host.get('description', ''))}
         if role != 'website':
-            desired['status'] = 1
+            desired['status'] = 0 if role == 'testserver' and monitor_testserver else 1
         update('host.update', host, 'hostid', desired)
         if role in ('testserver', 'self'):
             address = config['testserver']['address'] if role == 'testserver' else '127.0.0.1'

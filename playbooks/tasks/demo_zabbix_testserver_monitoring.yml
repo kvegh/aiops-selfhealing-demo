@@ -1,0 +1,22 @@
+---
+- name: Read all selected monitoring and template identities before status changes
+  ansible.builtin.include_tasks: demo_zabbix_testserver_snapshot.yml
+
+- name: Plan only reviewed Linux and ICMP monitoring with retained Apache history
+  ansible.builtin.set_fact:
+    demo_zabbix_testserver_plan: "{{ demo_zabbix_config | demo_zabbix_testserver_plan(demo_zabbix_testserver_snapshot) }}"
+
+- name: Apply only selected-host check status changes
+  ansible.builtin.include_tasks: demo_zabbix_rpc.yml
+  vars:
+    demo_zabbix_rpc_method: "{{ demo_zabbix_testserver_operation.method }}"
+    demo_zabbix_rpc_params: "{{ demo_zabbix_testserver_operation.params }}"
+  loop: "{{ demo_zabbix_testserver_plan.operations }}"
+  loop_control:
+    loop_var: demo_zabbix_testserver_operation
+
+- name: Mark the earliest acceptable time for fresh target metric samples
+  ansible.builtin.command:
+    argv: [date, '+%s']
+  register: demo_zabbix_testserver_polling_started
+  changed_when: false

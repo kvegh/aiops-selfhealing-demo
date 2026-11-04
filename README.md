@@ -211,7 +211,13 @@ the selected instance while retaining record IDs and history. It removes stale
 EDA recipient destinations and clears disabled dashboard credentials. The
 selected website forwarding action stays disabled until frontend and exact
 configuration readbacks pass, then the existing delivery flag can enable it as
-the final configuration write. Other copied monitoring and actions stay disabled.
+the final configuration write. Other copied hosts and actions stay disabled.
+An explicit per-instance opt-in can also enable the verified testserver's Linux
+and ICMP monitoring after its agent is installed. The normal deployment checks
+the actual domain/lease and agent identity before stopping monitoring, keeps
+inapplicable Apache checks disabled without deleting their history, and requires
+fresh agent ping, uptime and ICMP samples before finishing. It enables no general
+Claude forwarding or activation. See [selected testserver monitoring](docs/13-testserver-monitoring.md).
 
 Both new MCP installations have completed their normal jobs and passed real
 read-only queries against their matching testserver and monitoring instance.
@@ -230,9 +236,11 @@ forwarding, preserved website activation and healthy content and arm endpoints.
 
 The existing Zabbix agent job also passed on the verified new test guest after
 its CaC project reference was corrected and package-download HTTPS was approved.
-The matching monitoring VM received a successful passive agent ping. Copied
-testserver monitoring remains disabled; guest isolation removal and monitoring
-activation are separate steps.
+The matching monitoring VM received a successful passive agent ping. Successful
+guest configuration now releases only that guest's extra recovery isolation,
+while production destinations remain blocked. Selected monitoring has its own
+explicit readiness check and configuration switch; a live AI-remediation
+rehearsal remains separate from installing the agent or collecting healthy data.
 
 ### Audience website lifecycle
 

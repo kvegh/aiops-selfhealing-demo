@@ -48,6 +48,7 @@
           - demo_zabbix_basic_auth_file | trim | length > 0
           - demo_zabbix_deployment.isolation_policy is mapping
           - demo_zabbix_enable_delivery | default(false) is boolean
+          - demo_zabbix_enable_testserver_monitoring | default(false) is boolean
         quiet: true
         fail_msg: Supply the selected target and explicit Vault-protected clone, DNS and frontend credentials.
       no_log: true
@@ -142,6 +143,36 @@
       check_mode: false
       no_log: true
 
+    - name: Verify the selected testserver identity before allowing its monitoring
+      when: demo_zabbix_enable_testserver_monitoring | default(false) | bool
+      no_log: true
+      block:
+        - name: Read the selected testserver persistent domain
+          ansible.builtin.command:
+            argv: [virsh, -c, 'qemu:///system', dumpxml, --inactive, "{{ demo_zabbix_config.testserver.vm_name }}"]
+          register: demo_zabbix_testserver_domain_xml
+          changed_when: false
+          check_mode: false
+
+        - name: Require the verified testserver UUID, disk, MAC and network
+          ansible.builtin.assert:
+            that: demo_zabbix_config | demo_zabbix_testserver_domain(demo_zabbix_testserver_domain_xml.stdout)
+            quiet: true
+
+        - name: Read only the selected testserver assigned lease
+          ansible.builtin.command:
+            argv: [virsh, -c, 'qemu:///system', domifaddr, "{{ demo_zabbix_config.testserver.vm_name }}", --source, lease]
+          register: demo_zabbix_testserver_lease
+          changed_when: false
+          check_mode: false
+
+        - name: Require its actual assigned address to match the verified artifact
+          ansible.builtin.assert:
+            that: >-
+              demo_zabbix_testserver_lease.stdout | demo_zabbix_guest_address(demo_zabbix_config.testserver.mac)
+              == demo_zabbix_config.testserver.address
+            quiet: true
+
     - name: Stop check mode before cloning or configuring the monitoring guest
       ansible.builtin.meta: end_play
       when: ansible_check_mode
@@ -152,6 +183,15 @@
 
     - name: Prepare this guest's isolated management connection
       ansible.builtin.include_tasks: tasks/demo_zabbix_guest_connection.yml
+
+    - name: Verify the selected agent before interrupting existing monitoring
+      ansible.builtin.include_tasks: tasks/demo_zabbix_testserver_readiness.yml
+      args:
+        apply:
+          delegate_to: "{{ demo_zabbix_config.hostname }}"
+          become: true
+          no_log: true
+      when: demo_zabbix_enable_testserver_monitoring | default(false) | bool
 
     - name: Quarantine the copied integrations and configure target-local monitoring
       ansible.builtin.include_tasks: tasks/demo_zabbix_monitoring.yml
@@ -181,7 +221,8 @@
                  demo_zabbix_guest_machine_id.stdout | trim) |
                combine({'item_id': demo_zabbix_monitoring_item_id, 'trigger_id': demo_zabbix_monitoring_trigger_id,
                         'mediatype_id': demo_zabbix_media_id, 'action_id': demo_zabbix_action_id,
-                        'delivery_enabled': demo_zabbix_enable_delivery | default(false) | bool}) }}
+                        'delivery_enabled': demo_zabbix_enable_delivery | default(false) | bool,
+                        'testserver_monitoring_enabled': demo_zabbix_enable_testserver_monitoring | default(false) | bool}) }}
         aggregate: false
         per_host: false
       no_log: true

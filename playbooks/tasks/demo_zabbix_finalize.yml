@@ -4,8 +4,55 @@
 
 - name: Require all current copied names and endpoints to match this deployment
   ansible.builtin.assert:
-    that: demo_zabbix_config | demo_zabbix_reconciliation(demo_zabbix_reconcile_snapshot) | length == 0
+    that: >-
+      demo_zabbix_config | demo_zabbix_reconciliation(demo_zabbix_reconcile_snapshot,
+        demo_zabbix_enable_testserver_monitoring | default(false) | bool) | length == 0
     quiet: true
+
+- name: Verify reviewed testserver monitoring and fresh actual metric samples
+  when: demo_zabbix_enable_testserver_monitoring | default(false) | bool
+  block:
+    - name: Read back every selected check and its template ownership
+      ansible.builtin.include_tasks: demo_zabbix_testserver_snapshot.yml
+
+    - name: Require unchanged selected check states after starting monitoring
+      ansible.builtin.assert:
+        that: (demo_zabbix_config | demo_zabbix_testserver_plan(demo_zabbix_testserver_snapshot)).operations | length == 0
+        quiet: true
+
+    - name: Wait for fresh agent ping, uptime and ICMP samples from the selected guest
+      ansible.builtin.uri:
+        url: http://127.0.0.1/api_jsonrpc.php
+        method: POST
+        headers:
+          Authorization: "Bearer {{ demo_zabbix_clone_api_token }}"
+          Content-Type: application/json-rpc
+        body_format: json
+        body:
+          jsonrpc: '2.0'
+          method: history.get
+          params:
+            history: 3
+            itemids: "{{ demo_zabbix_testserver_plan.health_items.values() | list }}"
+            time_from: "{{ demo_zabbix_testserver_polling_started.stdout | int }}"
+            output: [itemid, clock, value]
+            sortfield: clock
+            sortorder: DESC
+            limit: 30
+          id: 1
+        follow_redirects: none
+        validate_certs: true
+        status_code: 200
+      register: demo_zabbix_testserver_health_samples
+      changed_when: false
+      until: >-
+        demo_zabbix_testserver_health_samples.json.result | default([]) |
+        demo_zabbix_testserver_samples_ready(demo_zabbix_testserver_plan.health_items,
+          demo_zabbix_testserver_polling_started.stdout | int)
+      failed_when: demo_zabbix_testserver_health_samples.json.error is defined
+      retries: 30
+      delay: 5
+      no_log: true
 
 - name: Read back the selected forwarding script and authentication parameters
   ansible.builtin.include_tasks: demo_zabbix_rpc.yml

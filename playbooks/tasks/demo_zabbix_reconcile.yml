@@ -4,7 +4,9 @@
 
 - name: Validate all copied-role names and plan only their target settings
   ansible.builtin.set_fact:
-    demo_zabbix_reconcile_operations: "{{ demo_zabbix_config | demo_zabbix_reconciliation(demo_zabbix_reconcile_snapshot) }}"
+    demo_zabbix_reconcile_operations: >-
+      {{ demo_zabbix_config | demo_zabbix_reconciliation(demo_zabbix_reconcile_snapshot,
+         demo_zabbix_enable_testserver_monitoring | default(false) | bool) }}
 
 - name: Reconcile copied names and endpoints without deleting records or history
   ansible.builtin.include_tasks: demo_zabbix_rpc.yml

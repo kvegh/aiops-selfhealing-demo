@@ -114,7 +114,7 @@ class Api:
         return {'result':{key+'s':[identity]}}
 
 class QuarantineExecutionTests(unittest.TestCase):
-    def run_tasks(self,reject=False,api=None,unsafe=False,vaulted=False,finalize=False,delivery=False,frontend_ok=True):
+    def run_tasks(self,reject=False,api=None,unsafe=False,vaulted=False,finalize=False,delivery=False,frontend_ok=True,monitor=False):
         api=api or Api(reject)
         class Handler(BaseHTTPRequestHandler):
             def log_message(self,*args):pass
@@ -141,7 +141,7 @@ class QuarantineExecutionTests(unittest.TestCase):
                 next(row for row in tasks if row['name']=='Keep the selected guest first in its owned frontend proxy aliases')['ansible.builtin.lineinfile']['path']=str(hosts)
                 tasks[-1].pop('ansible.builtin.systemd_service');tasks[-1]['ansible.builtin.command']={'argv':[sys.executable,'-c','from pathlib import Path;import sys;Path(sys.argv[1]).touch()',str(marker)]};tasks[-1]['changed_when']=True
                 (folder/'files').mkdir();shutil.copy(ROOT/'playbooks/files/demo-zabbix-event-stream.js',folder/'files')
-                variables={'demo_zabbix_config':policy.configuration(deployment()),'demo_zabbix_network':{'gateway':'192.0.2.1','bridge':'vmbr0'},'demo_zabbix_clone_api_token':'synthetic-clone-bearer','demo_zabbix_delivery':{'url':'https://aap27.v07.example.invalid/events','username':'synthetic-user','password':'synthetic-password'},'demo_zabbix_enable_delivery':delivery}
+                variables={'demo_zabbix_config':policy.configuration(deployment()),'demo_zabbix_network':{'gateway':'192.0.2.1','bridge':'vmbr0'},'demo_zabbix_clone_api_token':'synthetic-clone-bearer','demo_zabbix_delivery':{'url':'https://aap27.v07.example.invalid/events','username':'synthetic-user','password':'synthetic-password'},'demo_zabbix_enable_delivery':delivery,'demo_zabbix_enable_testserver_monitoring':monitor}
                 if finalize:
                     frontend=yaml.safe_load((ROOT/'playbooks/tasks/demo_zabbix_frontend.yml').read_text())[-2:]
                     frontend[0]['ansible.builtin.uri']['url']=f'http://127.0.0.1:{server.server_address[1]}/frontend'

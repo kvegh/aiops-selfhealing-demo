@@ -1,0 +1,104 @@
+---
+- name: Read only the selected testserver and its linked templates
+  ansible.builtin.include_tasks: demo_zabbix_rpc.yml
+  vars:
+    demo_zabbix_rpc_method: host.get
+    demo_zabbix_rpc_params:
+      filter:
+        host: ["{{ demo_zabbix_config.testserver.vm_name }}"]
+      output: [hostid, host, name, status]
+      selectInterfaces: extend
+      selectParentTemplates: [templateid, host, name]
+
+- name: Require exactly the selected versioned testserver
+  ansible.builtin.assert:
+    that: demo_zabbix_rpc_response.json.result | length == 1
+    quiet: true
+
+- name: Retain the selected host and its template identifiers
+  ansible.builtin.set_fact:
+    demo_zabbix_testserver_host: "{{ demo_zabbix_rpc_response.json.result[0] }}"
+    demo_zabbix_testserver_template_ids: "{{ demo_zabbix_rpc_response.json.result[0].parentTemplates | map(attribute='templateid') | list }}"
+
+- name: Read only this testserver's items and discovery ownership
+  ansible.builtin.include_tasks: demo_zabbix_rpc.yml
+  vars:
+    demo_zabbix_rpc_method: item.get
+    demo_zabbix_rpc_params:
+      hostids: ["{{ demo_zabbix_testserver_host.hostid }}"]
+      output: [itemid, hostid, templateid, key_, status, type, flags, value_type]
+      selectDiscoveryRule: [itemid]
+
+- name: Retain the selected items
+  ansible.builtin.set_fact:
+    demo_zabbix_testserver_items: "{{ demo_zabbix_rpc_response.json.result }}"
+
+- name: Read only this testserver's triggers and discovery ownership
+  ansible.builtin.include_tasks: demo_zabbix_rpc.yml
+  vars:
+    demo_zabbix_rpc_method: trigger.get
+    demo_zabbix_rpc_params:
+      hostids: ["{{ demo_zabbix_testserver_host.hostid }}"]
+      output: [triggerid, templateid, description, status, flags]
+      selectHosts: [hostid]
+      selectDiscoveryRule: [itemid]
+
+- name: Retain the selected triggers
+  ansible.builtin.set_fact:
+    demo_zabbix_testserver_triggers: "{{ demo_zabbix_rpc_response.json.result }}"
+
+- name: Read only this testserver's discovery rules
+  ansible.builtin.include_tasks: demo_zabbix_rpc.yml
+  vars:
+    demo_zabbix_rpc_method: discoveryrule.get
+    demo_zabbix_rpc_params:
+      hostids: ["{{ demo_zabbix_testserver_host.hostid }}"]
+      output: [itemid, hostid, templateid, key_, status]
+
+- name: Retain the selected discovery rules
+  ansible.builtin.set_fact:
+    demo_zabbix_testserver_discovery_rules: "{{ demo_zabbix_rpc_response.json.result }}"
+
+- name: Read the linked template item ownership
+  ansible.builtin.include_tasks: demo_zabbix_rpc.yml
+  vars:
+    demo_zabbix_rpc_method: item.get
+    demo_zabbix_rpc_params:
+      hostids: "{{ demo_zabbix_testserver_template_ids }}"
+      output: [itemid, hostid, key_]
+
+- name: Retain linked template items
+  ansible.builtin.set_fact:
+    demo_zabbix_testserver_template_items: "{{ demo_zabbix_rpc_response.json.result }}"
+
+- name: Read the linked template trigger ownership
+  ansible.builtin.include_tasks: demo_zabbix_rpc.yml
+  vars:
+    demo_zabbix_rpc_method: trigger.get
+    demo_zabbix_rpc_params:
+      hostids: "{{ demo_zabbix_testserver_template_ids }}"
+      output: [triggerid]
+      selectHosts: [hostid]
+
+- name: Retain linked template triggers
+  ansible.builtin.set_fact:
+    demo_zabbix_testserver_template_triggers: "{{ demo_zabbix_rpc_response.json.result }}"
+
+- name: Read the linked template discovery-rule ownership
+  ansible.builtin.include_tasks: demo_zabbix_rpc.yml
+  vars:
+    demo_zabbix_rpc_method: discoveryrule.get
+    demo_zabbix_rpc_params:
+      hostids: "{{ demo_zabbix_testserver_template_ids }}"
+      output: [itemid, hostid, key_]
+
+- name: Retain the complete selected testserver monitoring snapshot
+  ansible.builtin.set_fact:
+    demo_zabbix_testserver_snapshot:
+      host: "{{ demo_zabbix_testserver_host }}"
+      items: "{{ demo_zabbix_testserver_items }}"
+      triggers: "{{ demo_zabbix_testserver_triggers }}"
+      discovery_rules: "{{ demo_zabbix_testserver_discovery_rules }}"
+      template_items: "{{ demo_zabbix_testserver_template_items }}"
+      template_triggers: "{{ demo_zabbix_testserver_template_triggers }}"
+      template_discovery_rules: "{{ demo_zabbix_rpc_response.json.result }}"

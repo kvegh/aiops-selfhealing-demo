@@ -237,6 +237,10 @@
       hostid: "{{ demo_zabbix_host_id }}"
       status: 0
 
+- name: Enable reviewed testserver checks only after explicit readiness verification
+  ansible.builtin.include_tasks: demo_zabbix_testserver_monitoring.yml
+  when: demo_zabbix_enable_testserver_monitoring | default(false) | bool
+
 - name: Unmask the monitoring server only after quarantine and target configuration succeed
   ansible.builtin.systemd_service:
     name: zabbix-server.service
