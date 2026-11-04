@@ -453,3 +453,17 @@ cleanup. Its exact-disk guard accepts the positive numeric index produced by
 libvirt while rejecting foreign source attributes and different files. Nine MCP
 cases and nine Zabbix cases, syntax checks and scoped production lint passed.
 These fixes do not claim the subsequent live deployment has completed.
+
+
+## Keep the cloned Zabbix hostname canonical
+
+Implementation eac43d7 places the clone hostname first in the one owned hosts
+entry for versioned proxy URLs and idempotently repairs that same entry on an
+existing clone. The actual guest had the correct static hostname and verified
+machine identity, but its fully qualified hostname resolved to the first website
+alias sharing that address. The existing identity check now retains its purpose
+without replacing unrelated hosts entries or recreating the VM.
+
+Nine focused cases, native old-entry repair and unrelated-localhost preservation
+checks, syntax and scoped production lint passed. The server remained masked
+during diagnosis; no source monitoring service or credential was changed.
