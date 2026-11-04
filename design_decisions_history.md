@@ -739,3 +739,22 @@ tests were added for this presentation change; no browser or dependency was
 installed or run. Rendered browser review remains unverified.
 
 Implementation commit: `bf52f59`.
+
+
+## Enable verified Linux monitoring through the existing deployment
+
+The copied monitoring image carried Apache checks that do not apply to the
+minimal versioned testserver. Agent installation alone also left that host
+disabled. The existing Zabbix deployment now accepts an explicit per-instance
+monitoring opt-in after agent readiness. It verifies the actual domain/lease and
+passive agent identity, enables reviewed Linux/ICMP checks, disables only the
+retained Apache entities and requires fresh numeric samples. Unknown template
+ownership fails before status changes. Existing records/history, website
+forwarding and the disabled general Claude activation are preserved; no model
+invocation or new job/service/credential is introduced.
+
+Implementation: `a2ccdd9`. Integration `e688f67` preserves the independently
+published interactive walkthrough. Native fixture execution covers normal
+deployment and repeat configuration; identity, ownership and stale-sample
+regressions, syntax and scoped production lint passed. Live monitoring readiness
+is verified separately through the normal deployed template.
