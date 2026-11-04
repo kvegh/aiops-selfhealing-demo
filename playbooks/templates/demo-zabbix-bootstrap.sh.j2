@@ -29,5 +29,6 @@ for kind in ed25519 ecdsa rsa; do
 done
 # Resolve selected HTTPS services to this verified hypervisor's bridge. Public
 # DNS still points to its public address; this avoids NAT hairpin/routing changes.
-printf '\n%s %s %s %s\n' {{ demo_zabbix_network.gateway | quote }} {{ demo_zabbix_config.website_hostname | quote }} {{ demo_zabbix_config.aap_hostname | quote }} {{ demo_zabbix_config.hostname | quote }} >> /etc/hosts
+# Keep this guest's name first: hostname --fqdn uses the first canonical alias.
+printf '\n%s %s %s %s\n' {{ demo_zabbix_network.gateway | quote }} {{ demo_zabbix_config.hostname | quote }} {{ demo_zabbix_config.website_hostname | quote }} {{ demo_zabbix_config.aap_hostname | quote }} >> /etc/hosts
 rm -f /tmp/aiops-management.pub

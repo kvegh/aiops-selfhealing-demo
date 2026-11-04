@@ -195,6 +195,9 @@ Delegated testserver SSH connections read the computed address, user, port and
 temporary trust-file path from the original TRA host. The Zabbix deployment
 publishes its verified machine, disk, network and SSH identities for later MCP
 configuration and guarded cleanup.
+The Zabbix clone places its own hostname first in the owned hosts-file entry
+for the versioned proxy URLs, and retries repair that entry before checking its
+fully qualified hostname.
 
 ### Audience website lifecycle
 

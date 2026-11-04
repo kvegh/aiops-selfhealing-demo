@@ -5,6 +5,17 @@
   register: demo_zabbix_server_masked
   changed_when: "'Created symlink' in demo_zabbix_server_masked.stderr"
 
+- name: Keep the selected guest first in its owned frontend proxy aliases
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: >-
+      ^{{ ([demo_zabbix_network.gateway, demo_zabbix_config.website_hostname,
+            demo_zabbix_config.aap_hostname, demo_zabbix_config.hostname] | join(' ')) | regex_escape }}$
+    line: >-
+      {{ [demo_zabbix_network.gateway, demo_zabbix_config.hostname,
+          demo_zabbix_config.website_hostname, demo_zabbix_config.aap_hostname] | join(' ') }}
+    state: present
+
 - name: Require the selected versioned guest hostname
   ansible.builtin.command:
     argv: [hostname, --fqdn]

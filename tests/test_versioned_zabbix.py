@@ -116,11 +116,14 @@ class QuarantineExecutionTests(unittest.TestCase):
                 folder=Path(directory);marker=folder/'server-started'
                 for original in (ROOT/'playbooks/tasks').glob('demo_zabbix_*.yml'):
                     (folder/original.name).write_text(original.read_text().replace('http://127.0.0.1/api_jsonrpc.php',f'http://127.0.0.1:{server.server_address[1]}/api_jsonrpc.php'))
-                tasks=yaml.safe_load((folder/'demo_zabbix_monitoring.yml').read_text());tasks[0]['ansible.builtin.command']['argv']=[sys.executable,'-c','print("masked")']
-                tasks[1]['ansible.builtin.command']['argv']=[sys.executable,'-c','print("zabbix.v07.example.invalid")']
+                tasks=yaml.safe_load((folder/'demo_zabbix_monitoring.yml').read_text())
+                next(row for row in tasks if row['name']=='Stop and mask the monitoring server before inspecting inherited integrations')['ansible.builtin.command']['argv']=[sys.executable,'-c','print("masked")']
+                next(row for row in tasks if row['name']=='Require the selected versioned guest hostname')['ansible.builtin.command']['argv']=[sys.executable,'-c','print("zabbix.v07.example.invalid")']
+                hosts=folder/'hosts';hosts.write_text('127.0.0.1 localhost\n192.0.2.1 redhat.v07.example.invalid aap27.v07.example.invalid zabbix.v07.example.invalid\n')
+                next(row for row in tasks if row['name']=='Keep the selected guest first in its owned frontend proxy aliases')['ansible.builtin.lineinfile']['path']=str(hosts)
                 tasks[-1].pop('ansible.builtin.systemd_service');tasks[-1]['ansible.builtin.command']={'argv':[sys.executable,'-c','from pathlib import Path;import sys;Path(sys.argv[1]).touch()',str(marker)]};tasks[-1]['changed_when']=True
                 (folder/'files').mkdir();shutil.copy(ROOT/'playbooks/files/demo-zabbix-event-stream.js',folder/'files')
-                variables={'demo_zabbix_config':policy.configuration(deployment()),'demo_zabbix_clone_api_token':'synthetic-clone-bearer','demo_zabbix_delivery':{'url':'https://aap27.v07.example.invalid/events','username':'synthetic-user','password':'synthetic-password'},'demo_zabbix_enable_delivery':False}
+                variables={'demo_zabbix_config':policy.configuration(deployment()),'demo_zabbix_network':{'gateway':'192.0.2.1','bridge':'vmbr0'},'demo_zabbix_clone_api_token':'synthetic-clone-bearer','demo_zabbix_delivery':{'url':'https://aap27.v07.example.invalid/events','username':'synthetic-user','password':'synthetic-password'},'demo_zabbix_enable_delivery':False}
                 if unsafe:
                     from ansible.utils.unsafe_proxy import wrap_var
                     variables['demo_zabbix_clone_api_token']=wrap_var(variables['demo_zabbix_clone_api_token'])
@@ -139,6 +142,7 @@ class QuarantineExecutionTests(unittest.TestCase):
                 path=folder/'play.yml';path.write_text(yaml.dump([{'hosts':'localhost','connection':'local','gather_facts':False,'vars':variables,'tasks':tasks}],Dumper=AnsibleDumper,sort_keys=False))
                 environment=dict(os.environ,ANSIBLE_FILTER_PLUGINS=str(ROOT/'playbooks/filter_plugins'),ANSIBLE_LOCAL_TEMP=str(folder/'local'),ANSIBLE_REMOTE_TEMP=str(folder/'remote'),ANSIBLE_NOCOLOR='1')
                 response=subprocess.run([sys.executable,'-m','ansible.cli.playbook','-i','localhost,',*vault_arguments,str(path)],cwd=folder,env=environment,text=True,capture_output=True,timeout=150)
+                self.assertEqual(hosts.read_text(),'127.0.0.1 localhost\n192.0.2.1 zabbix.v07.example.invalid redhat.v07.example.invalid aap27.v07.example.invalid\n')
                 return response,marker.exists(),api
         finally:server.shutdown();server.server_close();thread.join(timeout=5)
     def test_rejected_quarantine_never_starts_the_server(self):

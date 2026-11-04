@@ -89,6 +89,10 @@ configured. The check uses the versioned website HTTPS name, verifies its chain
 and hostname, and refuses redirects. The selected service names resolve inside
 the guest to the verified hypervisor bridge, avoiding a NAT hairpin or firewall
 exception. Public DNS continues to point to that hypervisor's public IPv4.
+The guest's own versioned name is first in its managed proxy-address aliases,
+so `hostname --fqdn` retains the guest identity when multiple service names share
+one bridge address. A retry repairs only the exact older alias line before
+checking that hostname; unrelated hosts-file entries are preserved.
 
 A dedicated target-only native Zabbix webhook media and action deliver problem
 and recovery events to the selected AAP Event Stream, using its Basic credentials.
