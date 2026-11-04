@@ -711,3 +711,14 @@ new tests were added for this presentation adjustment. No browser or dependency
 was installed or run; rendered browser review remains unverified.
 
 Implementation commit: `b7c1409`.
+
+## Introduce the incident with a general error heading
+
+The user requested replacing One package disappears with An error suddenly
+arises. Release 1.1.5 updates the failure-step heading and initial Next-button
+label, reusing the existing arrow. The underlying missing-agent-package
+scenario, explanation, technical detail, and state transitions remain.
+Both runtime syntax checks, all 14 existing tests, and diff checks passed.
+No browser, dependency, or runtime configuration changes were needed.
+
+Implementation commit: `39c4e60`.
