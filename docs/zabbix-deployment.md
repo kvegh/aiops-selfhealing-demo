@@ -157,3 +157,11 @@ ansible-playbook --syntax-check -i localhost, playbooks/deploy_zabbix_demo.yml
 These checks establish implementation behavior. Actual VM boot, clone API access,
 DNS propagation, certificate issuance and public authentication require a
 separately observed successful deployment job; offline tests do not establish them.
+
+The current fresh test deployment has now completed its normal Zabbix job.
+Independent checks authenticated against the new clone and verified its
+quarantine, selected monitoring object IDs, DNS and trusted public HTTPS with
+the required Basic challenge. The exact connection to HTTPS on its own
+hypervisor was separately approved and applied after actual VM identity checks.
+Inherited integrations and event delivery remain disabled. Website content and
+the complete remediation loop still require their separate application checks.

@@ -119,7 +119,7 @@ class MCPDeploymentTests(unittest.TestCase):
 
 
 class StdioVerificationTests(unittest.TestCase):
-    def fake_server(self, root, hostname="testserver1-v07", extra_tools=None, tool_error=False):
+    def fake_server(self, root, hostname="testserver1-v07", extra_tools=None, tool_error=False, zabbix_payload=None):
         path = root / "fake_mcp.py"
         path.write_text(
             "import json,sys\n"
@@ -131,7 +131,7 @@ class StdioVerificationTests(unittest.TestCase):
             + repr(["get_system_information", "host_get"] + (extra_tools or [])) + "]}\n"
             " elif method=='tools/call': response="
             + repr({"isError": tool_error, "structuredContent": {
-                "hostname": hostname, "result": VERIFIER.ZABBIX_DATA_PREFIX + "1"}, "content": []}) + "\n"
+                "hostname": hostname, "result": VERIFIER.ZABBIX_DATA_PREFIX + (json.dumps("1") if zabbix_payload is None else zabbix_payload)}, "content": []}) + "\n"
             " print(json.dumps({'jsonrpc':'2.0','id':request['id'],'result':response}),flush=True)\n"
         )
         return [sys.executable, str(path)]
@@ -157,6 +157,13 @@ class StdioVerificationTests(unittest.TestCase):
     def test_zabbix_readonly_query_must_succeed(self):
         self.assertTrue(self.check(server="zabbix")["verification_passed"])
         self.assertFalse(self.check(server="zabbix", tool_error=True)["verification_passed"])
+
+    def test_zabbix_guarded_count_must_be_valid_numeric_json(self):
+        self.assertTrue(self.check(server="zabbix", zabbix_payload='"5"')["verification_passed"])
+        self.assertTrue(self.check(server="zabbix", zabbix_payload='0')["verification_passed"])
+        for payload in ['[]', '{}', '{"error":"denied"}', 'null', 'false', '1.5', '""', '"denied"', '{', '']:
+            with self.subTest(payload=payload):
+                self.assertFalse(self.check(server="zabbix", zabbix_payload=payload)["verification_passed"])
 
 
 class NativeDelegatedConnectionTests(unittest.TestCase):

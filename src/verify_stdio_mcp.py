@@ -104,7 +104,7 @@ def verify(command, server, expected_hostname=None, timeout=60):
                 content = decoded_content(result)
                 count = content.get("result") if isinstance(content, dict) else content
                 if isinstance(count, str) and count.startswith(ZABBIX_DATA_PREFIX):
-                    count = count[len(ZABBIX_DATA_PREFIX):]
+                    count = json.loads(count[len(ZABBIX_DATA_PREFIX):])
                 if not str(count).isdigit():
                     raise RuntimeError("Zabbix MCP did not return an authenticated host count")
             success = True

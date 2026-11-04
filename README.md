@@ -195,12 +195,21 @@ Delegated testserver SSH connections read the computed address, user, port and
 temporary trust-file path from the original TRA host. The Zabbix deployment
 publishes its verified machine, disk, network and SSH identities for later MCP
 configuration and guarded cleanup.
+The Zabbix MCP invocation maps the existing TRA user to the saved image's
+non-root identity so its private, read-only configuration stays accessible.
+Its verifier JSON-decodes the count after the server's unchanged safety warning
+and still rejects errors or nonnumeric results.
 The Zabbix clone places its own hostname first in the owned hosts-file entry
 for the versioned proxy URLs, and retries repair that entry before checking its
 fully qualified hostname.
 Its public frontend readiness check retries within a bounded window while
 requiring trusted HTTPS, HTTP 401 and the expected Basic authentication
 challenge. A persistent failure stops deployment.
+
+The new Linux MCP installation has passed a real read-only query to its matching
+testserver. The normal Zabbix deployment has also succeeded, with independently
+verified clone authentication, quarantine and trusted public HTTPS protection.
+Website deployment and the complete remediation loop remain separate checks.
 
 ### Audience website lifecycle
 

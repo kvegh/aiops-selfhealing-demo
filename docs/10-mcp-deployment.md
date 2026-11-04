@@ -109,12 +109,27 @@ setting is retained for the private HTTP endpoint; no public HTTPS certificate
 check is disabled. The public Zabbix UI retains its independent trusted HTTPS
 and Basic-auth protection, with no public API exception.
 
+The approved saved Zabbix MCP image runs as numeric UID/GID `999:999`. Its
+rootless invocation maps the existing TRA user to those image IDs with
+`--userns keep-id:uid=999,gid=999`, allowing that intended non-root process to
+read its owner's `0600` configuration. The read-only mount, file permissions,
+SELinux label and server read-only policy remain in place. Revalidate the
+image user when deliberately replacing the pinned image artifact.
+
+The native permission regression uses the exact saved image and unchanged
+private configuration: its original default mapping fails the configuration
+read; the explicit mapping must initialize stdio and complete an authenticated
+read-only query. The normal Job Template retains that real query as its final
+required verification.
+
 The job merges only the corresponding MCP entry into the existing user's
 `~/claude-wd` project configuration. Existing client settings and other MCP
 entries are preserved. Verification initializes the actual stdio command,
 discovers tools and performs an authenticated read-only `host_get` count query.
 The server's raw-data disclaimer remains enabled; verification interprets only
-the returned count and never requests removal of that disclaimer.
+the returned count and never requests removal of that disclaimer. After the
+exact known disclaimer, its JSON-encoded count is decoded and must still be
+numeric; errors, empty values and object/list responses fail verification.
 
 ## Verification and remaining application setup
 

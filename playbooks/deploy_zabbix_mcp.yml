@@ -59,6 +59,8 @@
                 - --rm
                 - -i
                 - --pull=never
+                - --userns
+                - keep-id:uid=999,gid=999
                 - -v
                 - /etc/zabbix-mcp/config.toml:/etc/zabbix-mcp/config.toml:ro
                 - "{{ demo_mcp_image.name }}"
