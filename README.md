@@ -206,6 +206,12 @@ The [protected runtime settings procedure](docs/11-protected-runtime-settings.md
 uses the existing private AIOps repository and runtime Vault credential.
 Application launch is a separate readiness step.
 
+At launch, select the AAP inventory entry by its inventory name. The private
+capture uses that entry's `vm_resource.vm_name` to select saved AIOps guest and
+runtime settings. An inventory alias can therefore change while the existing
+VM name, public FQDN, tokens and runtime ciphertext remain unchanged. Inventory
+facts still come from the entry selected through `aap_instance_key`.
+
 ### MCP deployment for a new TRA
 
 The two requested MCP deployment jobs use

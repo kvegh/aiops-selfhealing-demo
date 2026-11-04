@@ -8,9 +8,11 @@ needed. The configuration importer itself still launches no application.
 ## Identity and prerequisites
 
 The AAP allocation determines both public names. For example, allocation 7
-means `aap27.v07.example.invalid` and `redhat.v07.example.invalid`. Keep the
-allocation's internal inventory key, such as `aap27-test-7`; do not allocate a
-second number for the website. The source inventory entry needs
+means `aap27.v07.example.invalid` and `redhat.v07.example.invalid`. Select the
+current AAP inventory alias at launch and retain its existing created VM name
+in `vm_resource.vm_name`. That value selects the saved private settings; an
+inventory rename keeps the VM/runtime name and allocation unchanged. Do not
+allocate a second number for the website. The source inventory entry also needs
 `aap_instance_number`, `ansible_fqdn` and `hypervisor_host`. The named hypervisor
 also needs its own inventory entry containing `ansible_host`, `public_ipv4`,
 `ansible_user`, `ansible_port`, `machine_id` and `host_keys`. The private CaC

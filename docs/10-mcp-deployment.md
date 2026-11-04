@@ -16,8 +16,10 @@ separate tasks; these jobs do not invoke a model or run the remediation agent.
 ## Select the existing instance and its verified guests
 
 The imported TRA inventory entry receives `demo_mcp_deployment` from the
-encrypted private AIOps capture. Its `aiops_instances[selected_instance]` data
-owns the verified `tra`, `testserver1`, `zabbix` and `mcp_artifacts` metadata.
+encrypted private AIOps capture. Its `aiops_instances` map uses the selected
+AAP inventory entry's existing `vm_resource.vm_name` key and owns the verified
+`tra`, `testserver1`, `zabbix` and `mcp_artifacts` metadata. An inventory alias
+rename leaves that physical/runtime key and the encrypted settings unchanged.
 The selected AAP entry supplies its existing allocation and AAP identity.
 All guests must belong to the same allocation and verified hypervisor. Their
 public SSH keys and live machine identities are checked before changes.

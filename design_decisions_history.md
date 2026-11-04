@@ -760,3 +760,18 @@ regressions, syntax and scoped production lint passed. Both the normal monitorin
 actual fresh-sample and independent configuration readbacks. Original check IDs,
 website readiness and the disabled general Claude activation were preserved;
 exact runtime evidence remains in the private companion Vault.
+
+
+## Keep application identity stable when the AAP inventory name changes
+
+The launch input selects the current AAP inventory entry. Private AIOps guest
+and runtime records use that entry's existing `vm_resource.vm_name`, retaining
+the created VM name independently of its inventory alias. Placement and FQDN
+lookups continue to use the selected entry. This permits inventory naming
+cleanup without renaming VMs, tokens, registry records or runtime Vault keys,
+and requires no new mapping or store. Missing VM metadata stops rendering.
+
+Companion implementation: `a9ed0be`. Full resource rendering is identical for
+the original selection and renamed alias in both native Ansible modes, including
+runtime ciphertext, guest identities and monitoring opt-in. Current monitoring
+and activation readbacks remain healthy; no application job was launched.

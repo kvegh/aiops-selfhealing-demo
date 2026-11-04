@@ -10,7 +10,9 @@ In the private CaC's existing selected-instance record, set
 `testserver_monitoring_enabled: true` only after that instance's agent is ready.
 The existing deployment template derives its saved
 `demo_zabbix_enable_testserver_monitoring` boolean from that record, defaulting
-to false for an instance without the setting. Import the reviewed CaC into the
+to false for an instance without the setting. The selected AAP inventory entry's
+existing `vm_resource.vm_name` chooses this private record, so changing its
+inventory alias preserves the monitoring choice. Import the reviewed CaC into the
 selected AAP and run its normal **Deploy Zabbix Demo** template again. Publishing
 the repository alone does not change AAP or Zabbix.
 

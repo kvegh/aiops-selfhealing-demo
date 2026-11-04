@@ -20,6 +20,12 @@ instances:
     demo_website_webhook_key: !unsafe REPLACE_WITH_TARGET_WEBHOOK_KEY
 ```
 
+The `instances` key uses the VM name recorded in the selected AAP inventory
+entry's `vm_resource.vm_name`. The launch input `aap_instance_key` selects that
+inventory entry. Renaming the inventory alias leaves the created VM name and
+runtime namespaces unchanged; missing VM metadata stops configuration rather
+than guessing another namespace.
+
 Keep credential text explicitly `!unsafe` so it remains literal data after
 decryption. Actual instance names, host facts and settings are encrypted. The
 fixed allowed variable names are listed in `playbooks/filter_plugins/demo_runtime.py`;
@@ -74,7 +80,7 @@ dictionaries; those earlier scalar transport proposals were unsupported.
 
 ## Metadata ownership and runtime proof
 
-`aiops_instances[selected_instance]` in the encrypted private CaC owns the
+`aiops_instances[hostvars[aap_instance_key].vm_resource.vm_name]` in the encrypted private CaC owns the
 verified testserver, TRA, Zabbix and offline MCP artifact data, plus the existing
 base guest Machine credential reference. Application inventory derives from
 that private data, without requiring nested AIOps fields on the AAP host.
