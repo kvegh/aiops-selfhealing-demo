@@ -795,3 +795,19 @@ Companion implementation: `a9ed0be`. Full resource rendering is identical for
 the original selection and renamed alias in both native Ansible modes, including
 runtime ciphertext, guest identities and monitoring opt-in. Current monitoring
 and activation readbacks remain healthy; no application job was launched.
+
+## Make the published visualization easy to find in the documentation
+
+The user requested adding the visualization link to the AIOps demo repository's
+documentation. The link already appeared in the walkthrough section; this
+change adds a prominent link directly beneath the title of the repository
+README, starting-setup guide, and presenter guide. Readers can open the static
+recovery story before following the implementation documentation. Existing
+concurrent documentation and automation updates were preserved by first
+fast-forwarding the clean checkout to current main over SSH.
+
+Validation checked the exact destination at all three entry points and clean
+diffs. This is documentation only: frontend version 1.1.6 and all runtime,
+workflow, configuration and dependency files are unchanged.
+
+Implementation commit: `c13573a`.
