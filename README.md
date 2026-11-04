@@ -268,6 +268,11 @@ guest configuration now releases only that guest's extra recovery isolation,
 while production destinations remain blocked. Selected monitoring has its own
 explicit readiness check and configuration switch; a live AI-remediation
 rehearsal remains separate from installing the agent or collecting healthy data.
+The selected testserver has now passed both a normal monitoring deployment and
+a normal repeat. Independent readbacks confirmed fresh agent ping, uptime and
+ICMP data, retained host/check identities, disabled Apache checks and unchanged
+website delivery with healthy content and arm endpoints. General Claude
+activation remains disabled; no model inference or new outage was invoked.
 
 ### Audience website lifecycle
 

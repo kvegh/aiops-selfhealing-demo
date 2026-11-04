@@ -756,5 +756,7 @@ invocation or new job/service/credential is introduced.
 Implementation: `a2ccdd9`. Integration `e688f67` preserves the independently
 published interactive walkthrough. Native fixture execution covers normal
 deployment and repeat configuration; identity, ownership and stale-sample
-regressions, syntax and scoped production lint passed. Live monitoring readiness
-is verified separately through the normal deployed template.
+regressions, syntax and scoped production lint passed. Both the normal monitoring deployment and an unchanged normal repeat passed
+actual fresh-sample and independent configuration readbacks. Original check IDs,
+website readiness and the disabled general Claude activation were preserved;
+exact runtime evidence remains in the private companion Vault.

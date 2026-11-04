@@ -52,3 +52,14 @@ separate rehearsal would activate the reviewed agent rulebook and deliver a
 controlled agent-down event, causing **Run Claude to analyse and fix** to call
 the model provider. That model invocation and a new fault are not part of this
 monitoring verification. The website outage/restore/rearm loop remains intact.
+
+## Verified deployment state
+
+The selected deployment passed its normal Zabbix template and an unchanged
+normal repeat. Independent API/history readbacks confirmed fresh agent ping,
+uptime and ICMP samples, retained host and original check identifiers, the
+requested Linux/ICMP states and disabled Apache entities. Both runs left the
+working website's exact forwarding action and target credentials intact; trusted
+content and arm endpoints stayed healthy. The general Claude activation remained
+disabled, and neither an inference nor a new fault was invoked. Exact instance,
+job, revision and metric details are retained in the private verification Vault.
