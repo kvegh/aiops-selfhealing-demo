@@ -671,3 +671,22 @@ new dependency. Rendered browser inspection remains unverified under the
 user's no-Chromium constraint.
 
 Implementation commit: `06a06b9`.
+
+## Show an interchangeable AI agent role in the walkthrough
+
+The user requested replacing the displayed Claude Code CLI label with
+**Codex/Claude/Copilot etc**. Release 1.1.3 shows that exact text on two lines
+inside the existing agent node and uses generic runtime wording in the
+walkthrough. The surrounding architecture, MCP paths and AAP execution
+relationship are retained. Technical detail explicitly states that the current
+repository launcher invokes Claude Code CLI and preserves its real source
+excerpt and job-template names; this presentation change does not implement
+additional runtime integrations or alter automation configuration.
+
+Validation: both runtime scripts passed syntax checks, all 14 existing model
+and application-handler tests passed, the SVG label's combined text matched
+the request exactly, and diff checks passed. Automation, agent instructions,
+and rulebooks were verified unchanged. No dependency or browser was installed
+or run; rendered layout review remains unverified.
+
+Implementation commit: `26223e3`.
