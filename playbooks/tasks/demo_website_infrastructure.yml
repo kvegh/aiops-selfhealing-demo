@@ -6,7 +6,7 @@
       - demo_website_dns_api_token | length > 0
       - demo_website_fault_template_id | default(0) | int > 0
       - demo_website_webhook_key | default('') is match('^[A-Za-z0-9_-]{16,256}$')
-    fail_msg: Supply the selected target's webhook and DNS inputs through the existing encrypted launch handoff.
+    fail_msg: Supply the selected target's required protected webhook and DNS inputs before launching this job.
     quiet: true
   no_log: true
 
@@ -184,16 +184,16 @@
       ansible.builtin.assert:
         that:
           - >-
-            query('community.general.dig', demo_website_config.hostname, '@8.8.8.8', qtype='A') |
+            query('community.general.dig', demo_website_config.hostname, qtype='A') |
             unique | list == [demo_website_config.hypervisor.public_ipv4]
           - >-
-            query('community.general.dig', demo_website_config.hostname, '@8.8.8.8', qtype='AAAA') |
+            query('community.general.dig', demo_website_config.hostname, qtype='AAAA') |
             reject('equalto', '') | list == []
           - >-
-            query('community.general.dig', demo_website_config.aap_hostname, '@8.8.8.8', qtype='A') |
+            query('community.general.dig', demo_website_config.aap_hostname, qtype='A') |
             unique | list == [demo_website_config.hypervisor.public_ipv4]
           - >-
-            query('community.general.dig', demo_website_config.aap_hostname, '@8.8.8.8', qtype='AAAA') |
+            query('community.general.dig', demo_website_config.aap_hostname, qtype='AAAA') |
             reject('equalto', '') | list == []
         fail_msg: Public DNS has not converged on the selected hypervisor's IPv4-only website route.
         quiet: true

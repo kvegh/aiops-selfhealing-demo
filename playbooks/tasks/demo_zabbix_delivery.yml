@@ -1,0 +1,132 @@
+---
+- name: Read only this allocation's event-stream media
+  ansible.builtin.include_tasks: demo_zabbix_rpc.yml
+  vars:
+    demo_zabbix_rpc_method: mediatype.get
+    demo_zabbix_rpc_params:
+      output: [mediatypeid, name]
+      filter:
+        name: ["AIOps {{ demo_zabbix_config.version }} event stream"]
+
+- name: Require unique target event-stream media
+  ansible.builtin.assert:
+    that: demo_zabbix_rpc_response.json.result | length <= 1
+
+- name: Retain the existing media identity when present
+  ansible.builtin.set_fact:
+    demo_zabbix_existing_media_id: "{{ demo_zabbix_rpc_response.json.result[0].mediatypeid if demo_zabbix_rpc_response.json.result | length else '' }}"
+
+- name: Declare only target-local event delivery without logging credential values
+  ansible.builtin.set_fact:
+    demo_zabbix_media_definition:
+      type: 4
+      name: "AIOps {{ demo_zabbix_config.version }} event stream"
+      status: 0
+      timeout: 10s
+      maxattempts: 3
+      attempt_interval: 10s
+      script: "{{ lookup('ansible.builtin.file', playbook_dir + '/files/demo-zabbix-event-stream.js') }}"
+      parameters:
+        - {name: endpoint, value: "{{ demo_zabbix_delivery.url }}"}
+        - {name: username, value: "{{ demo_zabbix_delivery.username }}"}
+        - {name: password, value: "{{ demo_zabbix_delivery.password }}"}
+        - {name: event_id, value: !unsafe '{EVENT.ID}'}
+        - {name: event_name, value: !unsafe '{EVENT.NAME}'}
+        - {name: event_value, value: !unsafe '{EVENT.VALUE}'}
+        - {name: trigger_id, value: !unsafe '{TRIGGER.ID}'}
+        - {name: host_host, value: !unsafe '{HOST.HOST}'}
+
+- name: Create or update only this allocation's media
+  ansible.builtin.include_tasks: demo_zabbix_rpc.yml
+  vars:
+    demo_zabbix_rpc_method: "{{ 'mediatype.update' if demo_zabbix_existing_media_id else 'mediatype.create' }}"
+    demo_zabbix_rpc_params: >-
+      {{ demo_zabbix_media_definition | combine(
+           {'mediatypeid': demo_zabbix_existing_media_id} if demo_zabbix_existing_media_id else {}) }}
+
+- name: Retain the selected media identity
+  ansible.builtin.set_fact:
+    demo_zabbix_media_id: "{{ demo_zabbix_rpc_response.json.result.mediatypeids[0] }}"
+
+- name: Read the copied appliance administrator's notification media
+  ansible.builtin.include_tasks: demo_zabbix_rpc.yml
+  vars:
+    demo_zabbix_rpc_method: user.get
+    demo_zabbix_rpc_params:
+      userids: ['1']
+      output: [userid]
+      selectMedias: extend
+
+- name: Require the existing appliance notification recipient
+  ansible.builtin.assert:
+    that:
+      - demo_zabbix_rpc_response.json.result | length == 1
+      - demo_zabbix_rpc_response.json.result[0].userid | string == '1'
+
+- name: Preserve other recipient media while declaring this target-only endpoint
+  ansible.builtin.set_fact:
+    demo_zabbix_recipient_media: >-
+      {{ demo_zabbix_rpc_response.json.result[0].medias | demo_zabbix_recipient_medias(
+           demo_zabbix_media_id, demo_zabbix_delivery.url) }}
+
+- name: Configure only the new media association on the existing recipient
+  ansible.builtin.include_tasks: demo_zabbix_rpc.yml
+  vars:
+    demo_zabbix_rpc_method: user.update
+    demo_zabbix_rpc_params:
+      userid: '1'
+      medias: "{{ demo_zabbix_recipient_media }}"
+
+- name: Read only this allocation's event-delivery action
+  ansible.builtin.include_tasks: demo_zabbix_rpc.yml
+  vars:
+    demo_zabbix_rpc_method: action.get
+    demo_zabbix_rpc_params:
+      output: [actionid]
+      filter:
+        name: ["AIOps {{ demo_zabbix_config.version }} website events"]
+
+- name: Require a unique target delivery action
+  ansible.builtin.assert:
+    that: demo_zabbix_rpc_response.json.result | length <= 1
+
+- name: Retain an existing target action identity when present
+  ansible.builtin.set_fact:
+    demo_zabbix_existing_action_id: "{{ demo_zabbix_rpc_response.json.result[0].actionid if demo_zabbix_rpc_response.json.result | length else '' }}"
+
+- name: Define only the new trigger's problem and recovery delivery
+  ansible.builtin.set_fact:
+    demo_zabbix_action_definition:
+      name: "AIOps {{ demo_zabbix_config.version }} website events"
+      eventsource: 0
+      status: "{{ 0 if demo_zabbix_enable_delivery | default(false) else 1 }}"
+      filter:
+        evaltype: 0
+        conditions:
+          - conditiontype: 2
+            operator: 0
+            value: "{{ demo_zabbix_monitoring_trigger_id }}"
+      operations:
+        - operationtype: 0
+          opmessage:
+            default_msg: 0
+            subject: Demo website incident
+            message: The selected deployment reported a website incident.
+            mediatypeid: "{{ demo_zabbix_media_id }}"
+          opmessage_usr: [{userid: '1'}]
+      recovery_operations:
+        - operationtype: 0
+          opmessage:
+            default_msg: 0
+            subject: Demo website recovered
+            message: The selected deployment confirmed website recovery.
+            mediatypeid: "{{ demo_zabbix_media_id }}"
+          opmessage_usr: [{userid: '1'}]
+
+- name: Create or update only the target-local delivery action
+  ansible.builtin.include_tasks: demo_zabbix_rpc.yml
+  vars:
+    demo_zabbix_rpc_method: "{{ 'action.update' if demo_zabbix_existing_action_id else 'action.create' }}"
+    demo_zabbix_rpc_params: >-
+      {{ demo_zabbix_action_definition | combine(
+           {'actionid': demo_zabbix_existing_action_id} if demo_zabbix_existing_action_id else {}) }}

@@ -1,0 +1,275 @@
+---
+- name: Inspect the verified saved image without following symlinks
+  ansible.builtin.stat:
+    path: "{{ demo_zabbix_config.source_image.path }}"
+    follow: false
+    checksum_algorithm: sha256
+  register: demo_zabbix_source_image
+  no_log: true
+
+- name: Require the exact saved source image before cloning
+  ansible.builtin.assert:
+    that:
+      - demo_zabbix_source_image.stat.isreg | default(false)
+      - not (demo_zabbix_source_image.stat.islnk | default(false))
+      - demo_zabbix_source_image.stat.checksum == demo_zabbix_config.source_image.sha256
+    quiet: true
+  no_log: true
+
+- name: Inspect the reserved destination disk
+  ansible.builtin.stat:
+    path: "{{ demo_zabbix_config.disk }}"
+    follow: false
+    get_checksum: false
+  register: demo_zabbix_destination
+  no_log: true
+
+- name: Refuse an orphaned or foreign disk instead of overwriting it
+  ansible.builtin.assert:
+    that: >-
+      demo_zabbix_config.vm_name in demo_zabbix_domain_names.stdout_lines or
+      not demo_zabbix_destination.stat.exists
+    quiet: true
+  no_log: true
+
+- name: Prepare one fresh standalone clone with inherited monitoring stopped
+  when: demo_zabbix_config.vm_name not in demo_zabbix_domain_names.stdout_lines
+  block:
+    - name: Allocate a private workspace on the selected hypervisor
+      ansible.builtin.tempfile:
+        state: directory
+        path: /tmp
+        prefix: demo-zabbix-clone-
+      register: demo_zabbix_workspace
+
+    - name: Allocate a private temporary output beside the final clone
+      ansible.builtin.tempfile:
+        state: file
+        path: /opt/vms
+        prefix: .demo-zabbix-clone-
+      register: demo_zabbix_temporary_disk
+
+    - name: Convert only the active saved state to a standalone clone
+      ansible.builtin.command:
+        argv:
+          - qemu-img
+          - convert
+          - -f
+          - qcow2
+          - -O
+          - qcow2
+          - "{{ demo_zabbix_config.source_image.path }}"
+          - "{{ demo_zabbix_temporary_disk.path }}"
+      changed_when: true
+      no_log: true
+
+    - name: Generate fresh private guest host keys only for this clone
+      ansible.builtin.command:
+        argv: [ssh-keygen, -q, -t, "{{ item }}", -N, '', -f, "{{ demo_zabbix_workspace.path }}/ssh_host_{{ item }}_key"]
+      loop: [ed25519, ecdsa, rsa]
+      changed_when: true
+      no_log: true
+
+    - name: Read only the new guest public host keys
+      ansible.builtin.slurp:
+        src: "{{ demo_zabbix_workspace.path }}/ssh_host_{{ item }}_key.pub"
+      loop: [ed25519, ecdsa, rsa]
+      register: demo_zabbix_generated_public_keys
+      no_log: true
+
+    - name: Preserve nonsecret creation provenance in the native domain description
+      ansible.builtin.set_fact:
+        demo_zabbix_creation_metadata: >-
+          {{ demo_zabbix_config | demo_zabbix_metadata(
+               demo_zabbix_generated_public_keys.results | map(attribute='content') |
+               map('b64decode') | list) }}
+      no_log: true
+
+    - name: Prepare the guest management public key without copying its private key
+      ansible.builtin.copy:
+        dest: "{{ demo_zabbix_workspace.path }}/management.pub"
+        content: "{{ demo_zabbix_config.guest_authorized_public_key }}\n"
+        mode: '0600'
+      no_log: true
+
+    - name: Prepare the offline clone bootstrap
+      ansible.builtin.template:
+        src: demo-zabbix-bootstrap.sh.j2
+        dest: "{{ demo_zabbix_workspace.path }}/bootstrap.sh"
+        mode: '0700'
+      no_log: true
+      diff: false
+
+    - name: Customize only the fresh clone with its own identity, keys and disabled monitoring
+      ansible.builtin.command:
+        argv:
+          - virt-customize
+          - -a
+          - "{{ demo_zabbix_temporary_disk.path }}"
+          - --no-network
+          - --hostname
+          - "{{ demo_zabbix_config.hostname }}"
+          - --upload
+          - "{{ demo_zabbix_workspace.path }}/management.pub:/tmp/aiops-management.pub"
+          - --upload
+          - "{{ demo_zabbix_workspace.path }}/ssh_host_ed25519_key:/etc/ssh/ssh_host_ed25519_key"
+          - --upload
+          - "{{ demo_zabbix_workspace.path }}/ssh_host_ed25519_key.pub:/etc/ssh/ssh_host_ed25519_key.pub"
+          - --upload
+          - "{{ demo_zabbix_workspace.path }}/ssh_host_ecdsa_key:/etc/ssh/ssh_host_ecdsa_key"
+          - --upload
+          - "{{ demo_zabbix_workspace.path }}/ssh_host_ecdsa_key.pub:/etc/ssh/ssh_host_ecdsa_key.pub"
+          - --upload
+          - "{{ demo_zabbix_workspace.path }}/ssh_host_rsa_key:/etc/ssh/ssh_host_rsa_key"
+          - --upload
+          - "{{ demo_zabbix_workspace.path }}/ssh_host_rsa_key.pub:/etc/ssh/ssh_host_rsa_key.pub"
+          - --run
+          - "{{ demo_zabbix_workspace.path }}/bootstrap.sh"
+          - --selinux-relabel
+      changed_when: true
+      no_log: true
+
+    - name: Publish the clone atomically without replacing any existing disk
+      ansible.builtin.command:
+        argv:
+          - python3
+          - -c
+          - import os,sys; os.link(sys.argv[1],sys.argv[2]); os.unlink(sys.argv[1])
+          - "{{ demo_zabbix_temporary_disk.path }}"
+          - "{{ demo_zabbix_config.disk }}"
+      changed_when: true
+      no_log: true
+
+    - name: Set the copied disk's virtualization ownership and label
+      ansible.builtin.file:
+        path: "{{ demo_zabbix_config.disk }}"
+        owner: qemu
+        group: qemu
+        mode: '0600'
+        setype: virt_image_t
+
+    - name: Render one domain definition without starting it
+      ansible.builtin.command:
+        argv:
+          - virt-install
+          - --connect
+          - qemu:///system
+          - --name
+          - "{{ demo_zabbix_config.vm_name }}"
+          - --memory
+          - "{{ demo_zabbix_config.memory_mb | string }}"
+          - --vcpus
+          - "{{ demo_zabbix_config.vcpus | string }}"
+          - --import
+          - --graphics
+          - none
+          - --osinfo
+          - detect=on,require=off
+          - --disk
+          - "path={{ demo_zabbix_config.disk }},format=qcow2,bus=virtio"
+          - --network
+          - "network={{ demo_zabbix_config.vm_network }},model=virtio"
+          - --description
+          - "{{ demo_zabbix_creation_metadata | to_json }}"
+          - --noautoconsole
+          - --print-xml
+      register: demo_zabbix_new_domain_xml
+      changed_when: false
+      no_log: true
+
+    - name: Store the verified temporary domain definition
+      ansible.builtin.copy:
+        dest: "{{ demo_zabbix_workspace.path }}/domain.xml"
+        content: "{{ demo_zabbix_new_domain_xml.stdout }}"
+        mode: '0600'
+      no_log: true
+
+    - name: Define only the selected allocation's prepared monitoring guest
+      ansible.builtin.command:
+        argv: [virsh, -c, 'qemu:///system', define, "{{ demo_zabbix_workspace.path }}/domain.xml"]
+      changed_when: true
+      no_log: true
+  always:
+    - name: Remove only the private temporary guest-key workspace
+      ansible.builtin.file:
+        path: "{{ demo_zabbix_workspace.path }}"
+        state: absent
+      when: demo_zabbix_workspace.path is defined
+      no_log: true
+
+    - name: Remove only this job's unpublished temporary disk
+      ansible.builtin.file:
+        path: "{{ demo_zabbix_temporary_disk.path }}"
+        state: absent
+      when: demo_zabbix_temporary_disk.path is defined
+      no_log: true
+
+- name: Read the actual selected domain definition
+  ansible.builtin.command:
+    argv: [virsh, -c, 'qemu:///system', dumpxml, "{{ demo_zabbix_config.vm_name }}"]
+  register: demo_zabbix_existing_domain_xml
+  changed_when: false
+  no_log: true
+
+- name: Validate native ownership, disk, network and guest public keys
+  ansible.builtin.set_fact:
+    demo_zabbix_guest_record: "{{ demo_zabbix_existing_domain_xml.stdout | demo_zabbix_domain_record(demo_zabbix_config) }}"
+  no_log: true
+
+- name: Retain verified guest ownership before startup or API configuration
+  ansible.builtin.set_stats:
+    data:
+      demo_zabbix_instance: "{{ demo_zabbix_config | demo_zabbix_provenance(demo_zabbix_guest_record) }}"
+    aggregate: false
+    per_host: false
+  no_log: true
+
+- name: Recheck enforced isolation immediately before guest startup
+  ansible.builtin.command:
+    argv: [/usr/local/sbin/hactar-recovery-isolation, check]
+    stdin: "{{ demo_zabbix_deployment.isolation_policy | to_json }}"
+  changed_when: false
+  no_log: true
+
+- name: Read the selected guest state
+  ansible.builtin.command:
+    argv: [virsh, -c, 'qemu:///system', domstate, "{{ demo_zabbix_config.vm_name }}"]
+  register: demo_zabbix_guest_state
+  changed_when: false
+  no_log: true
+
+- name: Require a stopped or normally running owned guest
+  ansible.builtin.assert:
+    that: demo_zabbix_guest_state.stdout | trim in ['shut off', 'running']
+    quiet: true
+  no_log: true
+
+- name: Start only the prepared monitoring guest
+  ansible.builtin.command:
+    argv: [virsh, -c, 'qemu:///system', start, "{{ demo_zabbix_config.vm_name }}"]
+  when: demo_zabbix_guest_state.stdout | trim == 'shut off'
+  changed_when: true
+  no_log: true
+
+- name: Observe DHCP only for the selected domain
+  ansible.builtin.command:
+    argv: [virsh, -c, 'qemu:///system', domifaddr, "{{ demo_zabbix_config.vm_name }}", --source, lease]
+  register: demo_zabbix_guest_lease
+  until: demo_zabbix_guest_lease.stdout is search('ipv4')
+  retries: 40
+  delay: 5
+  changed_when: false
+  no_log: true
+
+- name: Require the DHCP address to belong to the verified domain MAC
+  ansible.builtin.set_fact:
+    demo_zabbix_guest_ip: "{{ demo_zabbix_guest_lease.stdout | demo_zabbix_guest_address(demo_zabbix_guest_record.mac) }}"
+  no_log: true
+
+- name: Retain the pinned DHCP route even if later configuration fails
+  ansible.builtin.set_stats:
+    data:
+      demo_zabbix_instance: "{{ demo_zabbix_config | demo_zabbix_provenance(demo_zabbix_guest_record, demo_zabbix_guest_ip) }}"
+    aggregate: false
+    per_host: false
+  no_log: true

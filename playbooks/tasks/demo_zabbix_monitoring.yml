@@ -1,0 +1,229 @@
+---
+- name: Stop and mask the monitoring server before inspecting inherited integrations
+  ansible.builtin.command:
+    argv: [systemctl, mask, --now, zabbix-server.service]
+  register: demo_zabbix_server_masked
+  changed_when: "'Created symlink' in demo_zabbix_server_masked.stderr"
+
+- name: Require the selected versioned guest hostname
+  ansible.builtin.command:
+    argv: [hostname, --fqdn]
+  register: demo_zabbix_actual_hostname
+  changed_when: false
+  failed_when: demo_zabbix_actual_hostname.stdout | trim != demo_zabbix_config.hostname
+
+- name: Verify the copied frontend API path and supported Zabbix version
+  ansible.builtin.uri:
+    url: http://127.0.0.1/api_jsonrpc.php
+    method: POST
+    body_format: json
+    body:
+      jsonrpc: '2.0'
+      method: apiinfo.version
+      params: {}
+      id: 1
+    validate_certs: true
+    follow_redirects: none
+    status_code: 200
+  register: demo_zabbix_api_version
+  until: demo_zabbix_api_version.json.result | default('') is match('^7[.]4[.]')
+  retries: 30
+  delay: 5
+  failed_when: demo_zabbix_api_version.json.error is defined
+
+- name: Require the explicit clone bearer to authenticate against this guest
+  ansible.builtin.include_tasks: demo_zabbix_rpc.yml
+  vars:
+    demo_zabbix_rpc_method: host.get
+    demo_zabbix_rpc_params:
+      countOutput: true
+
+- name: Quarantine copied monitoring and every outbound integration before starting the server
+  ansible.builtin.include_tasks: demo_zabbix_quarantine.yml
+  loop:
+    - {name: action, output: [actionid, status]}
+    - {name: mediatype, output: [mediatypeid, status]}
+    - {name: drule, output: [druleid, status]}
+    - {name: host, output: [hostid, status]}
+    - {name: httptest, output: [httptestid, status]}
+    - {name: script, output: [scriptid, type, scope, command, url]}
+  loop_control:
+    loop_var: demo_zabbix_kind
+
+- name: Read the target-only monitoring group
+  ansible.builtin.include_tasks: demo_zabbix_rpc.yml
+  vars:
+    demo_zabbix_rpc_method: hostgroup.get
+    demo_zabbix_rpc_params:
+      output: [groupid, name]
+      filter:
+        name: ["AIOps Demo {{ demo_zabbix_config.version }}"]
+
+- name: Require an unambiguous monitoring group
+  ansible.builtin.assert:
+    that: demo_zabbix_rpc_response.json.result | length <= 1
+
+- name: Preserve the group existence decision across its API creation
+  ansible.builtin.set_fact:
+    demo_zabbix_group_missing: "{{ demo_zabbix_rpc_response.json.result | length == 0 }}"
+
+- name: Remember an existing group
+  ansible.builtin.set_fact:
+    demo_zabbix_group_id: "{{ demo_zabbix_rpc_response.json.result[0].groupid }}"
+  when: demo_zabbix_rpc_response.json.result | length == 1
+
+- name: Create the missing target-only group
+  when: demo_zabbix_group_missing
+  block:
+    - name: Create the declared monitoring group
+      ansible.builtin.include_tasks: demo_zabbix_rpc.yml
+      vars:
+        demo_zabbix_rpc_method: hostgroup.create
+        demo_zabbix_rpc_params:
+          name: "AIOps Demo {{ demo_zabbix_config.version }}"
+    - name: Remember the newly created group
+      ansible.builtin.set_fact:
+        demo_zabbix_group_id: "{{ demo_zabbix_rpc_response.json.result.groupids[0] }}"
+
+- name: Read only the selected version's website monitoring host
+  ansible.builtin.include_tasks: demo_zabbix_rpc.yml
+  vars:
+    demo_zabbix_rpc_method: host.get
+    demo_zabbix_rpc_params:
+      output: [hostid, host, status]
+      filter:
+        host: ["demo-website-{{ demo_zabbix_config.version }}"]
+
+- name: Require a unique monitoring host
+  ansible.builtin.assert:
+    that: demo_zabbix_rpc_response.json.result | length <= 1
+
+- name: Preserve the host existence decision across its API creation
+  ansible.builtin.set_fact:
+    demo_zabbix_host_missing: "{{ demo_zabbix_rpc_response.json.result | length == 0 }}"
+
+- name: Bind an existing monitoring host
+  ansible.builtin.set_fact:
+    demo_zabbix_host_id: "{{ demo_zabbix_rpc_response.json.result[0].hostid }}"
+  when: demo_zabbix_rpc_response.json.result | length == 1
+
+- name: Create the missing target-only monitoring host
+  when: demo_zabbix_host_missing
+  block:
+    - name: Create the declared website monitoring host disabled during configuration
+      ansible.builtin.include_tasks: demo_zabbix_rpc.yml
+      vars:
+        demo_zabbix_rpc_method: host.create
+        demo_zabbix_rpc_params:
+          host: "demo-website-{{ demo_zabbix_config.version }}"
+          groups: [{groupid: "{{ demo_zabbix_group_id }}"}]
+          status: 1
+          tags:
+            - {tag: deployment, value: "{{ demo_zabbix_config.version }}"}
+            - {tag: purpose, value: aiops-website}
+    - name: Bind the newly created monitoring host
+      ansible.builtin.set_fact:
+        demo_zabbix_host_id: "{{ demo_zabbix_rpc_response.json.result.hostids[0] }}"
+
+- name: Read the selected website HTTP-status item
+  ansible.builtin.include_tasks: demo_zabbix_rpc.yml
+  vars:
+    demo_zabbix_rpc_method: item.get
+    demo_zabbix_rpc_params:
+      output: [itemid]
+      hostids: ["{{ demo_zabbix_host_id }}"]
+      filter:
+        key_: [demo.website.http_status]
+
+- name: Require a unique HTTP-status item
+  ansible.builtin.assert:
+    that: demo_zabbix_rpc_response.json.result | length <= 1
+
+- name: Retain the current item identity when present
+  ansible.builtin.set_fact:
+    demo_zabbix_existing_item_id: "{{ demo_zabbix_rpc_response.json.result[0].itemid if demo_zabbix_rpc_response.json.result | length else '' }}"
+
+- name: Define the exact target website check with TLS verification and no redirects
+  ansible.builtin.set_fact:
+    demo_zabbix_item_definition:
+      name: Demo website content HTTP status
+      key_: demo.website.http_status
+      type: 19
+      value_type: 3
+      delay: 4s
+      url: "https://{{ demo_zabbix_config.website_hostname }}/content.html"
+      retrieve_mode: 1
+      status_codes: ''
+      follow_redirects: 0
+      verify_peer: 1
+      verify_host: 1
+      status: 0
+      timeout: 10s
+      preprocessing:
+        - type: 5
+          params: |-
+            ^HTTP/\S+[ \t]+([0-9]{3})
+            \1
+          error_handler: 0
+
+- name: Create or update only the declared website status item
+  ansible.builtin.include_tasks: demo_zabbix_rpc.yml
+  vars:
+    demo_zabbix_rpc_method: "{{ 'item.update' if demo_zabbix_existing_item_id else 'item.create' }}"
+    demo_zabbix_rpc_params: >-
+      {{ demo_zabbix_item_definition | combine(
+           {'itemid': demo_zabbix_existing_item_id} if demo_zabbix_existing_item_id else {'hostid': demo_zabbix_host_id}) }}
+
+- name: Retain the new monitoring item identity
+  ansible.builtin.set_fact:
+    demo_zabbix_monitoring_item_id: "{{ demo_zabbix_rpc_response.json.result.itemids[0] }}"
+
+- name: Read the target website trigger
+  ansible.builtin.include_tasks: demo_zabbix_rpc.yml
+  vars:
+    demo_zabbix_rpc_method: trigger.get
+    demo_zabbix_rpc_params:
+      output: [triggerid]
+      hostids: ["{{ demo_zabbix_host_id }}"]
+      filter:
+        description: [Demo website content unavailable]
+
+- name: Require a unique target website trigger
+  ansible.builtin.assert:
+    that: demo_zabbix_rpc_response.json.result | length <= 1
+
+- name: Retain its existing identity when present
+  ansible.builtin.set_fact:
+    demo_zabbix_existing_trigger_id: "{{ demo_zabbix_rpc_response.json.result[0].triggerid if demo_zabbix_rpc_response.json.result | length else '' }}"
+
+- name: Create or update only the target website trigger
+  ansible.builtin.include_tasks: demo_zabbix_rpc.yml
+  vars:
+    demo_zabbix_rpc_method: "{{ 'trigger.update' if demo_zabbix_existing_trigger_id else 'trigger.create' }}"
+    demo_zabbix_rpc_params: >-
+      {{ {'description': 'Demo website content unavailable',
+           'expression': 'last(/demo-website-' + demo_zabbix_config.version + '/demo.website.http_status)<>200',
+           'priority': 3, 'status': 0} | combine(
+             {'triggerid': demo_zabbix_existing_trigger_id} if demo_zabbix_existing_trigger_id else {}) }}
+
+- name: Retain the new trigger identity
+  ansible.builtin.set_fact:
+    demo_zabbix_monitoring_trigger_id: "{{ demo_zabbix_rpc_response.json.result.triggerids[0] }}"
+
+- name: Configure delivery only to the selected AAP event stream
+  ansible.builtin.include_tasks: demo_zabbix_delivery.yml
+
+- name: Enable only the selected target-local monitoring host
+  ansible.builtin.include_tasks: demo_zabbix_rpc.yml
+  vars:
+    demo_zabbix_rpc_method: host.update
+    demo_zabbix_rpc_params:
+      hostid: "{{ demo_zabbix_host_id }}"
+      status: 0
+
+- name: Unmask the monitoring server only after quarantine and target configuration succeed
+  ansible.builtin.systemd_service:
+    name: zabbix-server.service
+    masked: false
+    enabled: true
+    state: started

@@ -1,0 +1,36 @@
+# Managed by the AIOps monitoring frontend playbook for {{ demo_zabbix_config.hostname }}.
+server {
+    listen 80;
+    server_name {{ demo_zabbix_config.hostname }};
+    location /.well-known/acme-challenge/ {
+        root /var/lib/letsencrypt;
+    }
+    location / {
+{% if demo_zabbix_tls_ready %}
+        return 301 https://$host$request_uri;
+{% else %}
+        return 503;
+{% endif %}
+    }
+}
+{% if demo_zabbix_tls_ready %}
+server {
+    listen 443 ssl;
+    server_name {{ demo_zabbix_config.hostname }};
+    ssl_certificate /etc/letsencrypt/live/{{ demo_zabbix_config.hostname }}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{ demo_zabbix_config.hostname }}/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    add_header Strict-Transport-Security "max-age=300" always;
+    # Preserve the source frontend's additional authentication gate for all paths.
+    auth_basic "AIOps monitoring";
+    auth_basic_user_file {{ demo_zabbix_config.auth_file }};
+    location / {
+        proxy_pass http://{{ demo_zabbix_guest_ip }};
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_http_version 1.1;
+        proxy_read_timeout 60s;
+    }
+}
+{% endif %}

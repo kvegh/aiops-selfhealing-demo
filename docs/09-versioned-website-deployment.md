@@ -39,8 +39,8 @@ Using authenticated, certificate-verified HTTPS calls to the selected target:
    and project; require one matching result and `webhook_service: gitlab`.
 2. Read that template's generated `webhook_key` through its webhook-key API.
    Preserve the key; this deployment does not rotate it.
-3. Launch the existing **Enable Demo Website** template on that same target,
-   with `demo_website_state: enabled` and the following extra variables:
+3. Retain the following required input names for the existing **Enable Demo
+   Website** template; launch waits for the reviewed protected input method:
 
 | Variable | Value |
 | --- | --- |
@@ -48,17 +48,18 @@ Using authenticated, certificate-verified HTTPS calls to the selected target:
 | `demo_website_webhook_key` | Its generated GitLab webhook key |
 | `demo_website_dns_api_token` | The existing DNS provider authorization token |
 
-Encrypt the launch values with the existing runtime Vault key. Use YAML
-`extra_vars` containing `!vault` values, supplied through the normal AAP launch
-API; do not paste secret values into a survey or plaintext job inputs. The
-Enable template permits launch variables but has no secret defaults. Secret
-checks, DNS requests and nginx template writes use protected logging even at
-debug verbosity, and the secret nginx configuration is root-readable only.
-Do not print API responses or the populated nginx configuration.
+The protected runtime delivery method remains an owner decision. Controller
+rejects inline `!vault` launch values and does not decrypt JSON Vault-marker
+mappings as ordinary variables; those approaches are not supported here. Do
+not put plaintext secrets in job defaults or ordinary launch inputs. The CaC
+definitions can be imported independently, with no saved secret defaults.
+Missing application inputs stop the job before managed host, DNS or API writes.
 
-The approved initial process uses this explicit handoff. A future unattended
-workflow and a permanent store for generated per-instance webhook information
-are separate decisions; this implementation does not introduce either.
+Secret checks, DNS requests and nginx template writes keep protected logging
+even at debug verbosity, and secret nginx configuration is root-readable only.
+No custom decoder, credential type, store or unattended combined workflow is
+implemented by these definitions. Do not print API responses or populated
+configuration.
 
 ## What the job changes
 

@@ -3,6 +3,7 @@
 import base64
 import ipaddress
 import re
+from urllib.parse import urlsplit
 
 from ansible.errors import AnsibleFilterError
 
@@ -79,9 +80,34 @@ def safe_dns_records(records, expected_address):
     )
 
 
+def monitoring_configuration(values):
+    """Reject ambient production settings for a managed recovery website."""
+    try:
+        if not isinstance(values, dict):
+            raise ValueError("Explicit target-local monitoring inputs are required.")
+        url = urlsplit(values["api_url"])
+        address = ipaddress.IPv4Address(url.hostname)
+        if not (
+            url.scheme == "http" and address.is_private
+            and not address.is_loopback and not address.is_link_local
+            and not address.is_reserved and url.netloc == str(address)
+            and url.path == "/api_jsonrpc.php" and not url.query and not url.fragment
+        ):
+            raise ValueError("Use only the verified new Zabbix guest's private API through the pinned hypervisor.")
+        if not isinstance(values["token"], str) or not values["token"].strip():
+            raise ValueError("The new target's monitoring token is required.")
+        for key in ("item_id", "trigger_id"):
+            if not re.fullmatch(r"[1-9][0-9]*", str(values[key])):
+                raise ValueError("The new target's website item and trigger IDs are required.")
+        return dict(values, item_id=str(values["item_id"]), trigger_id=str(values["trigger_id"]))
+    except (KeyError, TypeError, ValueError) as error:
+        raise AnsibleFilterError(str(error)) from error
+
+
 class FilterModule:
     def filters(self):
         return {
             "demo_website_configuration": website_configuration,
             "demo_website_safe_dns_records": safe_dns_records,
+            "demo_website_monitoring_configuration": monitoring_configuration,
         }

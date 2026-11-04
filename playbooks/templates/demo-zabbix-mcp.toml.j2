@@ -1,0 +1,11 @@
+[server]
+transport = "stdio"
+log_level = "info"
+tools = ["host", "hostgroup", "problem", "trigger", "event", "item", "history"]
+compact_output = true
+
+[zabbix.lab]
+url = {{ demo_zabbix_mcp_config.origin | to_json }}
+api_token = {{ demo_zabbix_mcp_config.token | to_json }}
+read_only = true
+verify_ssl = false

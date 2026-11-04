@@ -1,0 +1,119 @@
+---
+- name: Check free space before offline package installation and image loading
+  ansible.builtin.command:
+    argv: [df, -Pk, /]
+  register: demo_mcp_disk_space
+  changed_when: false
+
+- name: Require headroom for the staged archives and loaded images
+  ansible.builtin.assert:
+    that: >-
+      (demo_mcp_disk_space.stdout_lines[-1].split()[3] | int) * 1024 >=
+      demo_mcp_config.artifacts.minimum_free_bytes
+    fail_msg: Free space is insufficient for the offline runtime and loaded MCP images.
+    quiet: true
+
+- name: Verify each staged runtime RPM checksum and size
+  ansible.builtin.stat:
+    path: "{{ item.path }}"
+    checksum_algorithm: sha256
+  loop: "{{ demo_mcp_config.artifacts.rpms }}"
+  loop_control:
+    label: "{{ item.nevra }}"
+  register: demo_mcp_rpm_checks
+  failed_when: >-
+    not demo_mcp_rpm_checks.stat.exists or
+    demo_mcp_rpm_checks.stat.checksum != item.sha256 or
+    demo_mcp_rpm_checks.stat.size != item.bytes
+
+- name: Verify installed Red Hat signing trust for every staged RPM
+  ansible.builtin.command:
+    argv: [rpmkeys, --checksig, "{{ item.path }}"]
+  loop: "{{ demo_mcp_config.artifacts.rpms }}"
+  loop_control:
+    label: "{{ item.nevra }}"
+  register: demo_mcp_rpm_signatures
+  changed_when: false
+  failed_when: >-
+    demo_mcp_rpm_signatures.rc != 0 or
+    'signatures OK' not in demo_mcp_rpm_signatures.stdout
+
+- name: Install only the verified local RPM closure without contacting repositories
+  ansible.builtin.dnf:
+    name: "{{ demo_mcp_config.artifacts.rpms | map(attribute='path') | list }}"
+    state: present
+    disablerepo: '*'
+    disable_gpg_check: false
+    install_weak_deps: false
+
+- name: Read existing subordinate user and group ID allocations
+  ansible.builtin.slurp:
+    src: "{{ item }}"
+  loop: [/etc/subuid, /etc/subgid]
+  register: demo_mcp_subordinate_ids
+  no_log: true
+
+- name: Require existing rootless user namespace allocations
+  ansible.builtin.assert:
+    that: >-
+      item.content | b64decode | demo_mcp_subordinate_range(demo_mcp_user)
+    fail_msg: Prepare an approved subordinate user/group range for the existing runtime account first.
+    quiet: true
+  loop: "{{ demo_mcp_subordinate_ids.results }}"
+  no_log: true
+
+- name: Keep the runtime user's container-store parent directories writable by that user
+  ansible.builtin.file:
+    path: "{{ demo_mcp_user.home }}/{{ item }}"
+    state: directory
+    owner: "{{ demo_mcp_user.name }}"
+    group: "{{ demo_mcp_user.gid }}"
+    mode: '0700'
+  loop: [.local, .local/share]
+
+- name: Verify the approved image archive before loading it
+  ansible.builtin.stat:
+    path: "{{ demo_mcp_image.archive }}"
+    checksum_algorithm: sha256
+  register: demo_mcp_image_check
+  failed_when: >-
+    not demo_mcp_image_check.stat.exists or
+    demo_mcp_image_check.stat.checksum != demo_mcp_image.sha256 or
+    demo_mcp_image_check.stat.size != demo_mcp_image.bytes
+
+- name: Inspect the existing rootless image identity without pulling
+  ansible.builtin.command:
+    argv: [podman, image, inspect, "{{ demo_mcp_image.name }}", --format, '{% raw %}{{.Id}}{% endraw %}']
+  become: true
+  become_user: "{{ demo_mcp_user.name }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ demo_mcp_user.uid }}"
+  register: demo_mcp_existing_image
+  changed_when: false
+  failed_when: false
+
+- name: Load the verified existing image archive into the runtime user's store
+  ansible.builtin.command:
+    argv: [podman, load, --input, "{{ demo_mcp_image.archive }}"]
+  become: true
+  become_user: "{{ demo_mcp_user.name }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ demo_mcp_user.uid }}"
+  when: >-
+    demo_mcp_existing_image.rc != 0 or
+    (demo_mcp_existing_image.stdout | trim | regex_replace('^sha256:', '')) !=
+    (demo_mcp_image.image_id | regex_replace('^sha256:', ''))
+  changed_when: true
+
+- name: Verify the loaded image matches the approved source identity
+  ansible.builtin.command:
+    argv: [podman, image, inspect, "{{ demo_mcp_image.name }}", --format, '{% raw %}{{.Id}}{% endraw %}']
+  become: true
+  become_user: "{{ demo_mcp_user.name }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ demo_mcp_user.uid }}"
+  register: demo_mcp_loaded_image
+  changed_when: false
+  failed_when: >-
+    (demo_mcp_loaded_image.stdout | trim | regex_replace('^sha256:', '')) !=
+    (demo_mcp_image.image_id | regex_replace('^sha256:', ''))

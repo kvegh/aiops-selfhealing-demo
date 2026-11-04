@@ -1,0 +1,261 @@
+---
+- name: Check the certificate and nginx packages already provided by Hactar base
+  ansible.builtin.command:
+    argv:
+      - rpm
+      - -q
+      - nginx
+      - certbot
+      - python3-certbot-nginx
+  register: demo_zabbix_package_readiness
+  changed_when: false
+  failed_when: false
+  check_mode: false
+- name: Require existing base packages instead of installing dependencies
+  ansible.builtin.assert:
+    that: demo_zabbix_package_readiness.rc == 0
+    fail_msg: Prepare nginx, certbot, python3-certbot-nginx through Hactar base before deploying this monitoring
+      frontend.
+    quiet: true
+- name: Find an existing approved ACME registration
+  ansible.builtin.find:
+    paths: /etc/letsencrypt/accounts
+    patterns: regr.json
+    recurse: true
+    file_type: file
+  register: demo_zabbix_acme_accounts
+  no_log: true
+- name: Require a previously approved certificate account
+  ansible.builtin.assert:
+    that: demo_zabbix_acme_accounts.matched | int > 0
+    fail_msg: Register an approved ACME account separately; this playbook cannot accept legal terms.
+    quiet: true
+- name: Read only this versioned monitoring frontend's existing IPv4 DNS records
+  ansible.builtin.uri:
+    url: https://api.godaddy.com/v1/domains/{{ demo_zabbix_config.zone }}/records/A/{{ demo_zabbix_config.record_name
+      }}
+    method: GET
+    headers:
+      Authorization: Bearer {{ demo_zabbix_dns_api_token }}
+    status_code: 200
+    follow_redirects: none
+    validate_certs: true
+  delegate_to: localhost
+  become: false
+  register: demo_zabbix_existing_dns
+  no_log: true
+- name: Refuse to replace another monitoring frontend's DNS address
+  ansible.builtin.assert:
+    that: "demo_zabbix_existing_dns.json | demo_website_safe_dns_records(\n  demo_zabbix_config.hypervisor.public_ipv4)"
+    fail_msg: The versioned monitoring frontend name has a conflicting DNS record; inspect it before continuing.
+    quiet: true
+  no_log: true
+- name: Read only this versioned monitoring frontend's IPv6 DNS records
+  ansible.builtin.uri:
+    url: https://api.godaddy.com/v1/domains/{{ demo_zabbix_config.zone }}/records/AAAA/{{ demo_zabbix_config.record_name
+      }}
+    method: GET
+    headers:
+      Authorization: Bearer {{ demo_zabbix_dns_api_token }}
+    status_code: 200
+    follow_redirects: none
+    validate_certs: true
+  delegate_to: localhost
+  become: false
+  register: demo_zabbix_existing_ipv6_dns
+  no_log: true
+- name: Refuse an alternate unpinned IPv6 monitoring frontend route
+  ansible.builtin.assert:
+    that: demo_zabbix_existing_ipv6_dns.json == []
+    fail_msg: This IPv4-only monitoring frontend has an unexpected IPv6 DNS record.
+    quiet: true
+  no_log: true
+- name: Publish this versioned monitoring frontend at the selected hypervisor's public IPv4
+  ansible.builtin.uri:
+    url: https://api.godaddy.com/v1/domains/{{ demo_zabbix_config.zone }}/records/A/{{ demo_zabbix_config.record_name
+      }}
+    method: PUT
+    headers:
+      Authorization: Bearer {{ demo_zabbix_dns_api_token }}
+    body_format: json
+    body:
+      - data: '{{ demo_zabbix_config.hypervisor.public_ipv4 }}'
+        ttl: 600
+    status_code: 200
+    follow_redirects: none
+    validate_certs: true
+  delegate_to: localhost
+  become: false
+  when: demo_zabbix_existing_dns.json | length == 0
+  no_log: true
+- name: Inspect the version-specific nginx configuration before taking ownership
+  ansible.builtin.stat:
+    path: '{{ demo_zabbix_config.vhost_file }}'
+  register: demo_zabbix_existing_vhost
+- name: Preserve this version's existing nginx configuration for rollback
+  ansible.builtin.slurp:
+    src: '{{ demo_zabbix_config.vhost_file }}'
+  register: demo_zabbix_previous_vhost
+  when: demo_zabbix_existing_vhost.stat.exists
+  no_log: true
+- name: Refuse to overwrite an unrelated nginx configuration
+  ansible.builtin.assert:
+    that: not demo_zabbix_existing_vhost.stat.exists or ('# Managed by the AIOps monitoring frontend playbook for
+      ' + demo_zabbix_config.hostname + '.') in (demo_zabbix_previous_vhost.content | default('') | b64decode)
+    fail_msg: An unmanaged nginx file already occupies this version's path.
+    quiet: true
+  no_log: true
+- name: Prepare the shared ACME challenge webroot
+  ansible.builtin.file:
+    path: '{{ item.path }}'
+    state: directory
+    owner: '{{ item.owner }}'
+    group: '{{ item.owner }}'
+    mode: '{{ item.mode }}'
+    setype: '{{ item.setype }}'
+  loop:
+    - path: /var/lib/letsencrypt
+      owner: root
+      mode: '0755'
+      setype: httpd_sys_content_t
+- name: Inspect the exact version's existing certificate
+  ansible.builtin.stat:
+    path: /etc/letsencrypt/live/{{ demo_zabbix_config.hostname }}/fullchain.pem
+  register: demo_zabbix_existing_certificate
+- name: Install only the selected frontend's private Basic-auth file
+  ansible.builtin.copy:
+    content: '{{ demo_zabbix_basic_auth_file }}'
+    dest: '{{ demo_zabbix_config.auth_file }}'
+    owner: root
+    group: nginx
+    mode: '0640'
+    setype: httpd_config_t
+  no_log: true
+  diff: false
+- name: Provision the versioned HTTPS virtual host with rollback
+  block:
+    - name: Install the initial HTTP challenge configuration when no certificate exists
+      ansible.builtin.template:
+        src: demo-zabbix-vhost.conf.j2
+        dest: '{{ demo_zabbix_config.vhost_file }}'
+        owner: root
+        group: root
+        mode: '0600'
+        setype: httpd_config_t
+      vars:
+        demo_zabbix_tls_ready: false
+      when: not demo_zabbix_existing_certificate.stat.exists
+      no_log: true
+      diff: false
+    - name: Validate nginx before serving a certificate challenge
+      ansible.builtin.command:
+        argv:
+          - /usr/sbin/nginx
+          - -t
+      changed_when: false
+    - name: Reload nginx for the HTTP challenge
+      ansible.builtin.systemd_service:
+        name: nginx
+        state: reloaded
+      when: not demo_zabbix_existing_certificate.stat.exists
+    - name: Wait for public DNS to identify only the selected hypervisor
+      ansible.builtin.assert:
+        that:
+          - query('community.general.dig', demo_zabbix_config.hostname, qtype='A') | unique | list ==
+            [demo_zabbix_config.hypervisor.public_ipv4]
+          - query('community.general.dig', demo_zabbix_config.hostname, qtype='AAAA') | reject('equalto',
+            '') | list == []
+          - query('community.general.dig', demo_zabbix_config.aap_hostname, qtype='A') | unique | list
+            == [demo_zabbix_config.hypervisor.public_ipv4]
+          - query('community.general.dig', demo_zabbix_config.aap_hostname, qtype='AAAA') | reject('equalto',
+            '') | list == []
+        fail_msg: Public DNS has not converged on the selected hypervisor's IPv4-only monitoring frontend route.
+        quiet: true
+      register: demo_zabbix_dns_propagation
+      until: demo_zabbix_dns_propagation is not failed
+      retries: 30
+      delay: 10
+    - name: Obtain the monitoring frontend certificate with the existing account and webroot renewal
+      ansible.builtin.command:
+        argv:
+          - certbot
+          - certonly
+          - --webroot
+          - --webroot-path
+          - /var/lib/letsencrypt
+          - --cert-name
+          - '{{ demo_zabbix_config.hostname }}'
+          - -d
+          - '{{ demo_zabbix_config.hostname }}'
+          - --non-interactive
+          - --keep-until-expiring
+          - --deploy-hook
+          - /usr/sbin/nginx -t && /usr/bin/systemctl reload nginx
+        creates: /etc/letsencrypt/live/{{ demo_zabbix_config.hostname }}/fullchain.pem
+    - name: Install the protected versioned Zabbix HTTPS frontend
+      ansible.builtin.template:
+        src: demo-zabbix-vhost.conf.j2
+        dest: '{{ demo_zabbix_config.vhost_file }}'
+        owner: root
+        group: root
+        mode: '0600'
+        setype: httpd_config_t
+      vars:
+        demo_zabbix_tls_ready: true
+      no_log: true
+      diff: false
+    - name: Validate the complete nginx configuration with the HTTPS site
+      ansible.builtin.command:
+        argv:
+          - /usr/sbin/nginx
+          - -t
+      changed_when: false
+    - name: Reload nginx with the validated HTTPS site
+      ansible.builtin.systemd_service:
+        name: nginx
+        state: reloaded
+  rescue:
+    - name: Restore the previous managed virtual host after a failed change
+      ansible.builtin.copy:
+        content: '{{ demo_zabbix_previous_vhost.content | b64decode }}'
+        dest: '{{ demo_zabbix_config.vhost_file }}'
+        owner: root
+        group: root
+        mode: '0600'
+        setype: httpd_config_t
+      when: demo_zabbix_existing_vhost.stat.exists
+      no_log: true
+      diff: false
+    - name: Remove only the new version's incomplete virtual host
+      ansible.builtin.file:
+        path: '{{ demo_zabbix_config.vhost_file }}'
+        state: absent
+      when: not demo_zabbix_existing_vhost.stat.exists
+    - name: Validate nginx after restoring the previous configuration
+      ansible.builtin.command:
+        argv:
+          - /usr/sbin/nginx
+          - -t
+      changed_when: false
+    - name: Reload the restored nginx configuration
+      ansible.builtin.systemd_service:
+        name: nginx
+        state: reloaded
+    - name: Stop after the monitoring frontend infrastructure failure
+      ansible.builtin.fail:
+        msg: Monitoring frontend infrastructure did not complete; its previous virtual host was restored. Inspect
+          the protected job events.
+- name: Verify trusted public HTTPS and the frontend Basic-auth requirement
+  ansible.builtin.uri:
+    url: https://{{ demo_zabbix_config.hostname }}/
+    method: GET
+    validate_certs: true
+    follow_redirects: none
+    status_code: 401
+  register: demo_zabbix_public_frontend
+  no_log: true
+- name: Require the expected authentication challenge
+  ansible.builtin.assert:
+    that: '''Basic'' in demo_zabbix_public_frontend.www_authenticate | default('''')'
+    quiet: true
+  no_log: true

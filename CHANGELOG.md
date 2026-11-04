@@ -26,8 +26,19 @@ templates, and the status page are still outstanding.
   nginx virtual host, with pinned hypervisor SSH/machine identity and verified
   HTTPS forwarding to that AAP. Initial recovery deployments keep monitoring,
   shared fail2ban changes and audience button arming disabled until their own
-  monitoring/repair integration is ready. Protected post-import launch inputs
-  supply DNS authorization and the target's generated webhook information.
+  monitoring/repair integration is ready. DNS authorization and the target's
+  generated webhook information have no saved secret defaults; their protected
+  runtime input method remains awaiting the owner's decision.
+- Separate versioned Zabbix deployment: immutable saved-image cloning,
+  quarantine before monitoring starts, target-local website monitoring and a
+  trusted HTTPS frontend retaining Basic authentication. Event delivery stays
+  disabled until explicitly released.
+- Two requested MCP deployment playbooks retain the existing on-demand
+  Podman/stdio servers on the matching new TRA. They verify signed offline
+  runtime artifacts and image identities, pin fresh guest SSH keys and perform
+  read-only protocol checks. Linux MCP generates its private key only on TRA;
+  Zabbix MCP requires the new target's explicit API token. Neither opens a
+  public MCP port or installs or launches the agent.
 - Exact reviewed `community.general` collection pin for the public DNS checks.
 
 - `demo-web/index.html` — outer shell that polls `content.html` every 2s
@@ -44,6 +55,18 @@ templates, and the status page are still outstanding.
   the URL keeps answering.
 
 ### Changed
+
+- Fresh-target inventory data comes from the selected allocation's verified
+  guest artifacts. Guest jobs reuse the target's existing base Machine
+  credential; hypervisor jobs retain their separate Machine credential.
+- Website and monitoring checks use the permitted configured DNS resolver and
+  pinned hypervisor route. Managed website monitoring requires explicit new
+  target inputs instead of using production monitoring defaults.
+- CaC import and application execution are documented separately. The ten
+  template definitions can be imported before the pending runtime input choice;
+  missing secrets stop dependent jobs before managed writes. Unsupported inline
+  Vault launch scalars and JSON Vault-marker mappings are not advertised as a
+  Controller transport.
 
 - `playbooks/demo_website.yml` — Enable removes rate limiting for the whole
   audience site; Disable restores its previous button limit through a

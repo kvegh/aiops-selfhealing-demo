@@ -1,0 +1,68 @@
+---
+- name: Validate the selected guests and previously staged offline artifacts locally
+  ansible.builtin.set_fact:
+    demo_mcp_config: "{{ demo_mcp_deployment | demo_mcp_configuration }}"
+  no_log: true
+
+- name: Require one exact TRA destination
+  ansible.builtin.assert:
+    that:
+      - ansible_play_hosts_all | length == 1
+      - ansible_host == demo_mcp_config.tra.address
+    fail_msg: Select only the verified TRA VM belonging to this instance.
+    quiet: true
+  no_log: true
+
+- name: Allocate job-local trust for the two verified guests
+  ansible.builtin.tempfile:
+    state: file
+    prefix: aiops-mcp-known-hosts-
+  delegate_to: localhost
+  become: false
+  register: demo_mcp_trust
+
+- name: Pin only the new TRA and testserver SSH public keys
+  ansible.builtin.copy:
+    dest: "{{ demo_mcp_trust.path }}"
+    content: |
+      {% for target in [demo_mcp_config.tra, demo_mcp_config.testserver] %}
+      {% for key in target.host_keys %}
+      {{ target.address }} {{ key }}
+      [{{ target.address }}]:{{ target.port }} {{ key }}
+      {% endfor %}
+      {% endfor %}
+    mode: '0600'
+  delegate_to: localhost
+  become: false
+  no_log: true
+
+- name: Enforce the selected guest SSH identity with the existing Machine credential
+  ansible.builtin.set_fact:
+    ansible_user: "{{ demo_mcp_config.tra.user }}"
+    ansible_port: "{{ demo_mcp_config.tra.port }}"
+    ansible_host_key_checking: true
+    ansible_ssh_host_key_checking: true
+    ansible_ssh_common_args: >-
+      -o StrictHostKeyChecking=yes
+      -o UserKnownHostsFile={{ demo_mcp_trust.path | quote }}
+  no_log: true
+
+- name: Verify the connected TRA machine before installing or copying anything
+  ansible.builtin.command:
+    argv: [cat, /etc/machine-id]
+  register: demo_mcp_live_machine
+  changed_when: false
+  check_mode: false
+  failed_when: demo_mcp_live_machine.stdout | trim != demo_mcp_config.tra.machine_id
+  no_log: true
+
+- name: Read the existing TRA runtime account
+  ansible.builtin.command:
+    argv: [getent, passwd, "{{ demo_mcp_config.tra.user }}"]
+  register: demo_mcp_passwd
+  changed_when: false
+
+- name: Use the actual existing account rather than creating a client user
+  ansible.builtin.set_fact:
+    demo_mcp_user: "{{ demo_mcp_passwd.stdout | demo_mcp_user_record(demo_mcp_config.tra.user) }}"
+  no_log: true

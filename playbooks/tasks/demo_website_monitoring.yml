@@ -3,6 +3,22 @@
 # the existing Vault credential. All API calls run in the execution environment
 # and hide credentials and API responses from job output.
 
+- name: Require explicit verified target monitoring inputs for a managed website
+  ansible.builtin.set_fact:
+    demo_website_target_monitoring: >-
+      {{ demo_website_zabbix | default({}) | demo_website_monitoring_configuration }}
+  when: demo_website_manage_infrastructure | default(false) | bool
+  no_log: true
+
+- name: Bind only the new target's monitoring inputs without production defaults
+  ansible.builtin.set_fact:
+    demo_zabbix_api_url: "{{ demo_website_target_monitoring.api_url }}"
+    demo_zabbix_api_token: "{{ demo_website_target_monitoring.token }}"
+    demo_zabbix_item_id: "{{ demo_website_target_monitoring.item_id }}"
+    demo_zabbix_trigger_id: "{{ demo_website_target_monitoring.trigger_id }}"
+  when: demo_website_manage_infrastructure | default(false) | bool
+  no_log: true
+
 - name: Require the Zabbix monitoring configuration
   ansible.builtin.assert:
     that:
@@ -30,7 +46,7 @@
         triggerid: "{{ demo_zabbix_trigger_id }}"
         status: 1
       id: 1
-  delegate_to: localhost
+  delegate_to: "{{ inventory_hostname if (demo_website_manage_infrastructure | default(false) | bool) else 'localhost' }}"
   become: false
   register: demo_trigger_disabled
   no_log: true
@@ -59,7 +75,7 @@
         itemid: "{{ demo_zabbix_item_id }}"
         status: 1
       id: 2
-  delegate_to: localhost
+  delegate_to: "{{ inventory_hostname if (demo_website_manage_infrastructure | default(false) | bool) else 'localhost' }}"
   become: false
   register: demo_item_disabled
   no_log: true
@@ -97,7 +113,7 @@
             output:
               - lastclock
           id: 3
-      delegate_to: localhost
+      delegate_to: "{{ inventory_hostname if (demo_website_manage_infrastructure | default(false) | bool) else 'localhost' }}"
       become: false
       register: demo_previous_sample
       no_log: true
@@ -124,7 +140,7 @@
             itemid: "{{ demo_zabbix_item_id }}"
             status: 0
           id: 4
-      delegate_to: localhost
+      delegate_to: "{{ inventory_hostname if (demo_website_manage_infrastructure | default(false) | bool) else 'localhost' }}"
       become: false
       register: demo_item_enabled
       no_log: true
@@ -154,7 +170,7 @@
               - lastclock
               - lastvalue
           id: 5
-      delegate_to: localhost
+      delegate_to: "{{ inventory_hostname if (demo_website_manage_infrastructure | default(false) | bool) else 'localhost' }}"
       become: false
       register: demo_fresh_sample
       until:
@@ -180,7 +196,7 @@
             triggerid: "{{ demo_zabbix_trigger_id }}"
             status: 0
           id: 6
-      delegate_to: localhost
+      delegate_to: "{{ inventory_hostname if (demo_website_manage_infrastructure | default(false) | bool) else 'localhost' }}"
       become: false
       register: demo_trigger_enabled
       no_log: true

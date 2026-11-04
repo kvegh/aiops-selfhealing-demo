@@ -49,7 +49,9 @@
         ansible_ssh_common_args: >-
           -o StrictHostKeyChecking=yes
           -o UserKnownHostsFile={{ demo_website_known_hosts.path | quote }}
-          -o IdentitiesOnly=yes
+          -o BatchMode=yes
+          -o PasswordAuthentication=no
+          -o KbdInteractiveAuthentication=no
         demo_website_root: "{{ demo_website_config.root }}"
         demo_web_checkout: "{{ demo_website_config.checkout }}"
         demo_button_marker: "{{ demo_website_config.root }}/.armed"

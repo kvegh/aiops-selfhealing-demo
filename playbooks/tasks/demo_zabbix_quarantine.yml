@@ -1,0 +1,45 @@
+---
+- name: Read inherited integration definitions while monitoring is stopped
+  ansible.builtin.uri:
+    url: http://127.0.0.1/api_jsonrpc.php
+    method: POST
+    headers:
+      Authorization: "Bearer {{ demo_zabbix_clone_api_token }}"
+      Content-Type: application/json-rpc
+    body_format: json
+    body:
+      jsonrpc: '2.0'
+      method: "{{ demo_zabbix_kind.name }}.get"
+      params:
+        output: "{{ demo_zabbix_kind.output }}"
+      id: 1
+    follow_redirects: none
+    validate_certs: true
+    status_code: 200
+  register: demo_zabbix_inherited_objects
+  failed_when: demo_zabbix_inherited_objects.json.error is defined or demo_zabbix_inherited_objects.json.result is not defined
+  no_log: true
+
+- name: Disable or neutralize copied outbound integration definitions
+  ansible.builtin.uri:
+    url: http://127.0.0.1/api_jsonrpc.php
+    method: POST
+    headers:
+      Authorization: "Bearer {{ demo_zabbix_clone_api_token }}"
+      Content-Type: application/json-rpc
+    body_format: json
+    body:
+      jsonrpc: '2.0'
+      method: "{{ demo_zabbix_kind.name }}.update"
+      params: "{{ item }}"
+      id: 1
+    follow_redirects: none
+    validate_certs: true
+    status_code: 200
+  loop: >-
+    {{ demo_zabbix_inherited_objects.json.result |
+       demo_zabbix_quarantine(demo_zabbix_kind.name, 'https://' + demo_zabbix_config.aap_hostname) }}
+  register: demo_zabbix_quarantine_updates
+  failed_when: demo_zabbix_quarantine_updates.json.error is defined or demo_zabbix_quarantine_updates.json.result is not defined
+  changed_when: true
+  no_log: true

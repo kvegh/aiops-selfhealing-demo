@@ -158,15 +158,35 @@ flowchart TD
 |---|---|
 | [`docs/`](docs/) | Build/recreation guides (00 through 07), paused dashboard handoff (08), troubleshooting |
 | [`docs/todo/`](docs/todo/) | Backlog and design notes |
-| [`playbooks/`](playbooks/) | AAP project content used by the remediation templates |
+| [`playbooks/`](playbooks/) | Remediation content and versioned website, monitoring and MCP deployment playbooks |
 | [`assets/nginx/`](assets/nginx/) | Generic vhost example and panic-delivery cache snippets; private headers stay on the host |
 | [`assets/zabbix/`](assets/zabbix/) | Green/red/grey status icons and portable map/dashboard request templates |
-| [`src/`](src/) | Status-icon generator and unfinished AAP dashboard configuration helper/preprocessing |
-| [`tests/`](tests/) | Browser lifecycle and AAP dashboard preprocessing checks |
+| [`src/`](src/) | Status-icon generator, stdio MCP verifier and unfinished AAP dashboard configuration helper/preprocessing |
+| [`tests/`](tests/) | Deployment identity/artifact checks, MCP protocol checks, browser lifecycle and AAP dashboard preprocessing |
 | [`extensions/eda/rulebooks/`](extensions/eda/rulebooks/) | EDA rulebooks (level routing) |
 | [`AI_Instructions_Guardrails/`](AI_Instructions_Guardrails/) | Agent guardrails (CLAUDE.md) |
 
 ## Status
+
+### CaC import and application launch
+
+The reviewed capture defines ten Job Templates and binds its inventory to the
+selected instance's verified hypervisor, testserver and TRA. Importing it
+creates AAP configuration and launches no application or EDA activation.
+Secret-dependent jobs have no saved secret defaults and stop before managed
+host, DNS or API writes when their required inputs are missing. The supported
+runtime secret-input method is awaiting the owner's decision; application
+launch is a separate readiness step.
+
+### MCP deployment for a new TRA
+
+The two requested MCP deployment jobs use
+`playbooks/deploy_linux_mcp.yml` and `playbooks/deploy_zabbix_mcp.yml`. They
+preserve the existing on-demand Podman/stdio configuration, connect only to the
+matching new testserver and Zabbix instance, and configure the existing TRA user.
+See the [MCP deployment procedure](docs/10-mcp-deployment.md) for the verified
+guest metadata, signed offline runtime/image staging and read-only checks.
+They create no public MCP listener and do not install or invoke Claude Code.
 
 ### Audience website lifecycle
 
@@ -188,12 +208,13 @@ the complete audience outage/recovery loop. The deployment uses an existing
 approved ACME account and base-installed packages; it accepts no legal terms
 and installs no dependencies.
 
-After the CaC import, the operator retrieves the selected target's fault-template
-ID and generated webhook key through its authenticated HTTPS API. The existing
-Enable job accepts those values and the DNS token as Vault-encrypted launch
-variables through its existing runtime Vault credential. DNS and webhook secrets
-are not stored in inventory or exposed to the browser. This is an explicit
-post-import handoff; an unattended combined deployment workflow is not claimed.
+After the CaC import, the selected target's fault-template ID and generated
+webhook key can be read through its authenticated HTTPS API. The DNS and webhook
+inputs have no saved defaults or inventory secrets. Their protected runtime
+delivery method remains pending; do not launch the secret-dependent application
+jobs until that choice is implemented. Controller does not support the earlier
+proposed inline Vault launch scalars or JSON Vault-marker mappings. No custom
+decoder, credential type or store has been introduced.
 
 The following lifecycle instructions describe an existing host whose virtual
 host is already configured. That mode retains its current defaults.

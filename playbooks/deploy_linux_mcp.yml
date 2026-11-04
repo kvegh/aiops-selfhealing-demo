@@ -1,0 +1,200 @@
+---
+- name: Deploy the existing Linux MCP stdio server on the selected TRA
+  hosts: all
+  become: true
+  gather_facts: false
+  vars:
+    demo_mcp_server_name: linux-mcp
+  tasks:
+    - name: Prepare and verify the instance-local Linux MCP configuration
+      block:
+        - name: Select the verified TRA and testserver before connecting
+          ansible.builtin.include_tasks: tasks/demo_mcp_target.yml
+
+        - name: Select the approved Linux MCP image archive
+          ansible.builtin.set_fact:
+            demo_mcp_image: "{{ demo_mcp_config.artifacts.images['linux-mcp'] }}"
+
+        - name: Install the verified offline rootless runtime and image
+          ansible.builtin.include_tasks: tasks/demo_mcp_runtime.yml
+
+        - name: Prepare private MCP client SSH and log directories
+          ansible.builtin.file:
+            path: "{{ demo_mcp_user.home }}/.local/share/{{ item }}"
+            state: directory
+            owner: "{{ demo_mcp_user.name }}"
+            group: "{{ demo_mcp_user.gid }}"
+            mode: '0700'
+          loop: [linux-mcp-server, linux-mcp-server/ssh, linux-mcp-server/logs]
+
+        - name: Generate the fresh instance client key only on TRA
+          ansible.builtin.command:
+            argv:
+              - ssh-keygen
+              - -t
+              - ed25519
+              - -N
+              - ''
+              - -C
+              - "aiops-linux-mcp-v{{ '%02d' | format(demo_mcp_config.instance_number) }}"
+              - -f
+              - "{{ demo_mcp_user.home }}/.local/share/linux-mcp-server/ssh/id_ed25519"
+            creates: "{{ demo_mcp_user.home }}/.local/share/linux-mcp-server/ssh/id_ed25519"
+          become: true
+          become_user: "{{ demo_mcp_user.name }}"
+          no_log: true
+
+        - name: Read only the newly generated public half
+          ansible.builtin.slurp:
+            src: "{{ demo_mcp_user.home }}/.local/share/linux-mcp-server/ssh/id_ed25519.pub"
+          register: demo_mcp_public_key
+          no_log: true
+
+        - name: Refuse to reuse an unrelated existing client key
+          ansible.builtin.assert:
+            that: >-
+              (demo_mcp_public_key.content | b64decode).split()[-1] ==
+              'aiops-linux-mcp-v' + ('%02d' | format(demo_mcp_config.instance_number))
+            fail_msg: Preserve the existing key and review its ownership before using it for this instance.
+            quiet: true
+          no_log: true
+
+        - name: Install only the public key on the matching new testserver
+          delegate_to: testserver1
+          vars:
+            ansible_host: "{{ demo_mcp_config.testserver.address }}"
+            ansible_user: "{{ demo_mcp_config.testserver.user }}"
+            ansible_port: "{{ demo_mcp_config.testserver.port }}"
+            ansible_host_key_checking: true
+            ansible_ssh_host_key_checking: true
+            ansible_ssh_common_args: >-
+              -o StrictHostKeyChecking=yes
+              -o UserKnownHostsFile={{ demo_mcp_trust.path | quote }}
+          block:
+            - name: Check the actual testserver machine before authorizing its key
+              ansible.builtin.command:
+                argv: [cat, /etc/machine-id]
+              register: demo_mcp_live_testserver
+              changed_when: false
+              check_mode: false
+              failed_when: demo_mcp_live_testserver.stdout | trim != demo_mcp_config.testserver.machine_id
+              no_log: true
+
+            - name: Read the existing testserver account
+              ansible.builtin.command:
+                argv: [getent, passwd, "{{ demo_mcp_config.testserver.user }}"]
+              register: demo_mcp_testserver_passwd
+              changed_when: false
+
+            - name: Use the existing testserver account home
+              ansible.builtin.set_fact:
+                demo_mcp_testserver_user: >-
+                  {{ demo_mcp_testserver_passwd.stdout | demo_mcp_user_record(demo_mcp_config.testserver.user) }}
+              no_log: true
+
+            - name: Prepare its SSH authorization directory
+              ansible.builtin.file:
+                path: "{{ demo_mcp_testserver_user.home }}/.ssh"
+                state: directory
+                owner: "{{ demo_mcp_testserver_user.name }}"
+                group: "{{ demo_mcp_testserver_user.gid }}"
+                mode: '0700'
+                setype: ssh_home_t
+
+            - name: Add the instance public key without replacing management access
+              ansible.builtin.lineinfile:
+                path: "{{ demo_mcp_testserver_user.home }}/.ssh/authorized_keys"
+                line: "{{ demo_mcp_public_key.content | b64decode | trim }}"
+                create: true
+                owner: "{{ demo_mcp_testserver_user.name }}"
+                group: "{{ demo_mcp_testserver_user.gid }}"
+                mode: '0600'
+                setype: ssh_home_t
+              no_log: true
+
+        - name: Write only the new testserver's pinned SSH keys for the container
+          ansible.builtin.copy:
+            content: |
+              {% for key in demo_mcp_config.testserver.host_keys %}
+              testserver1 {{ key }}
+              {{ demo_mcp_config.testserver.address }} {{ key }}
+              [{{ demo_mcp_config.testserver.address }}]:{{ demo_mcp_config.testserver.port }} {{ key }}
+              {% endfor %}
+            dest: "{{ demo_mcp_user.home }}/.local/share/linux-mcp-server/ssh/known_hosts"
+            owner: "{{ demo_mcp_user.name }}"
+            group: "{{ demo_mcp_user.gid }}"
+            mode: '0600'
+          no_log: true
+
+        - name: Configure the existing alias for the new testserver only
+          ansible.builtin.copy:
+            content: |
+              Host testserver1
+                  HostName {{ demo_mcp_config.testserver.address }}
+                  User {{ demo_mcp_config.testserver.user }}
+                  Port {{ demo_mcp_config.testserver.port }}
+                  IdentityFile /var/lib/mcp/.ssh/id_ed25519
+                  UserKnownHostsFile /var/lib/mcp/.ssh/known_hosts
+                  StrictHostKeyChecking yes
+                  IdentitiesOnly yes
+            dest: "{{ demo_mcp_user.home }}/.local/share/linux-mcp-server/ssh/config"
+            owner: "{{ demo_mcp_user.name }}"
+            group: "{{ demo_mcp_user.gid }}"
+            mode: '0600'
+          no_log: true
+
+        - name: Use the existing on-demand container and stdio configuration
+          ansible.builtin.set_fact:
+            demo_mcp_server_definition:
+              type: stdio
+              command: podman
+              args:
+                - run
+                - --rm
+                - --interactive
+                - --pull=never
+                - --userns
+                - keep-id:uid=1001,gid=0
+                - -e
+                - "LINUX_MCP_USER={{ demo_mcp_config.testserver.user }}"
+                - -v
+                - "{{ demo_mcp_user.home }}/.local/share/linux-mcp-server/ssh:/var/lib/mcp/.ssh:ro,Z"
+                - -v
+                - "{{ demo_mcp_user.home }}/.local/share/linux-mcp-server/logs:/var/lib/mcp/.local/share/linux-mcp-server/logs:rw,Z"
+                - "{{ demo_mcp_image.name }}"
+
+        - name: Merge the one Linux MCP client entry
+          ansible.builtin.include_tasks: tasks/demo_mcp_client.yml
+
+        - name: Verify stdio initialization and read-only diagnostics against the new testserver
+          ansible.builtin.script:
+            cmd: >-
+              {{ (playbook_dir + '/../src/verify_stdio_mcp.py') | quote }}
+              --client-config {{ (demo_mcp_user.home + '/.claude.json') | quote }}
+              --project {{ (demo_mcp_user.home + '/claude-wd') | quote }}
+              --server linux-mcp
+              --expected-hostname {{ demo_mcp_config.testserver.vm_name | quote }}
+            executable: /usr/bin/python3
+          become: true
+          become_user: "{{ demo_mcp_user.name }}"
+          environment:
+            XDG_RUNTIME_DIR: "/run/user/{{ demo_mcp_user.uid }}"
+          changed_when: false
+          failed_when: false
+          register: demo_mcp_protocol_check
+          no_log: true
+
+        - name: Require the read-only check to reach the expected new testserver
+          ansible.builtin.assert:
+            that: demo_mcp_protocol_check.rc == 0
+            fail_msg: Linux MCP verification failed; inspect the protected diagnostic file on the selected TRA.
+            quiet: true
+
+      always:
+        - name: Remove the execution environment's temporary public trust file
+          ansible.builtin.file:
+            path: "{{ demo_mcp_trust.path }}"
+            state: absent
+          delegate_to: localhost
+          become: false
+          when: demo_mcp_trust.path is defined

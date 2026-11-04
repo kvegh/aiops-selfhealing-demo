@@ -1,0 +1,21 @@
+---
+- name: Apply the declared operation only to the selected cloned Zabbix API
+  ansible.builtin.uri:
+    url: http://127.0.0.1/api_jsonrpc.php
+    method: POST
+    headers:
+      Authorization: "Bearer {{ demo_zabbix_clone_api_token }}"
+      Content-Type: application/json-rpc
+    body_format: json
+    body:
+      jsonrpc: '2.0'
+      method: "{{ demo_zabbix_rpc_method }}"
+      params: "{{ demo_zabbix_rpc_params }}"
+      id: 1
+    follow_redirects: none
+    validate_certs: true
+    status_code: 200
+  register: demo_zabbix_rpc_response
+  failed_when: demo_zabbix_rpc_response.json.error is defined or demo_zabbix_rpc_response.json.result is not defined
+  changed_when: demo_zabbix_rpc_method is not search('\\.get$')
+  no_log: true
