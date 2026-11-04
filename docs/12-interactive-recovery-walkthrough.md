@@ -1,6 +1,6 @@
 # Interactive recovery walkthrough
 
-Version: **1.1.4**. This static presenter walkthrough illustrates the existing
+Version: **1.1.5**. This static presenter walkthrough illustrates the existing
 missing-`zabbix-agent2` recovery scenario. It is separate from the live audience
 website and makes no infrastructure connections. All findings, status changes,
 and timing are simulated; a successful walkthrough is not live recovery proof.
@@ -21,7 +21,8 @@ screens, the architecture scrolls sideways so its text remains legible.
 **Technical detail** opens relevant Ansible/EDA excerpts or illustrations and
 links to the complete repository source. Escape closes the dialog.
 
-The continuous story has 17 stops: healthy baseline; package removal; Zabbix
+The continuous story has 17 stops: healthy baseline; “An error suddenly arises.”
+(the missing agent package); Zabbix
 detection; event delivery; EDA matching; the Controller investigation job; agent
 startup; three separate MCP investigations; correlation and root cause;
 catalog discovery; job launch request; AAP execution; job success with monitoring

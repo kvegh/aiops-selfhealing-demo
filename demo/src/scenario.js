@@ -23,7 +23,7 @@
   {
     "id": "failure",
     "phase": "Observe",
-    "title": "One package disappears.",
+    "title": "An error suddenly arises.",
     "short": "The monitoring agent is removed.",
     "description": "The demo failure is removal of zabbix-agent2. The server still runs, but its monitoring agent cannot answer. Zabbix has not detected the failure yet.",
     "caption": "Injected failure: zabbix-agent2 removed. The AI is still idle.",
@@ -480,7 +480,7 @@
       }
     });
   }
-  const api = freeze({ steps, flows, stateAt, version: '1.1.4', sourceBase: 'https://github.com/kvegh/aiops-selfhealing-demo/blob/main/' });
+  const api = freeze({ steps, flows, stateAt, version: '1.1.5', sourceBase: 'https://github.com/kvegh/aiops-selfhealing-demo/blob/main/' });
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.AIOpsDemo = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

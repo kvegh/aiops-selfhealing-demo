@@ -89,6 +89,14 @@ templates, and the status page are still outstanding.
   stack. All three pages now make zero external requests, so they render
   identically on an audience phone with nothing but venue wifi.
 
+## [1.1.5] — 2026-11-04
+
+### Changed
+
+- Renamed the failure step to **An error suddenly arises.** The existing Next
+  arrow is retained, and the missing-Zabbix-agent example remains in the
+  step explanation and technical detail.
+
 ## [1.1.4] — 2026-11-04
 
 ### Changed
