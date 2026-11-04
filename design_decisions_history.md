@@ -591,3 +591,31 @@ without replacing unrelated hosts entries or recreating the VM.
 Nine focused cases, native old-entry repair and unrelated-localhost preservation
 checks, syntax and scoped production lint passed. The server remained masked
 during diagnosis; no source monitoring service or credential was changed.
+
+## Visualize missing-agent recovery through the existing AAP catalog
+
+The user requested one continuous missing-`zabbix-agent2` recovery story with
+**AAP as the Trusted Execution Layer**, using the Windows + AAP visualization
+as the presentation reference. Release 1.1.0 adds a buildless static frontend
+in `demo/` with an explicit SVG platform containing EDA, separate MCP interfaces,
+and 17 presenter-paced stops. AI investigation, evidence correlation, catalog
+discovery, job requests, AAP execution, and monitoring confirmation remain
+distinct. A successful remediation job leaves monitoring unresolved until a
+subsequent check confirms recovery. The functionality-demo wording separates
+platform capabilities from configured controls and agent instructions.
+
+The repository had no configured Pages site or workflow when inspected. The
+new workflow follows the reference's GitHub Actions approach and stages only
+an explicit frontend allowlist. This avoids uploading automation or protected
+configuration alongside the walkthrough and needs no frontend build dependency.
+This work changes no live AAP, monitoring, managed-host, or agent configuration.
+
+Validation: both runtime scripts passed syntax checks; 14 built-in Node tests
+passed for story ordering, MCP routes, AAP-originated execution, monitoring
+verification, and actual application handlers in a minimal DOM harness. HTML
+references, relative links, workflow structure, local assets, and sensitive
+patterns were checked. The user declined Chromium installation; no browser was
+installed and rendered desktop/mobile inspection was not performed. The DOM
+harness does not attest to browser layout.
+
+Implementation commit: `19da250`.
