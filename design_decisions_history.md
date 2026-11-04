@@ -19,9 +19,16 @@ Nineteen focused tests, including real Ansible execution of final enable and
 failure-before-frontend paths, passed. Syntax, twelve-file production lint and
 whitespace checks passed. The selected live clone's reconciliation readback is
 idempotent, trusted frontend checks passed, and an unmatched diagnostic event
-reached its own Event Stream over trusted HTTPS. Automatic outage recovery has
-not yet been verified. Publication remains pending under the active local-only
-Git rule.
+reached its own Event Stream over trusted HTTPS. A subsequent normal fault job
+produced problem and recovery events; EDA automatically ran the existing restore
+and rearm templates successfully. Final trusted HTTP checks confirmed healthy
+content and an armed button, with the monitoring trigger recovered. Protected
+evidence is retained in the private companion repository.
+
+Publication remains pending under the active local-only Git rule. These live
+settings were reconciled through the existing authenticated API using the
+reviewed helper. The normal monitoring deployment job has not yet executed this
+new, unpublished playbook revision.
 
 ## Verify the versioned website after base tooling — 2026-11-04
 

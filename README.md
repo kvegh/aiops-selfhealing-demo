@@ -218,8 +218,14 @@ read-only queries against their matching testserver and monitoring instance.
 The normal Zabbix deployment has also succeeded, with independently
 verified clone authentication, quarantine and trusted public HTTPS protection.
 The normal website deployment has also succeeded: versioned DNS, trusted HTTPS,
-content and the selected new AAP webhook were independently verified. Its button
-remains disarmed, and the complete remediation loop remains a separate check.
+content and the selected new AAP webhook were independently verified. Subsequent
+target-local monitoring reconciliation passed a complete normal fault-job test:
+Zabbix delivered the problem and recovery events, EDA ran the existing restore
+and rearm templates, and content and arm endpoints returned HTTP 200 again.
+The new deployment code and matching private CaC are committed locally but
+remain unpublished under the current Git restriction. The live reconciliation
+used the reviewed helper through the existing authenticated API; a normal
+deployment job using this new revision has not yet run.
 
 ### Audience website lifecycle
 
