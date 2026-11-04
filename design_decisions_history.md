@@ -1,5 +1,18 @@
 # Design decisions history
 
+## Wait for the protected monitoring frontend — 2026-11-03
+
+Implementation `ef7af00` gives the final frontend probe a bounded retry window
+after nginx publication. The expected result remains trusted HTTPS with HTTP
+401 and a Basic authentication challenge, with redirects refused. Independent
+checks passed after an actual deployment's final probe failed, so this change
+handles temporary readiness failures without relaxing authentication or trust.
+
+Native Ansible tests verify temporary failure followed by readiness, permanent
+failure, and rejection of a missing Basic challenge. Scoped production lint
+and the existing quarantine checks pass. Actual deployment retry is tracked
+separately from this publication.
+
 ## Load per-instance application settings through native Vault — 2026-11-03
 
 Implementation `ba099ef` implements the owner's approved whole-file settings
