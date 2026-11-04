@@ -89,6 +89,15 @@ templates, and the status page are still outstanding.
   stack. All three pages now make zero external requests, so they render
   identically on an audience phone with nothing but venue wifi.
 
+## [1.1.6] — 2026-11-04
+
+### Changed
+
+- Made **Ansible Automation Platform** the dominant 32 px bold platform title,
+  with a prominent 20 px **TRUSTED EXECUTION LAYER** label alongside it.
+  The other components retain their function-first hierarchy. Existing
+  colors, connection paths, and walkthrough behavior are preserved.
+
 ## [1.1.5] — 2026-11-04
 
 ### Changed

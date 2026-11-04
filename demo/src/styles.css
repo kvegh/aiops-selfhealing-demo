@@ -108,8 +108,8 @@ kbd{font-family:inherit;border:1px solid #d7e0e9;border-radius:3px;padding:1px 4
 .mcp-node[data-tone="request"] .node-surface{fill:#f0edff;stroke:#5b42a6}
 .mcp-title{font-size:14px;font-weight:650;fill:#14548f}
 .mcp-detail{font-size:11px;fill:#46678c}
-.platform-name{font-size:25px;fill:#fff;letter-spacing:-.5px;font-weight:650}
-.platform-label{font-size:12px;fill:#ffffff;font-weight:450;letter-spacing:.2px}
+.platform-name{font-size:32px;fill:#fff;letter-spacing:-.5px;font-weight:750}
+.platform-label{font-size:20px;fill:#ffffff;font-weight:650;letter-spacing:.5px}
 .platform-node .node-surface{fill:#26384e;stroke:#53667c;stroke-width:1}
 .platform-node.is-active .node-surface{fill:#314b69;stroke:#a4c7eb;stroke-width:2}
 .platform-eyebrow{fill:#d4dfec;font-size:10px;font-weight:650;letter-spacing:.7px}

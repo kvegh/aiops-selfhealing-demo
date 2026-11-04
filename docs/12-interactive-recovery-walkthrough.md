@@ -1,6 +1,6 @@
 # Interactive recovery walkthrough
 
-Version: **1.1.5**. This static presenter walkthrough illustrates the existing
+Version: **1.1.6**. This static presenter walkthrough illustrates the existing
 missing-`zabbix-agent2` recovery scenario. It is separate from the live audience
 website and makes no infrastructure connections. All findings, status changes,
 and timing are simulated; a successful walkthrough is not live recovery proof.
@@ -34,11 +34,12 @@ confirms the result after the remediation job succeeds.
 
 ## What the diagram means
 
-The diagram makes functionality the primary label: **PROD SERVER**,
-**MONITORING**, **AGENTIC AI**, and **TRUSTED EXECUTION LAYER**. The smaller
-product captions read Red Hat Enterprise Linux, Zabbix in this case, Claude
-in this case, and Ansible Automation Platform. Role headings use 22–25 px
-SVG text; product captions use 11–12 px.
+**Ansible Automation Platform** is the dominant platform name, using bold
+32 px SVG text with a 20 px **TRUSTED EXECUTION LAYER** label alongside it.
+The title has a bounded width so job-dispatch and MCP paths remain clear.
+The other components keep functionality as the primary label: **PROD SERVER**,
+**MONITORING**, and **AGENTIC AI**, using 22 px headings with 11 px product
+captions: Red Hat Enterprise Linux, Zabbix in this case, and Claude in this case.
 
 EDA is inside the AAP platform. An AAP job starts the AI agent runtime. The
 current repository implementation still launches Claude Code CLI; Codex,
