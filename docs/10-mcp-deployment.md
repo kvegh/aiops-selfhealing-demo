@@ -38,6 +38,16 @@ through the already prepared hypervisor, without installing staging tools or
 packages there, and copy it through the approved management connection.
 Inspect repository entitlement and existing download capability first.
 
+Resolve the requested Podman, fuse-overlayfs and slirp4netns packages against
+the selected guest's actual installed RPM database before recording the install
+set. A download-only dependency list can omit conditional SELinux providers.
+Stage those signed providers as needed, expose the verified local RPMs to a
+read-only dependency solve with repositories disabled, and require a solution
+without installed package removals. The manifest's `rpms` list contains that
+minimal install set. This avoids forcing unrelated base-library upgrades just
+because newer dependency files were downloaded. Keep signature verification,
+SELinux policy and protected-package checks enabled throughout.
+
 Save the two already installed image artifacts, preserving their image IDs:
 
 - `quay.io/redhat-services-prod/rhel-lightspeed-tenant/linux-mcp-server:latest`

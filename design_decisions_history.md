@@ -426,3 +426,14 @@ lifecycle templates. The current deployment's association is complete;
 cloned-controller setup and a live recovery rehearsal remain separate work.
 The source implementation remains `89e113f`, with its production hostname
 default encrypted and inventory/job overrides covered by three local tests.
+
+
+## Validate the offline runtime install set on the selected guest
+
+The existing runtime installer from f8ccebe keeps signature and repository
+restrictions. Private configuration implementation 04267b8 corrects its RPM
+input after DNF rejected an overbroad dependency request before installation.
+The revised procedure resolves the runtime against the selected guest package
+database, includes conditional SELinux providers, and records only the proven
+install set. The real read-only solve required no installed package removals.
+This documentation does not claim the later installation or MCP smoke test.

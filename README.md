@@ -187,6 +187,9 @@ preserve the existing on-demand Podman/stdio configuration, connect only to the
 matching new testserver and Zabbix instance, and configure the existing TRA user.
 See the [MCP deployment procedure](docs/10-mcp-deployment.md) for the verified
 guest metadata, signed offline runtime/image staging and read-only checks.
+The RPM manifest must contain the install set validated against the selected
+guest, including its conditional SELinux dependencies; the procedure explains
+the required dependency solve before installation.
 They create no public MCP listener and do not install or invoke Claude Code.
 
 ### Audience website lifecycle
