@@ -13,8 +13,11 @@ and actions remain disabled.
 The public source, private capture and corresponding hypervisor policy changes
 have been published and their remote heads independently checked. Exact job and
 resource evidence remains encrypted in the private companion repository.
-Verification of a separate repeat-import failure in AutoDeploy's activation
-handling remains open; it did not stop the working website activation.
+At that checkpoint, a separate AutoDeploy repeat-import failure was still under
+investigation; it did not stop the working website activation. AutoDeploy
+implementation `8c0af1c` subsequently preserved the original activation variable
+text, and its normal import passed on version 0.34.3 while preserving activation
+state, the Event Stream and existing template identities.
 
 ## Verify the existing agent job on its intended guest — 2026-11-04
 
