@@ -89,6 +89,17 @@ templates, and the status page are still outstanding.
   stack. All three pages now make zero external requests, so they render
   identically on an audience phone with nothing but venue wifi.
 
+## [1.1.1] — 2026-11-04
+
+### Changed
+
+- Refined the walkthrough palette with fixed Red Hat red AAP branding, a
+  dark navy platform, white surfaces, crisp blue interactions, and teal AI
+  and execution accents. Dark crimson failures and green recovery remain
+  labeled explicitly; brand color does not indicate incident state.
+- Matched SVG arrows and path legends, increased muted-text contrast,
+  and retained the existing recovery story, controls, and motion behavior.
+
 ## [1.1.0] — 2026-11-04
 
 ### Added

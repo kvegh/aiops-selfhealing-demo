@@ -480,7 +480,7 @@
       }
     });
   }
-  const api = freeze({ steps, flows, stateAt, version: '1.1.0', sourceBase: 'https://github.com/kvegh/aiops-selfhealing-demo/blob/main/' });
+  const api = freeze({ steps, flows, stateAt, version: '1.1.1', sourceBase: 'https://github.com/kvegh/aiops-selfhealing-demo/blob/main/' });
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.AIOpsDemo = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

@@ -1,6 +1,6 @@
 # Interactive recovery walkthrough
 
-Version: **1.1.0**. This static presenter walkthrough illustrates the existing
+Version: **1.1.1**. This static presenter walkthrough illustrates the existing
 missing-`zabbix-agent2` recovery scenario. It is separate from the live audience
 website and makes no infrastructure connections. All findings, status changes,
 and timing are simulated; a successful walkthrough is not live recovery proof.
@@ -37,7 +37,7 @@ EDA is inside the AAP platform. An AAP job starts Claude Code CLI on its runtime
 host. Every AI interaction with Zabbix, Linux, and AAP is drawn through the
 corresponding MCP interface. Dashed blue paths are diagnostic requests and
 responses. Purple paths request an AAP job. Event and job dispatch paths are
-separate; the red execution path originates from Automation Controller and
+separate; the teal execution path originates from Automation Controller and
 terminates at the managed server.
 
 The missing package is the injected demo failure, not an AI action. The server
@@ -67,6 +67,22 @@ Source references:
 The frontend contains only this recovery story. It has no infrastructure
 credentials, live MCP connections, alternative response levels, content
 generation, incident memory, ITSM, or audience website controls.
+
+## Color and status
+
+AAP carries a fixed Red Hat red (`#ee0000`) header above a dark navy platform.
+Brand color does not change with the incident state. White surfaces and crisp
+blue interactions keep the presentation light; teal identifies the AI runtime
+and the labeled AAP execution path. Diagnostic paths are dashed blue, job
+requests are solid purple, and event/job dispatch is slate.
+
+Failure uses darker crimson with explicit Problem text, while recovery uses
+green with explicit Recovered text. The monitoring status stays unresolved
+until verification. These labels, route captions, dash patterns and line widths
+carry meaning alongside color. The Red Hat accent follows its
+[official brand color reference](https://www.redhat.com/en/about/brand/standards/color);
+this visualization retains its original red/green monitoring story and does
+not claim to be an official Red Hat product interface.
 
 ## Validate it
 
