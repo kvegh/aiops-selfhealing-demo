@@ -72,8 +72,8 @@ kbd{font-family:inherit;border:1px solid #d7e0e9;border-radius:3px;padding:1px 4
 .architecture text{font-family:Inter,"Segoe UI",system-ui,sans-serif}
 .node-surface{fill:#fff;stroke:#ccd8e4;stroke-width:1.5}
 .node-divider{stroke:#dce5ee}
-.node-eyebrow{font-size:11px;letter-spacing:1px;fill:#526277;font-weight:600}
-.node-title{font-size:24px;fill:#1d3048;font-weight:550}
+.node-product{font-size:11px;fill:#526277;font-weight:450}
+.node-title{font-size:22px;fill:#1d3048;font-weight:650;letter-spacing:-.3px}
 .node-status{font-size:13px;fill:#245b48;font-weight:550}
 .node-detail{font-size:12px;fill:#526277}
 .status-dot{fill:#1e8057}
@@ -93,7 +93,7 @@ kbd{font-family:inherit;border:1px solid #d7e0e9;border-radius:3px;padding:1px 4
 .agent-node .node-surface{fill:url(#agent-fill);stroke:#a5d9d3}
 .agent-node.is-active>.node-surface{stroke:#007b84}
 .agent-node.is-active .agent-halo{opacity:.5}
-.agent-name{font-size:17px;font-weight:600;fill:#064e4b}
+.agent-role{fill:#064e4b}
 .agent-constellation{stroke:#148a8b;fill:#fff;stroke-width:1.2}
 .agent-constellation .agent-core{fill:#007b84;stroke:#fff;stroke-width:2}
 .agent-divider{stroke:#bce2dc}
@@ -108,8 +108,8 @@ kbd{font-family:inherit;border:1px solid #d7e0e9;border-radius:3px;padding:1px 4
 .mcp-node[data-tone="request"] .node-surface{fill:#f0edff;stroke:#5b42a6}
 .mcp-title{font-size:14px;font-weight:650;fill:#14548f}
 .mcp-detail{font-size:11px;fill:#46678c}
-.platform-name{font-size:25px;fill:#fff;letter-spacing:-.5px;font-weight:550}
-.platform-label{font-size:10px;fill:#ffffff;font-weight:600;letter-spacing:1.8px}
+.platform-name{font-size:25px;fill:#fff;letter-spacing:-.5px;font-weight:650}
+.platform-label{font-size:12px;fill:#ffffff;font-weight:450;letter-spacing:.2px}
 .platform-node .node-surface{fill:#26384e;stroke:#53667c;stroke-width:1}
 .platform-node.is-active .node-surface{fill:#314b69;stroke:#a4c7eb;stroke-width:2}
 .platform-eyebrow{fill:#d4dfec;font-size:10px;font-weight:650;letter-spacing:.7px}

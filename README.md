@@ -20,12 +20,15 @@ simulation; the walkthrough distinguishes AAP platform capabilities from the
 agent instructions and hardening still to do. See the
 [presenter, validation, and GitHub Pages guide](docs/12-interactive-recovery-walkthrough.md).
 [Open the published visualization](https://kvegh.github.io/aiops-selfhealing-demo/).
-GitHub Pages uses the included Actions workflow. Frontend release: **1.1.3**.
+GitHub Pages uses the included Actions workflow. Frontend release: **1.1.4**.
 The palette uses a deep navy AAP platform with a thin red brand accent,
 blue MCP paths, teal AI/execution accents, and labeled failure/recovery states.
-The diagram labels the agent role **Codex/Claude/Copilot etc**. The current
-repository launcher still invokes Claude Code CLI; the visualization does
-not provision additional agent integrations.
+The diagram puts functionality first: **PROD SERVER**, **MONITORING**,
+**AGENTIC AI**, and **TRUSTED EXECUTION LAYER** are the large labels. Smaller
+captions identify Red Hat Enterprise Linux, Zabbix in this case, Claude in
+this case, and Ansible Automation Platform. Codex, Copilot, and other runtimes
+can represent the broader agent role; the current launcher remains Claude
+Code CLI, and the visualization does not provision additional integrations.
 
 ## What this is
 

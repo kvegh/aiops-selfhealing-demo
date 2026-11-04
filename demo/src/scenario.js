@@ -109,7 +109,7 @@
     "phase": "Trigger",
     "title": "The AAP job wakes the AI.",
     "short": "The AI agent runtime starts headlessly.",
-    "description": "The AAP job starts the AI agent runtime, shown here as Codex/Claude/Copilot etc. The agent can now investigate through its configured MCP interfaces. It has not requested a remediation.",
+    "description": "The AAP job starts AGENTIC AI, with Claude as the example runtime in this case. The agent can now investigate through its configured MCP interfaces. It has not requested a remediation.",
     "caption": "AAP launches the agent runtime. Investigation comes next.",
     "active": [
       "controller",
@@ -480,7 +480,7 @@
       }
     });
   }
-  const api = freeze({ steps, flows, stateAt, version: '1.1.3', sourceBase: 'https://github.com/kvegh/aiops-selfhealing-demo/blob/main/' });
+  const api = freeze({ steps, flows, stateAt, version: '1.1.4', sourceBase: 'https://github.com/kvegh/aiops-selfhealing-demo/blob/main/' });
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.AIOpsDemo = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

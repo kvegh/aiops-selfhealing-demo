@@ -89,6 +89,16 @@ templates, and the status page are still outstanding.
   stack. All three pages now make zero external requests, so they render
   identically on an audience phone with nothing but venue wifi.
 
+## [1.1.4] — 2026-11-04
+
+### Changed
+
+- Made functionality the primary diagram label: **PROD SERVER**, **MONITORING**,
+  **AGENTIC AI**, and **TRUSTED EXECUTION LAYER**. Product names are smaller
+  secondary captions: Red Hat Enterprise Linux, Zabbix in this case, Claude
+  in this case, and Ansible Automation Platform. Existing colors, architecture
+  routes, controls, and monitoring-verification behavior are retained.
+
 ## [1.1.3] — 2026-11-04
 
 ### Changed
