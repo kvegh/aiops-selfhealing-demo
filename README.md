@@ -173,10 +173,11 @@ flowchart TD
 The reviewed capture defines ten Job Templates and binds its inventory to the
 selected instance's verified hypervisor, testserver and TRA. Importing it
 creates AAP configuration and launches no application or EDA activation.
-Secret-dependent jobs have no saved secret defaults and stop before managed
-host, DNS or API writes when their required inputs are missing. The supported
-runtime secret-input method is awaiting the owner's decision; application
-launch is a separate readiness step.
+Secret-dependent jobs receive a whole-file Vault ciphertext string and stop
+before managed host, DNS or API writes when required settings are missing.
+The [protected runtime settings procedure](docs/11-protected-runtime-settings.md)
+uses the existing private AIOps repository and runtime Vault credential.
+Application launch is a separate readiness step.
 
 ### MCP deployment for a new TRA
 
@@ -210,11 +211,13 @@ and installs no dependencies.
 
 After the CaC import, the selected target's fault-template ID and generated
 webhook key can be read through its authenticated HTTPS API. The DNS and webhook
-inputs have no saved defaults or inventory secrets. Their protected runtime
-delivery method remains pending; do not launch the secret-dependent application
-jobs until that choice is implemented. Controller does not support the earlier
-proposed inline Vault launch scalars or JSON Vault-marker mappings. No custom
-decoder, credential type or store has been introduced.
+inputs stay in the private whole-file runtime Vault, organized by selected
+instance. The CaC capture saves only that file's unchanged ciphertext on the
+existing application templates. Native `include_vars` decrypts it in the
+execution environment and always removes its private temporary file.
+Controller does not support the earlier proposed inline Vault launch scalars
+or JSON Vault-marker mappings. No custom decoder, credential type or store has
+been introduced.
 
 The following lifecycle instructions describe an existing host whose virtual
 host is already configured. That mode retains its current defaults.

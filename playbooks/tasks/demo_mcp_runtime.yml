@@ -26,6 +26,34 @@
     demo_mcp_rpm_checks.stat.checksum != item.sha256 or
     demo_mcp_rpm_checks.stat.size != item.bytes
 
+- name: Inspect the existing release-owned Red Hat signing key file
+  ansible.builtin.stat:
+    path: /etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
+    checksum_algorithm: sha256
+  register: demo_mcp_vendor_key
+
+- name: Verify that the installed release package owns the signing key file
+  ansible.builtin.command:
+    argv: [rpm, -qf, --qf, '%{NAME}', /etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release]
+  register: demo_mcp_vendor_key_owner
+  changed_when: false
+
+- name: Require only the reviewed existing vendor key before importing trust
+  ansible.builtin.assert:
+    that:
+      - demo_mcp_vendor_key.stat.exists
+      - demo_mcp_vendor_key.stat.isreg
+      - demo_mcp_vendor_key.stat.checksum == '0db3dc1b6228f29d60f37c5ad91d9f4cd3547895e8ebedb242469b1c0a0cdf08'
+      - demo_mcp_vendor_key_owner.stdout == 'redhat-release'
+    fail_msg: Preserve signing trust and review this release's vendor key before installing the offline runtime.
+    quiet: true
+
+- name: Import only the installed release key with its reviewed fingerprint
+  ansible.builtin.rpm_key:
+    key: /etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
+    fingerprint: 567E347AD0044ADE55BA8A5F199E2F91FD431D51
+    state: present
+
 - name: Verify installed Red Hat signing trust for every staged RPM
   ansible.builtin.command:
     argv: [rpmkeys, --checksig, "{{ item.path }}"]

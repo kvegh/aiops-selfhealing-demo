@@ -1,0 +1,54 @@
+---
+- name: Load the selected instance's native Vault-encrypted runtime settings
+  delegate_to: localhost
+  become: false
+  no_log: true
+  block:
+    - name: Require an opaque whole-file Vault string and an explicit instance
+      ansible.builtin.assert:
+        that:
+          - demo_runtime_settings_vault is defined
+          - demo_runtime_settings_vault is string
+          - demo_runtime_settings_vault is match('^\$ANSIBLE_VAULT;1\.[12];AES256(?:;[^\n]+)?\n')
+          - demo_runtime_expected_instance is defined
+          - demo_runtime_expected_instance is string
+        quiet: true
+        fail_msg: Import this instance's encrypted runtime settings and attach its existing runtime Vault credential.
+
+    - name: Allocate a private ciphertext file in the execution environment
+      ansible.builtin.tempfile:
+        state: file
+        prefix: aiops-runtime-vault-
+      register: demo_runtime_temporary_file
+      check_mode: false
+
+    - name: Preserve the ciphertext without automatic copy-module decryption
+      ansible.builtin.copy:
+        content: "{{ demo_runtime_settings_vault }}"
+        dest: "{{ demo_runtime_temporary_file.path }}"
+        mode: '0600'
+        decrypt: false
+      diff: false
+      check_mode: false
+
+    - name: Decrypt only through the native variables loader and existing Vault credential
+      ansible.builtin.include_vars:
+        file: "{{ demo_runtime_temporary_file.path }}"
+        name: demo_runtime_file
+
+    - name: Validate the selected instance namespace and fixed reviewed setting names
+      ansible.builtin.set_fact:
+        demo_runtime_selected: "{{ demo_runtime_file | demo_runtime_selected_settings(demo_runtime_expected_instance) }}"
+
+    - name: Bind only the selected instance's validated runtime inputs
+      ansible.builtin.set_fact:
+        "{{ item.key }}": "{{ item.value }}"
+      loop: "{{ demo_runtime_selected | dict2items }}"
+
+  always:
+    - name: Always remove the private execution-environment ciphertext file
+      ansible.builtin.file:
+        path: "{{ demo_runtime_temporary_file.path }}"
+        state: absent
+      when: demo_runtime_temporary_file.path is defined
+      check_mode: false

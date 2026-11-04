@@ -38,9 +38,10 @@ as `demo_website_deployment`, plus:
 - `isolation_policy`: the complete current approved recovery policy, including
   any separately approved clients. The playbook validates it and never changes it.
 
-The playbook declares these required structured inputs with no saved secret
-defaults. Their protected runtime delivery method awaits the owner's decision;
-importing the CaC definitions does not require or launch them:
+The playbook declares these required structured inputs. The existing private
+repository's [whole-file runtime Vault](11-protected-runtime-settings.md)
+supplies them through saved ciphertext and the already attached Vault
+credential; importing the CaC definitions launches no application:
 
 | Variable | Content |
 |---|---|
@@ -51,10 +52,10 @@ importing the CaC definitions does not require or launch them:
 
 The deployment playbook does not load the production runtime `myvars` file.
 A missing clone credential fails; it cannot silently use the production token.
-Do not launch this application job until the protected input method is
-implemented. Controller does not support inline Vault launch scalars or JSON
-Vault-marker mappings, and no custom decoder is added. Do not save plaintext
-secrets in extra variables or defaults.
+Native `include_vars` decrypts the whole-file ciphertext and validates its
+selected instance before binding inputs. Controller does not support inline Vault launch scalars
+or JSON Vault-marker mappings, and no custom decoder is added. Do not save
+individual plaintext secrets in extra variables or defaults.
 The Event Stream URL must use the selected `aap27.vNN` origin and an actual
 external Event Stream UUID returned after AIOps CaC import. Credentials stay
 out of event payloads, diagnostics, Git plaintext and returned artifacts.
@@ -123,8 +124,8 @@ disk, MAC, IP, public SSH keys, source hash and owned nginx/TLS paths, plus the
 verified private API URL and new website item/trigger IDs. It never returns the
 API token. The deployment coordinator persists this provenance with the existing
 encrypted allocation record so decommissioning can prove ownership. Website
-monitoring requires the target-local URL/token/IDs as `demo_website_zabbix`;
-its protected runtime handoff remains pending the same owner decision.
+monitoring requires the target-local URL/token/IDs as `demo_website_zabbix`
+in the same instance's private runtime settings.
 
 Offline checks exercise exact naming and ownership, refusal of foreign disks or
 networks, target-only Event Stream selection and credential-free webhook payloads.

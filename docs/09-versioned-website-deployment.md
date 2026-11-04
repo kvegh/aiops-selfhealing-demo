@@ -40,7 +40,7 @@ Using authenticated, certificate-verified HTTPS calls to the selected target:
 2. Read that template's generated `webhook_key` through its webhook-key API.
    Preserve the key; this deployment does not rotate it.
 3. Retain the following required input names for the existing **Enable Demo
-   Website** template; launch waits for the reviewed protected input method:
+   Website** template, stored in the selected instance's private runtime Vault:
 
 | Variable | Value |
 | --- | --- |
@@ -48,11 +48,13 @@ Using authenticated, certificate-verified HTTPS calls to the selected target:
 | `demo_website_webhook_key` | Its generated GitLab webhook key |
 | `demo_website_dns_api_token` | The existing DNS provider authorization token |
 
-The protected runtime delivery method remains an owner decision. Controller
+Use the [whole-file runtime settings procedure](11-protected-runtime-settings.md)
+to update the existing private repository and the existing Enable template's
+saved ciphertext. Its already attached runtime Vault credential supplies native
+decryption; no individual plaintext secret is entered at launch. Controller
 rejects inline `!vault` launch values and does not decrypt JSON Vault-marker
-mappings as ordinary variables; those approaches are not supported here. Do
-not put plaintext secrets in job defaults or ordinary launch inputs. The CaC
-definitions can be imported independently, with no saved secret defaults.
+mappings as ordinary variables; those approaches are not used. The CaC
+definitions can be imported independently, with only saved ciphertext.
 Missing application inputs stop the job before managed host, DNS or API writes.
 
 Secret checks, DNS requests and nginx template writes keep protected logging

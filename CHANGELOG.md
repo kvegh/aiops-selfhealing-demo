@@ -28,7 +28,8 @@ templates, and the status page are still outstanding.
   shared fail2ban changes and audience button arming disabled until their own
   monitoring/repair integration is ready. DNS authorization and the target's
   generated webhook information have no saved secret defaults; their protected
-  runtime input method remains awaiting the owner's decision.
+  runtime settings use the existing private whole-file Vault and runtime
+  credential, with native loading and unconditional temporary-file cleanup.
 - Separate versioned Zabbix deployment: immutable saved-image cloning,
   quarantine before monitoring starts, target-local website monitoring and a
   trusted HTTPS frontend retaining Basic authentication. Event delivery stays
@@ -56,17 +57,20 @@ templates, and the status page are still outstanding.
 
 ### Changed
 
-- Fresh-target inventory data comes from the selected allocation's verified
-  guest artifacts. Guest jobs reuse the target's existing base Machine
+- Fresh-target inventory data comes from the AIOps private capture's selected
+  allocation and verified guest artifacts. Guest jobs reuse the target's existing base Machine
   credential; hypervisor jobs retain their separate Machine credential.
 - Website and monitoring checks use the permitted configured DNS resolver and
   pinned hypervisor route. Managed website monitoring requires explicit new
   target inputs instead of using production monitoring defaults.
 - CaC import and application execution are documented separately. The ten
-  template definitions can be imported before the pending runtime input choice;
-  missing secrets stop dependent jobs before managed writes. Unsupported inline
+  template definitions can be imported independently of application execution;
+  missing settings stop dependent jobs before managed writes. Unsupported inline
   Vault launch scalars and JSON Vault-marker mappings are not advertised as a
   Controller transport.
+- Offline MCP runtime preparation imports only the reviewed existing
+  release-owned Red Hat signing key after checksum/fingerprint checks, before
+  mandatory RPM signature verification. Package GPG checks remain enabled.
 
 - `playbooks/demo_website.yml` — Enable removes rate limiting for the whole
   audience site; Disable restores its previous button limit through a

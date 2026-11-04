@@ -48,6 +48,14 @@
     demo_website_fail2ban_jail: nginx-444
 
   pre_tasks:
+    - name: Load the selected instance's protected settings before managed website changes
+      ansible.builtin.include_tasks: tasks/demo_runtime_settings.yml
+      vars:
+        demo_runtime_expected_instance: "{{ demo_website_deployment.instance_name }}"
+      when:
+        - demo_website_manage_infrastructure | default(false) | bool
+        - demo_website_state | default('') == 'enabled'
+
     - name: Select and verify the website's hypervisor before connecting
       ansible.builtin.include_tasks: tasks/demo_website_target.yml
 

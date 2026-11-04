@@ -15,9 +15,10 @@ separate tasks; these jobs do not invoke a model or run the remediation agent.
 
 ## Select the existing instance and its verified guests
 
-The imported TRA inventory entry receives `demo_mcp_deployment` from the source
-inventory's selected AAP entry. It uses that entry's existing allocation,
-`aiops_tra`, `aiops_testserver`, `aiops_zabbix` and offline artifact metadata.
+The imported TRA inventory entry receives `demo_mcp_deployment` from the
+encrypted private AIOps capture. Its `aiops_instances[selected_instance]` data
+owns the verified `tra`, `testserver1`, `zabbix` and `mcp_artifacts` metadata.
+The selected AAP entry supplies its existing allocation and AAP identity.
 All guests must belong to the same allocation and verified hypervisor. Their
 public SSH keys and live machine identities are checked before changes.
 
@@ -25,8 +26,8 @@ Each MCP job uses exactly one existing native Machine credential: the base
 guest login selected by `guest_machine_credential_name`. AAP connects directly
 to TRA and the testserver on their existing guest bridge. There is no
 hypervisor SSH hop and the base Machine credential receives no hypervisor key.
-The existing runtime Vault credential is retained. Runtime secret delivery is
-awaiting an owner decision; secret-dependent application jobs remain gated.
+The existing runtime Vault credential decrypts the selected instance's
+[whole-file runtime settings](11-protected-runtime-settings.md).
 Do not substitute old production addresses, passwords or tokens.
 
 ## Prepare offline runtime artifacts
@@ -84,10 +85,11 @@ No fault or write operation is used as a verification test.
 Zabbix must already be deployed and quarantined for this allocation. Its verified
 artifact supplies the exact new private API address. The Zabbix MCP job requires
 the explicitly selected target's `demo_zabbix_mcp_api_token`; it does not load
-production `myvars` or reuse an ambient token. Supply that token only through
-the protected runtime-input method after the owner selects it. Its saved
-defaults are empty, so importing this job does not require a token or launch
-the server. Inline Vault launch scalars and JSON Vault-marker mappings are
+production `myvars` or reuse an ambient token. Put the reviewed token in that
+instance's private runtime Vault and reapply its ciphertext through the existing
+CaC import. The job decrypts only through the attached native Vault credential;
+missing input fails before managed changes. Importing definitions launches no
+server. Inline Vault launch scalars and JSON Vault-marker mappings are
 unsupported by Controller and are not used as a fallback.
 
 The existing `/etc/zabbix-mcp/config.toml` shape is retained with mode `0600` and
