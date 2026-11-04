@@ -1,5 +1,15 @@
 # Design decisions history
 
+## Verify both MCP jobs on the new TRA — 2026-11-03
+
+The normal Zabbix MCP job and an independent stdio/read-only query now pass on
+the fixes in `ef45ec7`, deployed at `15bf30e`. The exact approved image, private
+API endpoint, 0600 configuration, read-only policy and existing Linux/client
+settings were checked. Linux MCP was already independently verified on the
+delegated-connection fix in `06f64ba`. Both actual deployment tasks are complete.
+Website deployment and event/remediation readiness remain separate; no public
+MCP listener or agent execution is introduced.
+
 ## Match the monitoring container user and native count response — 2026-11-03
 
 Implementation `ef45ec7` fixes two observed failures in the real Zabbix MCP

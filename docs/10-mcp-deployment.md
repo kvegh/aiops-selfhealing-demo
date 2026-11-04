@@ -146,6 +146,13 @@ configuration or raw error responses. Successful MCP deployment does not install
 Claude Code, supply model-provider credentials, execute the agent or enable an
 EDA activation. Those application stages require their own reviewed readiness.
 
+Both normal MCP deployment jobs have now succeeded on the fresh TRA. Linux MCP
+returned the matching new testserver's system identity; Zabbix MCP initialized
+stdio, discovered its tools and completed an authenticated read-only host-count
+query against the verified new clone. The private configuration and rootless
+image identity are checked separately from the completed job status. Website
+health and the full event/remediation loop are not established by these queries.
+
 ## Native AAP MCP baseline
 
 The platform's separate native MCP server remains private on its existing TLS

@@ -206,8 +206,9 @@ Its public frontend readiness check retries within a bounded window while
 requiring trusted HTTPS, HTTP 401 and the expected Basic authentication
 challenge. A persistent failure stops deployment.
 
-The new Linux MCP installation has passed a real read-only query to its matching
-testserver. The normal Zabbix deployment has also succeeded, with independently
+Both new MCP installations have completed their normal jobs and passed real
+read-only queries against their matching testserver and monitoring instance.
+The normal Zabbix deployment has also succeeded, with independently
 verified clone authentication, quarantine and trusted public HTTPS protection.
 Website deployment and the complete remediation loop remain separate checks.
 
