@@ -10,8 +10,9 @@ The two Job Templates use the existing AIOps Project and separate playbooks:
 Both preserve the working Podman containers and on-demand stdio transport.
 They create no network listener, public port or persistent MCP service. The
 existing guest account runs the containers and owns its client configuration.
-Claude Code CLI installation, provider authentication and agent execution are
-separate tasks; these jobs do not invoke a model or run the remediation agent.
+The separate combined [Claude deployment job](14-claude-deployment.md) installs
+the CLI, provisions approved Vertex authentication and imports these same plays.
+The two standalone MCP jobs do not invoke a model or run the remediation agent.
 
 ## Select the existing instance and its verified guests
 
@@ -125,7 +126,11 @@ read-only query. The normal Job Template retains that real query as its final
 required verification.
 
 The job merges only the corresponding MCP entry into the existing user's
-`~/claude-wd` project configuration. Existing client settings and other MCP
+`~/claude-wd` project configuration, or the same `claude_agent_workdir` used by
+the incident job. The override must remain beneath the verified user's home.
+Existing path components are checked without following links before creation;
+existing directory modes and user instruction files are preserved.
+Existing client settings and other MCP
 entries are preserved. Verification initializes the actual stdio command,
 discovers tools and performs an authenticated read-only `host_get` count query.
 The server's raw-data disclaimer remains enabled; verification interprets only

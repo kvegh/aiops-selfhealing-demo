@@ -114,6 +114,32 @@ def subordinate_range(text, user):
     return False
 
 
+def workspace(user, configured=""):
+    require(isinstance(user, dict) and isinstance(configured, str),
+            "Use the existing runtime account and an explicit workspace path.")
+    home = Path(user["home"])
+    selected = Path(configured or str(home / "claude-wd"))
+    require(selected.is_absolute() and str(selected) == (configured or str(home / "claude-wd"))
+            and selected != home and selected.is_relative_to(home) and ".." not in selected.parts,
+            "Keep the selected Claude workspace beneath the actual runtime user's home.")
+    directories = [str(home)]
+    for part in selected.relative_to(home).parts:
+        directories.append(str(Path(directories[-1]) / part))
+    return {"path": str(selected), "directories": directories}
+
+
+def safe_directories(results, uid):
+    require(isinstance(results, list) and results and type(uid) is int,
+            "Inspect every existing directory before creating the runtime paths.")
+    for result in results:
+        stat = result.get("stat", {})
+        require(stat.get("exists") is False or (
+            stat.get("exists") is True and stat.get("isdir") is True
+            and not stat.get("islnk", False) and stat.get("uid") == uid),
+            "Preserve the symlink, non-directory or unrelated owner's runtime path for review.")
+    return True
+
+
 def client_configuration(text, project, name, definition):
     try:
         config = json.loads(text) if text.strip() else {}
@@ -154,6 +180,8 @@ class FilterModule:
             "demo_mcp_configuration": configuration,
             "demo_mcp_user_record": user_record,
             "demo_mcp_subordinate_range": subordinate_range,
+            "demo_mcp_workspace": workspace,
+            "demo_mcp_safe_directories": safe_directories,
             "demo_mcp_client_configuration": client_configuration,
             "demo_mcp_zabbix_configuration": zabbix_configuration,
         }

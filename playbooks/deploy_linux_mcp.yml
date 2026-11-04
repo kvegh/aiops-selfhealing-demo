@@ -171,7 +171,7 @@
             cmd: >-
               {{ (playbook_dir + '/../src/verify_stdio_mcp.py') | quote }}
               --client-config {{ (demo_mcp_user.home + '/.claude.json') | quote }}
-              --project {{ (demo_mcp_user.home + '/claude-wd') | quote }}
+              --project {{ demo_mcp_workspace.path | quote }}
               --server linux-mcp
               --expected-hostname {{ demo_mcp_config.testserver.vm_name | quote }}
             executable: /usr/bin/python3

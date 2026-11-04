@@ -1,0 +1,90 @@
+---
+- name: Validate only the explicitly approved selected Vertex configuration
+  ansible.builtin.set_fact:
+    demo_claude_vertex: "{{ demo_claude_vertex_auth | demo_claude_vertex(demo_mcp_user.home) }}"
+    demo_claude_auth_files:
+      - "{{ demo_mcp_user.home }}/.config/gcloud/application_default_credentials.json"
+      - "{{ demo_mcp_user.home }}/.claude/settings.json"
+    demo_claude_auth_directories:
+      - "{{ demo_mcp_user.home }}"
+      - "{{ demo_mcp_user.home }}/.config"
+      - "{{ demo_mcp_user.home }}/.config/gcloud"
+      - "{{ demo_mcp_user.home }}/.claude"
+  no_log: true
+
+- name: Inspect existing authentication directories without following links
+  ansible.builtin.stat:
+    path: "{{ item }}"
+    follow: false
+  loop: "{{ demo_claude_auth_directories }}"
+  register: demo_claude_auth_directory_checks
+  no_log: true
+
+- name: Preserve unrelated authentication directory ownership
+  ansible.builtin.assert:
+    that: demo_claude_auth_directory_checks.results | demo_mcp_safe_directories(demo_mcp_user.uid)
+    quiet: true
+  no_log: true
+
+- name: Inspect existing authentication files without following links
+  ansible.builtin.stat:
+    path: "{{ item }}"
+    follow: false
+    checksum_algorithm: sha256
+  loop: "{{ demo_claude_auth_files }}"
+  register: demo_claude_auth_file_checks
+  no_log: true
+
+- name: Preserve unrelated authentication files for review
+  ansible.builtin.assert:
+    that: >-
+      not item.stat.exists or
+      (item.stat.isreg | default(false) and not item.stat.islnk | default(false) and
+       item.stat.uid == demo_mcp_user.uid)
+    quiet: true
+  loop: "{{ demo_claude_auth_file_checks.results }}"
+  no_log: true
+
+- name: Read existing Claude settings without displaying their values
+  ansible.builtin.slurp:
+    src: "{{ demo_claude_auth_files[1] }}"
+  register: demo_claude_settings_before
+  when: demo_claude_auth_file_checks.results[1].stat.exists
+  no_log: true
+
+- name: Require private permissions on any existing Google ADC
+  ansible.builtin.assert:
+    that: >-
+      not demo_claude_auth_file_checks.results[0].stat.exists or
+      demo_claude_auth_file_checks.results[0].stat.mode == '0600'
+    quiet: true
+  no_log: true
+
+- name: Inspect only the presence of existing native Claude authentication
+  ansible.builtin.stat:
+    path: "{{ demo_mcp_user.home }}/.claude/.credentials.json"
+    follow: false
+    get_checksum: false
+  register: demo_claude_native_auth_before
+  no_log: true
+
+- name: Merge only compatible Vertex environment settings
+  ansible.builtin.set_fact:
+    demo_claude_settings: >-
+      {{ demo_claude_settings_before.content | default('') | b64decode |
+         demo_claude_vertex_settings(demo_claude_vertex, demo_claude_native_auth_before.stat.exists) }}
+  no_log: true
+
+- name: Read an existing Google ADC without displaying its contents
+  ansible.builtin.slurp:
+    src: "{{ demo_claude_auth_files[0] }}"
+  register: demo_claude_adc_before
+  when: demo_claude_auth_file_checks.results[0].stat.exists
+  no_log: true
+
+- name: Require existing Google authentication to match the approved account data
+  ansible.builtin.assert:
+    that: demo_claude_adc_before.content | b64decode | demo_claude_existing_adc(demo_claude_vertex)
+    quiet: true
+  when: demo_claude_auth_file_checks.results[0].stat.exists
+  no_log: true

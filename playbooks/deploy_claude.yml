@@ -1,0 +1,255 @@
+---
+# Task overview: Install the selected Claude native release on the verified TRA,
+# then reuse the matching Linux and Zabbix MCP deployment plays. Download only
+# in the execution environment; preserve guest egress and unrelated settings.
+# Provision only approved encrypted Vertex authentication. Check the program
+# and private MCPs without invoking a model.
+
+- name: Install the pinned Claude program on only the selected TRA
+  hosts: all
+  become: true
+  gather_facts: false
+  no_log: true
+  tasks:
+    - name: Install Claude after verifying its release and selected guest
+      block:
+        - name: Validate protected runtime settings before managed installation
+          ansible.builtin.include_tasks: tasks/demo_runtime_settings.yml
+          vars:
+            demo_runtime_expected_instance: "{{ demo_mcp_deployment.instance_name }}"
+
+        - name: Validate the exact reviewed native release before connecting
+          ansible.builtin.set_fact:
+            demo_claude_pin: "{{ demo_claude_release | demo_claude_release }}"
+
+        - name: Require the matching protected Zabbix MCP token before managed writes
+          ansible.builtin.set_fact:
+            demo_claude_zabbix_preflight: >-
+              {{ demo_mcp_deployment | demo_mcp_zabbix_configuration(demo_zabbix_mcp_api_token | default('')) }}
+
+        - name: Reuse the existing TRA and SSH identity verification
+          ansible.builtin.include_tasks: tasks/demo_mcp_target.yml
+
+        - name: Require the same runtime account used by the existing incident job
+          ansible.builtin.assert:
+            that:
+              - claude_agent_user is defined
+              - claude_agent_user == demo_mcp_user.name
+            quiet: true
+
+        - name: Check approved Vertex authentication without changing existing account data
+          ansible.builtin.include_tasks: tasks/demo_claude_vertex_preflight.yml
+
+        - name: Require the reviewed native binary architecture
+          ansible.builtin.command:
+            argv: [uname, -m]
+          register: demo_claude_architecture
+          changed_when: false
+          failed_when: demo_claude_architecture.stdout | trim != 'x86_64'
+
+        - name: Allocate a private execution-environment download directory
+          ansible.builtin.tempfile:
+            state: directory
+            prefix: aiops-claude-
+          delegate_to: localhost
+          become: false
+          register: demo_claude_download
+
+        - name: Download the exact native binary in AAP with trusted HTTPS
+          ansible.builtin.get_url:
+            url: "{{ demo_claude_pin.url }}"
+            checksum: "sha256:{{ demo_claude_pin.sha256 }}"
+            dest: "{{ demo_claude_download.path }}/claude"
+            mode: '0600'
+            timeout: 180
+            validate_certs: true
+          delegate_to: localhost
+          become: false
+
+        - name: Check binary size and SHA-256 before any managed write
+          ansible.builtin.stat:
+            path: "{{ demo_claude_download.path }}/claude"
+            checksum_algorithm: sha256
+          delegate_to: localhost
+          become: false
+          register: demo_claude_download_check
+          failed_when: >-
+            not demo_claude_download_check.stat.exists or
+            not demo_claude_download_check.stat.isreg or
+            demo_claude_download_check.stat.checksum != demo_claude_pin.sha256 or
+            demo_claude_download_check.stat.size != demo_claude_pin.bytes
+
+        - name: Check available installation space without changing the guest
+          ansible.builtin.command:
+            argv: [df, -Pk, /usr/local]
+          register: demo_claude_free_space
+          changed_when: false
+
+        - name: Retain room for the binary and atomic transfer
+          ansible.builtin.assert:
+            that: >-
+              (demo_claude_free_space.stdout_lines[-1].split()[3] | int) * 1024 >=
+              2 * demo_claude_pin.bytes + 67108864
+            fail_msg: Free space is insufficient for the pinned Claude installation.
+            quiet: true
+
+        - name: Inspect the existing system command directory
+          ansible.builtin.stat:
+            path: /usr/local/bin
+            follow: false
+          register: demo_claude_command_directory
+
+        - name: Require the existing root-owned system command directory
+          ansible.builtin.assert:
+            that:
+              - demo_claude_command_directory.stat.isdir | default(false)
+              - not demo_claude_command_directory.stat.islnk | default(false)
+              - demo_claude_command_directory.stat.uid == 0
+              - demo_claude_command_directory.stat.mode == '0755'
+            fail_msg: Review the system command directory ownership before installing Claude.
+            quiet: true
+
+        - name: Inspect any existing Claude command without following a link
+          ansible.builtin.stat:
+            path: /usr/local/bin/claude
+            follow: false
+            checksum_algorithm: sha256
+          register: demo_claude_existing
+
+        - name: Preserve an unrelated command rather than replacing it
+          ansible.builtin.assert:
+            that: demo_claude_existing.stat | demo_claude_existing_program(demo_claude_pin)
+            quiet: true
+
+        - name: Install only the verified native Claude program
+          ansible.builtin.copy:
+            src: "{{ demo_claude_download.path }}/claude"
+            dest: /usr/local/bin/claude
+            owner: root
+            group: root
+            mode: '0755'
+            force: false
+
+        - name: Verify the installed binary independently
+          ansible.builtin.stat:
+            path: /usr/local/bin/claude
+            checksum_algorithm: sha256
+          register: demo_claude_installed
+          failed_when: >-
+            demo_claude_installed.stat.checksum != demo_claude_pin.sha256 or
+            demo_claude_installed.stat.size != demo_claude_pin.bytes or
+            demo_claude_installed.stat.uid != 0 or
+            demo_claude_installed.stat.mode != '0755'
+
+        - name: Check the actual job user's noninteractive command lookup
+          ansible.builtin.command:
+            argv: [/bin/sh, -c, command -v claude]
+          become: true
+          become_user: "{{ demo_mcp_user.name }}"
+          register: demo_claude_command_lookup
+          changed_when: false
+          failed_when: demo_claude_command_lookup.stdout | trim != '/usr/local/bin/claude'
+
+        - name: Verify the selected version as the actual agent user without a model call
+          ansible.builtin.command:
+            argv: [/usr/local/bin/claude, --version]
+          become: true
+          become_user: "{{ demo_mcp_user.name }}"
+          environment:
+            DISABLE_AUTOUPDATER: '1'
+          register: demo_claude_version
+          changed_when: false
+          failed_when: demo_claude_version.stdout | trim != demo_claude_pin.version + ' (Claude Code)'
+
+        - name: Safely prepare the same workspace used by the existing Claude job
+          ansible.builtin.include_tasks: tasks/demo_mcp_workspace.yml
+
+        - name: Inspect existing workspace instructions without following a link
+          ansible.builtin.stat:
+            path: "{{ demo_mcp_workspace.path }}/CLAUDE.md"
+            follow: false
+          register: demo_claude_guardrails_before
+
+        - name: Preserve unrelated instruction paths for explicit review
+          ansible.builtin.assert:
+            that: >-
+              not demo_claude_guardrails_before.stat.exists or
+              (demo_claude_guardrails_before.stat.isreg | default(false) and
+               not demo_claude_guardrails_before.stat.islnk | default(false) and
+               demo_claude_guardrails_before.stat.uid == demo_mcp_user.uid)
+            quiet: true
+            fail_msg: Preserve the unrelated workspace instructions and review their ownership.
+
+        - name: Seed only missing instructions from the maintained existing guardrails
+          ansible.builtin.copy:
+            src: "{{ playbook_dir }}/../AI_Instructions_Guardrails/CLAUDE.md"
+            dest: "{{ demo_mcp_workspace.path }}/CLAUDE.md"
+            owner: "{{ demo_mcp_user.name }}"
+            group: "{{ demo_mcp_user.gid }}"
+            mode: '0600'
+            force: false
+
+        - name: Provision the explicitly approved encrypted Vertex authentication
+          ansible.builtin.include_tasks: tasks/demo_claude_vertex_apply.yml
+
+        - name: Check selected provider recognition without a model request
+          ansible.builtin.command:
+            argv: [/usr/local/bin/claude, auth, status, --json]
+          args:
+            chdir: "{{ demo_mcp_workspace.path }}"
+          become: true
+          become_user: "{{ demo_mcp_user.name }}"
+          environment:
+            DISABLE_AUTOUPDATER: '1'
+          register: demo_claude_auth_status
+          changed_when: false
+
+        - name: Require the approved Vertex authentication method
+          ansible.builtin.assert:
+            that:
+              - (demo_claude_auth_status.stdout | from_json).loggedIn is sameas true
+              - (demo_claude_auth_status.stdout | from_json).authMethod == 'third_party'
+              - (demo_claude_auth_status.stdout | from_json).apiProvider == 'vertex'
+            quiet: true
+
+      always:
+        - name: Remove the private download after success or failure
+          ansible.builtin.file:
+            path: "{{ demo_claude_download.path }}"
+            state: absent
+          delegate_to: localhost
+          become: false
+          when: demo_claude_download.path is defined
+
+        - name: Remove the execution environment's temporary SSH trust
+          ansible.builtin.file:
+            path: "{{ demo_mcp_trust.path }}"
+            state: absent
+          delegate_to: localhost
+          become: false
+          when: demo_mcp_trust.path is defined
+
+- name: Reuse the existing private Linux MCP deployment and verification
+  ansible.builtin.import_playbook: deploy_linux_mcp.yml
+
+- name: Reuse the existing private Zabbix MCP deployment and verification
+  ansible.builtin.import_playbook: deploy_zabbix_mcp.yml
+
+- name: Publish only completed installation and private MCP readiness
+  hosts: all
+  gather_facts: false
+  no_log: true
+  tasks:
+    - name: Retain a bounded non-inference installation result
+      ansible.builtin.set_stats:
+        data:
+          claude_and_mcp_deployment:
+            version: "{{ demo_claude_pin.version }}"
+            instance_number: "{{ demo_mcp_config.instance_number }}"
+            linux_mcp_verified: true
+            zabbix_mcp_verified: true
+            workspace_guardrails_present: true
+            vertex_authentication_configured: true
+            model_invoked: false
+        aggregate: false
+        per_host: false

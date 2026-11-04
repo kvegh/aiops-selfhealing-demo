@@ -203,7 +203,7 @@ flowchart TD
 
 ### CaC import and application launch
 
-The reviewed capture defines ten Job Templates and binds its inventory to the
+The reviewed capture defines eleven Job Templates and binds its inventory to the
 selected instance's verified hypervisor, testserver and TRA. Importing it
 creates AAP configuration and launches no application or EDA activation.
 Secret-dependent jobs receive a whole-file Vault ciphertext string and stop
@@ -218,7 +218,16 @@ runtime settings. An inventory alias can therefore change while the existing
 VM name, public FQDN, tokens and runtime ciphertext remain unchanged. Inventory
 facts still come from the entry selected through `aap_instance_key`.
 
-### MCP deployment for a new TRA
+### Claude and MCP deployment for a new TRA
+
+**Deploy Claude and MCP Servers** runs `playbooks/deploy_claude.yml`. It installs
+the reviewed native Claude release through the execution environment, provisions
+only the explicitly approved encrypted Vertex authentication and reuses both MCP
+playbooks below. It verifies the actual job user's command/version, preserves
+existing workspace instructions and unrelated settings, and performs no model
+request or activation. See the [Claude deployment procedure](docs/14-claude-deployment.md)
+for ownership/conflict checks, the shared workspace override and the separate
+functional-model/AAP-MCP prerequisites.
 
 The two requested MCP deployment jobs use
 `playbooks/deploy_linux_mcp.yml` and `playbooks/deploy_zabbix_mcp.yml`. They
@@ -230,6 +239,8 @@ The RPM manifest must contain the install set validated against the selected
 guest, including its conditional SELinux dependencies; the procedure explains
 the required dependency solve before installation.
 They create no public MCP listener and do not install or invoke Claude Code.
+Those two standalone MCP jobs remain available; Claude installation is added by
+the combined entry point above.
 Delegated testserver SSH connections read the computed address, user, port and
 temporary trust-file path from the original TRA host. The Zabbix deployment
 publishes its verified machine, disk, network and SSH identities for later MCP

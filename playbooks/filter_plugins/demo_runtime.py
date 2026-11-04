@@ -16,6 +16,7 @@ ALLOWED_SETTINGS = {
     "demo_zabbix_basic_auth_file",
     "demo_zabbix_event_stream",
     "demo_zabbix_mcp_api_token",
+    "demo_claude_vertex_auth",
 }
 
 

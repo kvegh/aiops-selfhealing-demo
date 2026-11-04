@@ -1,0 +1,86 @@
+---
+- name: Recheck presence of native Claude authentication before provider changes
+  ansible.builtin.stat:
+    path: "{{ demo_mcp_user.home }}/.claude/.credentials.json"
+    follow: false
+    get_checksum: false
+  register: demo_claude_native_auth_current
+  no_log: true
+
+- name: Preserve concurrently created native Claude authentication
+  ansible.builtin.assert:
+    that: demo_claude_native_auth_current.stat.exists == demo_claude_native_auth_before.stat.exists
+    quiet: true
+  no_log: true
+
+- name: Recheck authentication files immediately before provisioning
+  ansible.builtin.stat:
+    path: "{{ item }}"
+    follow: false
+    checksum_algorithm: sha256
+  loop: "{{ demo_claude_auth_files }}"
+  register: demo_claude_auth_current_files
+  no_log: true
+
+- name: Refuse concurrent authentication changes
+  ansible.builtin.assert:
+    that:
+      - item.stat.exists == demo_claude_auth_file_checks.results[demo_claude_auth_index].stat.exists
+      - >-
+        not item.stat.exists or
+        (item.stat.isreg | default(false) and not item.stat.islnk | default(false) and
+         item.stat.uid == demo_mcp_user.uid and
+         item.stat.mode == demo_claude_auth_file_checks.results[demo_claude_auth_index].stat.mode and
+         item.stat.checksum == demo_claude_auth_file_checks.results[demo_claude_auth_index].stat.checksum)
+    quiet: true
+  loop: "{{ demo_claude_auth_current_files.results }}"
+  loop_control:
+    index_var: demo_claude_auth_index
+  no_log: true
+
+- name: Recheck authentication directories without following links
+  ansible.builtin.stat:
+    path: "{{ item }}"
+    follow: false
+  loop: "{{ demo_claude_auth_directories }}"
+  register: demo_claude_auth_current_directories
+  no_log: true
+
+- name: Require only the actual runtime account's authentication directories
+  ansible.builtin.assert:
+    that: demo_claude_auth_current_directories.results | demo_mcp_safe_directories(demo_mcp_user.uid)
+    quiet: true
+  no_log: true
+
+- name: Create only missing private authentication directories
+  ansible.builtin.file:
+    path: "{{ item.item }}"
+    state: directory
+    owner: "{{ demo_mcp_user.name }}"
+    group: "{{ demo_mcp_user.gid }}"
+    mode: '0700'
+    follow: false
+  loop: "{{ demo_claude_auth_current_directories.results }}"
+  when: not item.stat.exists
+  no_log: true
+
+- name: Provision only the explicitly approved Google ADC
+  ansible.builtin.copy:
+    content: "{{ demo_claude_vertex.adc | to_nice_json }}"
+    dest: "{{ demo_claude_auth_files[0] }}"
+    owner: "{{ demo_mcp_user.name }}"
+    group: "{{ demo_mcp_user.gid }}"
+    mode: '0600'
+    force: false
+  no_log: true
+  diff: false
+
+- name: Preserve unrelated Claude settings while selecting approved Vertex authentication
+  ansible.builtin.copy:
+    content: "{{ demo_claude_settings | to_nice_json }}"
+    dest: "{{ demo_claude_auth_files[1] }}"
+    owner: "{{ demo_mcp_user.name }}"
+    group: "{{ demo_mcp_user.gid }}"
+    mode: '0600'
+  no_log: true
+  diff: false

@@ -1,11 +1,6 @@
 ---
-- name: Prepare the existing runtime user's client workspace
-  ansible.builtin.file:
-    path: "{{ demo_mcp_user.home }}/claude-wd"
-    state: directory
-    owner: "{{ demo_mcp_user.name }}"
-    group: "{{ demo_mcp_user.gid }}"
-    mode: '0700'
+- name: Prepare only the verified existing runtime user's selected workspace
+  ansible.builtin.include_tasks: demo_mcp_workspace.yml
 
 - name: Inspect the existing Claude client configuration
   ansible.builtin.stat:
@@ -23,7 +18,7 @@
   ansible.builtin.copy:
     content: >-
       {{ (demo_mcp_client_previous.content | default('') | b64decode) |
-          demo_mcp_client_configuration(demo_mcp_user.home + '/claude-wd',
+          demo_mcp_client_configuration(demo_mcp_workspace.path,
                                        demo_mcp_server_name, demo_mcp_server_definition) | to_nice_json }}
     dest: "{{ demo_mcp_user.home }}/.claude.json"
     owner: "{{ demo_mcp_user.name }}"
