@@ -197,7 +197,9 @@
       output: [triggerid]
       hostids: ["{{ demo_zabbix_host_id }}"]
       filter:
-        description: [Demo website content unavailable]
+        description:
+          - Demo website content unavailable
+          - "Demo website content unavailable: {{ demo_zabbix_config.website_hostname }}"
 
 - name: Require a unique target website trigger
   ansible.builtin.assert:
@@ -212,7 +214,7 @@
   vars:
     demo_zabbix_rpc_method: "{{ 'trigger.update' if demo_zabbix_existing_trigger_id else 'trigger.create' }}"
     demo_zabbix_rpc_params: >-
-      {{ {'description': 'Demo website content unavailable',
+      {{ {'description': 'Demo website content unavailable: ' + demo_zabbix_config.website_hostname,
            'expression': 'last(/demo-website-' + demo_zabbix_config.version + '/demo.website.http_status)<>200',
            'priority': 3, 'status': 0} | combine(
              {'triggerid': demo_zabbix_existing_trigger_id} if demo_zabbix_existing_trigger_id else {}) }}
@@ -223,6 +225,9 @@
 
 - name: Configure delivery only to the selected AAP event stream
   ansible.builtin.include_tasks: demo_zabbix_delivery.yml
+
+- name: Reconcile every known copied host and check to this selected deployment
+  ansible.builtin.include_tasks: demo_zabbix_reconcile.yml
 
 - name: Enable only the selected target-local monitoring host
   ansible.builtin.include_tasks: demo_zabbix_rpc.yml

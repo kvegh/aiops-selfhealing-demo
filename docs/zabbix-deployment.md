@@ -37,6 +37,10 @@ as `demo_website_deployment`, plus:
   key, with its optional comment removed;
 - `isolation_policy`: the complete current approved recovery policy, including
   any separately approved clients. The playbook validates it and never changes it.
+- `testserver`: the selected allocation's existing verified `testserver1-vNN`
+  resource, including its actual address, UUID, machine ID, management account,
+  SSH keys and hypervisor identity. This reuses the resource already used by the
+  Linux MCP deployment; an inventory alias is not accepted as an address guess.
 
 The playbook declares these required structured inputs. The existing private
 repository's [whole-file runtime Vault](11-protected-runtime-settings.md)
@@ -60,11 +64,13 @@ The Event Stream URL must use the selected `aap27.vNN` origin and an actual
 external Event Stream UUID returned after AIOps CaC import. Credentials stay
 out of event payloads, diagnostics, Git plaintext and returned artifacts.
 
-`demo_zabbix_enable_delivery` is an explicit Boolean, default `false`. The
-playbook creates the target-only problem/recovery action but leaves it disabled
-until delivery is deliberately enabled. It never enables an AAP EDA activation,
-sends a test outage, or arms the audience button. Prepare the healthy versioned
-website before enabling monitoring delivery.
+`demo_zabbix_enable_delivery` is an explicit Boolean, default `false`. Setup
+always creates or updates the target action disabled. When the selected Job
+Template explicitly saves this flag as `true`, the final configuration write
+enables only that action, after the frontend and exact target-setting readbacks
+pass. Any earlier failure leaves forwarding disabled. The job never enables an
+AAP EDA activation, sends a test outage, or arms the audience button. Prepare the
+healthy versioned website before enabling monitoring delivery.
 
 ## Clone preparation and runtime access
 
@@ -94,12 +100,42 @@ so `hostname --fqdn` retains the guest identity when multiple service names shar
 one bridge address. A retry repairs only the exact older alias line before
 checking that hostname; unrelated hosts-file entries are preserved.
 
+Copied monitoring records are reconciled in place, preserving their IDs and
+history. The known source roles receive the following names and destinations:
+
+| Record | Reconciled behavior |
+|---|---|
+| Canonical website | Keep technical key `demo-website-vNN` and its item/trigger IDs; display the selected `redhat.vNN` hostname and check its HTTPS content URL. |
+| Imported website duplicate | Keep its IDs, rename the technical key to `demo-website-vNN-imported`, label it as imported/disabled, update its retained target URL and leave it disabled. |
+| Testserver | Rename to the verified `testserver1-vNN`, update its interfaces and Apache HTTP-check address macro to that guest's actual address. |
+| Monitoring server | Rename to `zabbix-vNN` and bind retained self-check interfaces to loopback. |
+| Copied AAP dashboard | Use the selected AAP URL and versioned labels, clear the copied API token and unusable stream/job-ID macro values, and keep it disabled. No AAP administrator token is added. |
+
+The imported secondary hosts remain disabled by this deployment. Name collisions
+stop reconciliation before changes; records are never merged or deleted. Linked
+template items are retained, with a host-specific address override where needed.
+Unrelated records and third-party documentation URLs are preserved. The website
+trigger retains the phrase `Demo website content unavailable` and appends the
+selected hostname, so the existing EDA rule's search condition still matches.
+
 A dedicated target-only native Zabbix webhook media and action deliver problem
 and recovery events to the selected AAP Event Stream, using its Basic credentials.
 The copied appliance administrator remains the recipient; no new user, role or
 credential type is introduced. Existing copied outbound integrations remain
-quarantined. Only after all configuration succeeds is the monitoring server
-unmasked and started. Failed authentication or quarantine leaves it stopped.
+quarantined. The retained imported EDA media receives the same current endpoint,
+script and Basic settings but remains disabled. The Admin user's stale EDA
+destinations are removed; the selected current association keeps its ID, and
+unrelated non-EDA associations are preserved disabled. These are Event Stream
+Basic credentials, separate from the MCP/API bearer used to configure Zabbix.
+
+The monitoring server is started after quarantine and reconciliation. Forwarding
+stays disabled while DNS, trusted frontend HTTPS and the Basic gate are checked.
+The job then rereads the reconciled objects, selected webhook script/parameters,
+recipient and all action states. Only after those values match does it enable
+the selected action as the final API write. A subsequent read confirms its state.
+Failed authentication or initial quarantine leaves the server stopped. After
+quarantine succeeds, failures before the final enable step leave forwarding
+disabled.
 
 ## DNS, HTTPS and the additional nginx authentication gate
 
@@ -131,7 +167,8 @@ preserve useful cleanup evidence. After success it returns the actual guest UUID
 disk, MAC, IP/address, network, bridge, machine ID, public SSH keys, source hash
 and owned nginx/TLS paths, plus the
 verified private API URL and new website item/trigger IDs. It never returns the
-API token. Early ownership is marked unverified until the fresh guest machine
+API token. Final results also identify the selected media/action and requested
+delivery state. Early ownership is marked unverified until the fresh guest machine
 identity has been authenticated through its pinned SSH key. The deployment
 coordinator persists verified provenance in the existing source inventory's
 `vm_resource` and the owning use case's encrypted configuration, so decommissioning
@@ -143,7 +180,11 @@ Offline checks exercise exact naming and ownership, refusal of foreign disks or
 networks, target-only Event Stream selection and credential-free webhook payloads.
 A real local Ansible/API fixture proves that failed quarantine does not start the
 server and that a successful run disables inherited integrations before starting
-only target monitoring. Reruns preserve the created object identities. Both HTTP
+only target monitoring. Reconciliation tests preserve IDs and unrelated objects,
+reject conflicting names, clear stale destinations and validate exact selected
+authentication. Native execution tests prove that reconciliation or frontend
+failures never enable forwarding, and that successful forwarding enable is the
+final configuration write. Reruns preserve the created object identities. Both HTTP
 challenge and HTTPS/Basic-auth templates also pass the target hypervisor's actual
 nginx syntax check using temporary fixture files, without a reload.
 
@@ -151,6 +192,7 @@ Run the focused local tests with existing dependencies:
 
 ```sh
 python3.12 -m unittest discover -s tests -p test_versioned_zabbix.py -v
+python3.12 -m unittest discover -s tests -p test_zabbix_reconciliation.py -v
 ansible-playbook --syntax-check -i localhost, playbooks/deploy_zabbix_demo.yml
 ```
 
@@ -158,10 +200,12 @@ These checks establish implementation behavior. Actual VM boot, clone API access
 DNS propagation, certificate issuance and public authentication require a
 separately observed successful deployment job; offline tests do not establish them.
 
-The current fresh test deployment has now completed its normal Zabbix job.
+The earlier fresh test deployment completed its normal Zabbix job.
 Independent checks authenticated against the new clone and verified its
 quarantine, selected monitoring object IDs, DNS and trusted public HTTPS with
 the required Basic challenge. The exact connection to HTTPS on its own
 hypervisor was separately approved and applied after actual VM identity checks.
-Inherited integrations and event delivery remain disabled. Website content and
-the complete remediation loop still require their separate application checks.
+That baseline kept inherited integrations and event delivery disabled. Enabling
+the selected forwarding action under the procedure above and demonstrating the
+complete outage/EDA/recovery loop require their own observed results; a passing
+configuration test does not establish remediation success.

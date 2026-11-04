@@ -164,6 +164,14 @@
     - name: Publish this version's DNS, trusted certificate and protected reverse proxy
       ansible.builtin.include_tasks: tasks/demo_zabbix_frontend.yml
 
+    - name: Validate all target settings and finish only the selected forwarding action
+      ansible.builtin.include_tasks: tasks/demo_zabbix_finalize.yml
+      args:
+        apply:
+          delegate_to: "{{ demo_zabbix_config.hostname }}"
+          become: true
+          no_log: true
+
     - name: Publish verified monitoring provenance for the owning use case and existing source inventory
       ansible.builtin.set_stats:
         data:
@@ -171,7 +179,9 @@
             {{ demo_zabbix_config | demo_zabbix_provenance(
                  demo_zabbix_guest_record, demo_zabbix_guest_ip, demo_zabbix_network,
                  demo_zabbix_guest_machine_id.stdout | trim) |
-               combine({'item_id': demo_zabbix_monitoring_item_id, 'trigger_id': demo_zabbix_monitoring_trigger_id}) }}
+               combine({'item_id': demo_zabbix_monitoring_item_id, 'trigger_id': demo_zabbix_monitoring_trigger_id,
+                        'mediatype_id': demo_zabbix_media_id, 'action_id': demo_zabbix_action_id,
+                        'delivery_enabled': demo_zabbix_enable_delivery | default(false) | bool}) }}
         aggregate: false
         per_host: false
       no_log: true

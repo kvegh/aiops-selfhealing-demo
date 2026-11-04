@@ -1,0 +1,16 @@
+---
+- name: Read copied monitoring fields before planning in-place reconciliation
+  ansible.builtin.include_tasks: demo_zabbix_snapshot.yml
+
+- name: Validate all copied-role names and plan only their target settings
+  ansible.builtin.set_fact:
+    demo_zabbix_reconcile_operations: "{{ demo_zabbix_config | demo_zabbix_reconciliation(demo_zabbix_reconcile_snapshot) }}"
+
+- name: Reconcile copied names and endpoints without deleting records or history
+  ansible.builtin.include_tasks: demo_zabbix_rpc.yml
+  vars:
+    demo_zabbix_rpc_method: "{{ demo_zabbix_reconcile_operation.method }}"
+    demo_zabbix_rpc_params: "{{ demo_zabbix_reconcile_operation.params }}"
+  loop: "{{ demo_zabbix_reconcile_operations }}"
+  loop_control:
+    loop_var: demo_zabbix_reconcile_operation

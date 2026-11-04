@@ -1,0 +1,77 @@
+---
+- name: Read back every reconciled host and check after frontend validation
+  ansible.builtin.include_tasks: demo_zabbix_snapshot.yml
+
+- name: Require all current copied names and endpoints to match this deployment
+  ansible.builtin.assert:
+    that: demo_zabbix_config | demo_zabbix_reconciliation(demo_zabbix_reconcile_snapshot) | length == 0
+    quiet: true
+
+- name: Read back the selected forwarding script and authentication parameters
+  ansible.builtin.include_tasks: demo_zabbix_rpc.yml
+  vars:
+    demo_zabbix_rpc_method: mediatype.get
+    demo_zabbix_rpc_params:
+      mediatypeids: ["{{ demo_zabbix_media_id }}"]
+      output: extend
+      selectParameters: extend
+
+- name: Retain the selected media readback
+  ansible.builtin.set_fact:
+    demo_zabbix_final_media: "{{ demo_zabbix_rpc_response.json.result }}"
+
+- name: Read back all action states and selected problem and recovery targets
+  ansible.builtin.include_tasks: demo_zabbix_rpc.yml
+  vars:
+    demo_zabbix_rpc_method: action.get
+    demo_zabbix_rpc_params:
+      output: [actionid, status]
+      selectFilter: extend
+      selectOperations: extend
+      selectRecoveryOperations: extend
+
+- name: Retain action readbacks before the final enable step
+  ansible.builtin.set_fact:
+    demo_zabbix_final_actions: "{{ demo_zabbix_rpc_response.json.result }}"
+
+- name: Read back the existing recipient associations
+  ansible.builtin.include_tasks: demo_zabbix_rpc.yml
+  vars:
+    demo_zabbix_rpc_method: user.get
+    demo_zabbix_rpc_params:
+      userids: ['1']
+      output: [userid]
+      selectMedias: extend
+
+- name: Require exact current delivery settings with no stale recipient destination
+  ansible.builtin.assert:
+    that: >-
+      demo_zabbix_final_media | demo_zabbix_delivery_ready(
+        demo_zabbix_final_actions, demo_zabbix_rpc_response.json.result,
+        demo_zabbix_media_definition, demo_zabbix_media_id, demo_zabbix_action_id,
+        demo_zabbix_monitoring_trigger_id, demo_zabbix_delivery.url, demo_zabbix_stale_media_ids)
+    quiet: true
+
+- name: Enable only this deployment forwarding action as the final configuration write
+  ansible.builtin.include_tasks: demo_zabbix_rpc.yml
+  vars:
+    demo_zabbix_rpc_method: action.update
+    demo_zabbix_rpc_params:
+      actionid: "{{ demo_zabbix_action_id }}"
+      status: 0
+  when: demo_zabbix_enable_delivery | default(false) | bool
+
+- name: Read back the final selected action state
+  ansible.builtin.include_tasks: demo_zabbix_rpc.yml
+  vars:
+    demo_zabbix_rpc_method: action.get
+    demo_zabbix_rpc_params:
+      actionids: ["{{ demo_zabbix_action_id }}"]
+      output: [actionid, status]
+
+- name: Verify the requested final forwarding state
+  ansible.builtin.assert:
+    that:
+      - demo_zabbix_rpc_response.json.result | length == 1
+      - demo_zabbix_rpc_response.json.result[0].status | int == (0 if demo_zabbix_enable_delivery | default(false) | bool else 1)
+    quiet: true

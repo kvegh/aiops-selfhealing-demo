@@ -13,6 +13,9 @@ from ansible.parsing.yaml.objects import AnsibleVaultEncryptedUnicode
 spec = importlib.util.spec_from_file_location('zabbix_website_configuration', Path(__file__).with_name('demo_website.py'))
 website = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(website)
+guest_spec = importlib.util.spec_from_file_location('zabbix_verified_guests', Path(__file__).with_name('demo_mcp.py'))
+guests = importlib.util.module_from_spec(guest_spec)
+guest_spec.loader.exec_module(guests)
 
 
 def require(condition, message):
@@ -43,6 +46,7 @@ def configuration(value):
                   auth_file=f'/etc/nginx/demo-zabbix-{version}.htpasswd', source_image=copy.deepcopy(source),
                   vm_network=value['vm_network'], guest_user=user, guest_authorized_public_key=key,
                   memory_mb=4096, vcpus=2)
+    result['testserver'] = guests.guest(result, value.get('testserver'), 'testserver1')
     return result
 
 
@@ -140,16 +144,167 @@ def event_stream(config, value):
 
 
 
-def recipient_medias(existing, media_id, endpoint):
+def recipient_medias(existing, media_id, endpoint, stale_media_ids=None):
+    from urllib.parse import urlsplit
     require(isinstance(existing, list), 'Read the existing cloned notification recipient media.')
-    result = []
+    result, selected = [], []
+    stale_media_ids = {str(value) for value in (stale_media_ids or [])}
     for entry in existing:
-        if str(entry['mediatypeid']) != str(media_id):
-            require(not int(entry.get('provisioned', 0)), 'Review directory-provisioned notification media separately.')
-            result.append({key: entry[key] for key in ('mediatypeid', 'sendto', 'active', 'severity', 'period')})
-    result.append({'mediatypeid':str(media_id), 'sendto':endpoint, 'active':0,
-                   'severity':63, 'period':'1-7,00:00-24:00'})
+        require(not int(entry.get('provisioned', 0)), 'Review directory-provisioned notification media separately.')
+        if str(entry['mediatypeid']) == str(media_id):
+            selected.append(entry)
+            continue
+        destinations = entry['sendto'] if isinstance(entry['sendto'], list) else [entry['sendto']]
+        is_eda = str(entry['mediatypeid']) in stale_media_ids or any(re.fullmatch(
+            r'/eda-event-streams/api/eda/v1/external_event_stream/[0-9a-f-]{36}/post/',
+            urlsplit(str(value)).path) for value in destinations)
+        if not is_eda:
+            retained = {key: entry[key] for key in ('mediaid', 'mediatypeid', 'sendto', 'active', 'severity', 'period') if key in entry}
+            retained['active'] = 1
+            result.append(retained)
+    require(len(selected) <= 1, 'The selected notification association must be unique.')
+    current = {'mediatypeid':str(media_id), 'sendto':endpoint, 'active':0,
+               'severity':63, 'period':'1-7,00:00-24:00'}
+    if selected and 'mediaid' in selected[0]:
+        current['mediaid'] = selected[0]['mediaid']
+    result.append(current)
     return result
+
+
+def reconcile(config, snapshot):
+    """Plan only in-place changes to the known copied monitoring roles."""
+    require(isinstance(snapshot, dict) and all(isinstance(snapshot.get(key), list)
+            for key in ('hosts', 'items', 'triggers')), 'Read the complete copied monitoring definitions first.')
+    version = config['version']
+    roles = {
+        'website': (['demo-website-' + version], 'demo-website-' + version, config['website_hostname']),
+        'imported': (['demo-website-redhat', 'demo-website-' + version + '-imported'],
+                     'demo-website-' + version + '-imported', 'Imported website ' + version + ' (disabled)'),
+        'testserver': (['testserver1', config['testserver']['vm_name']], config['testserver']['vm_name'], config['testserver']['vm_name']),
+        'self': (['Zabbix server', config['vm_name']], config['vm_name'], config['hostname']),
+        'dashboard': (['demo-aap-dashboard', 'demo-aap-dashboard-' + version],
+                      'demo-aap-dashboard-' + version, 'AAP dashboard ' + config['aap_hostname']),
+    }
+    operations, owned = [], {}
+    replacements = {f'redhat.{config["zone"]}':config['website_hostname'],
+                    f'aap.{config["zone"]}':config['aap_hostname'], f'zabbix.{config["zone"]}':config['hostname'],
+                    f'testserver1.{config["zone"]}':config['testserver']['vm_name'] + '.' + config['zone']}
+
+    def rewrite(value):
+        if not isinstance(value, str):
+            return value
+        for old, new in replacements.items():
+            value = re.sub(r'(?<![A-Za-z0-9_.-])' + re.escape(old) + r'(?![A-Za-z0-9_.-])', new, value)
+        return re.sub(r'(?<![A-Za-z0-9_.-])testserver1(?![A-Za-z0-9_.-])', config['testserver']['vm_name'], value)
+
+    def update(method, current, identifier, desired):
+        changed = {key:value for key,value in desired.items() if str(current.get(key, '')) != str(value)}
+        if changed:
+            operations.append({'method':method, 'params':dict(changed, **{identifier:current[identifier]})})
+
+    for role, (aliases, name, display) in roles.items():
+        matches = [host for host in snapshot['hosts'] if host.get('host') in aliases]
+        require(len(matches) <= 1, 'Copied role names collide; preserve both records for review.')
+        if not matches:
+            require(role not in ('website', 'testserver', 'self'), 'A required copied monitoring role is missing.')
+            continue
+        host = matches[0]
+        require(not any(row.get('host') == name and row.get('hostid') != host['hostid'] for row in snapshot['hosts']),
+                'A target monitoring name belongs to another record; do not merge or delete it.')
+        owned[str(host['hostid'])] = role
+        desired = {'host':name, 'name':display, 'description':rewrite(host.get('description', ''))}
+        if role != 'website':
+            desired['status'] = 1
+        update('host.update', host, 'hostid', desired)
+        if role in ('testserver', 'self'):
+            address = config['testserver']['address'] if role == 'testserver' else '127.0.0.1'
+            for interface in host.get('interfaces', []):
+                update('hostinterface.update', interface, 'interfaceid', {'ip':address, 'dns':name, 'useip':1})
+        for macro in host.get('macros', []):
+            if role == 'dashboard' and macro['macro'] in ('{$BBB.AAP.TOKEN}', '{$BBB.AAP.STREAM_ID}', '{$BBB.AAP.JOB_TEMPLATES}'):
+                update('usermacro.update', macro, 'hostmacroid', {'value':'', 'type':0})
+            elif role == 'dashboard' and macro['macro'] == '{$BBB.AAP.URL}':
+                update('usermacro.update', macro, 'hostmacroid', {'value':'https://' + config['aap_hostname'], 'type':0})
+            elif str(macro.get('type', '0')) == '0':
+                update('usermacro.update', macro, 'hostmacroid', {'value':rewrite(macro.get('value', ''))})
+        if role == 'testserver' and any(item.get('hostid') == host['hostid'] and '{$APACHE.STATUS.HOST}' in item.get('url', '') for item in snapshot['items']):
+            macros = [macro for macro in host.get('macros', []) if macro['macro'] == '{$APACHE.STATUS.HOST}']
+            require(len(macros) <= 1, 'The target HTTP-check address override must be unique.')
+            if macros:
+                update('usermacro.update', macros[0], 'hostmacroid', {'value':config['testserver']['address'], 'type':0})
+            else:
+                operations.append({'method':'usermacro.create', 'params':{'hostid':host['hostid'],
+                    'macro':'{$APACHE.STATUS.HOST}', 'value':config['testserver']['address'], 'type':0}})
+    for item in snapshot['items']:
+        role = owned.get(str(item.get('hostid')))
+        if not role or str(item.get('templateid', '0')) != '0':
+            continue
+        desired = {key:rewrite(item[key]) for key in ('name', 'url', 'description') if key in item}
+        if role in ('website', 'imported') and item.get('key_') == 'demo.website.http_status':
+            desired.update(url='https://' + config['website_hostname'] + '/content.html',
+                name=config['website_hostname'] + ' content HTTP status' + (' (imported, disabled)' if role == 'imported' else ''))
+            if role == 'imported':desired['status'] = 1
+        if role == 'dashboard' and 'name' in desired and not desired['name'].startswith(config['aap_hostname'] + ': '):
+            desired['name'] = config['aap_hostname'] + ': ' + desired['name']
+        update('item.update', item, 'itemid', desired)
+    for trigger in snapshot['triggers']:
+        hosts = trigger.get('hosts', [])
+        selected = [owned[str(host['hostid'])] for host in hosts if str(host.get('hostid')) in owned]
+        if len(selected) != 1 or str(trigger.get('templateid', '0')) != '0':
+            continue
+        role = selected[0]
+        desired = {key:rewrite(trigger[key]) for key in ('description', 'comments', 'url', 'url_name') if key in trigger}
+        if role in ('website', 'imported') and 'Demo website content unavailable' in trigger.get('description', ''):
+            desired['description'] = 'Demo website content unavailable: ' + config['website_hostname']
+            if role == 'imported':desired.update(description=desired['description'] + ' (imported, disabled)', status=1)
+        update('trigger.update', trigger, 'triggerid', desired)
+    return operations
+
+
+def imported_media(objects, selected_id, config, definition):
+    name = 'Imported EDA event stream ' + config['version'] + ' (disabled)'
+    matches = [row for row in objects if row.get('name') in ('Event-Driven Ansible', name)
+               and str(row['mediatypeid']) != str(selected_id)]
+    require(len(matches) <= 1 and all(str(row.get('type')) == '4' for row in matches),
+            'Review ambiguous imported EDA media before replacing target settings.')
+    return [dict(copy.deepcopy(definition), mediatypeid=row['mediatypeid'], name=name, status=1) for row in matches]
+
+
+def delivery_ready(media, actions, admin, definition, media_id, action_id, trigger_id, endpoint, stale_ids):
+    require(isinstance(media, list) and len(media) == 1, 'Read back exactly the selected forwarding media.')
+    current = media[0]
+    require(str(current['mediatypeid']) == str(media_id) and str(current['status']) == '0'
+            and str(current['type']) == '4' and current['script'] == definition['script'],
+            'The selected forwarding media does not match its declared script and state.')
+    actual = {row['name']:str(row['value']) for row in current.get('parameters', [])}
+    expected = {row['name']:str(row['value']) for row in definition['parameters']}
+    require(actual == expected and len(current.get('parameters', [])) == len(expected),
+            'The selected forwarding endpoint and Basic authentication must match protected settings.')
+    selected = [row for row in actions if str(row['actionid']) == str(action_id)]
+    require(len(selected) == 1 and all(str(row['status']) == '1' for row in actions),
+            'Every action must remain disabled until final deployment validation.')
+    conditions = selected[0].get('filter', {}).get('conditions', [])
+    require(len(conditions) == 1 and str(conditions[0].get('conditiontype')) == '2'
+            and str(conditions[0].get('operator', '0')) == '0' and str(conditions[0].get('value')) == str(trigger_id),
+            'The selected forwarding action must refer to this exact website trigger.')
+    for field in ('operations', 'recovery_operations'):
+        operations = selected[0].get(field, [])
+        require(len(operations) == 1 and str(operations[0].get('operationtype')) == '0'
+                and str(operations[0].get('opmessage', {}).get('mediatypeid')) == str(media_id)
+                and [str(row['userid']) for row in operations[0].get('opmessage_usr', [])] == ['1'],
+                'Forward only the selected trigger through the selected media and existing recipient.')
+    require(len(admin) == 1 and str(admin[0]['userid']) == '1', 'Read the existing notification recipient.')
+    associations = admin[0]['medias']
+    selected_media = [row for row in associations if str(row['mediatypeid']) == str(media_id)]
+    require(len(selected_media) == 1 and str(selected_media[0]['active']) == '0', 'Keep one active selected notification association.')
+    destinations = selected_media[0]['sendto']
+    require((destinations if isinstance(destinations, list) else [destinations]) == [endpoint],
+            'The selected recipient must use the current target event stream.')
+    cleaned = recipient_medias(associations, media_id, endpoint, stale_ids)
+    require(len(cleaned) == len(associations)
+            and all(str(row.get('active')) == '1' for row in associations if str(row['mediatypeid']) != str(media_id)),
+            'Stale EDA destinations must be removed and unrelated recipient media remain disabled.')
+    return True
 
 
 
@@ -184,4 +339,5 @@ class FilterModule:
                 'demo_zabbix_domain_record':domain_record, 'demo_zabbix_guest_address':guest_address,
                 'demo_zabbix_network_details':network_details, 'demo_zabbix_quarantine':quarantine,
                 'demo_zabbix_event_stream':event_stream, 'demo_zabbix_recipient_medias':recipient_medias,
-                'demo_zabbix_provenance':provenance}
+                'demo_zabbix_provenance':provenance, 'demo_zabbix_reconciliation':reconcile,
+                'demo_zabbix_imported_media':imported_media, 'demo_zabbix_delivery_ready':delivery_ready}

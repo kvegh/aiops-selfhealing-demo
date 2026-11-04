@@ -48,6 +48,32 @@
   ansible.builtin.set_fact:
     demo_zabbix_media_id: "{{ demo_zabbix_rpc_response.json.result.mediatypeids[0] }}"
 
+- name: Read the retained copied media definitions
+  ansible.builtin.include_tasks: demo_zabbix_rpc.yml
+  vars:
+    demo_zabbix_rpc_method: mediatype.get
+    demo_zabbix_rpc_params:
+      output: [mediatypeid, name, type, status]
+
+- name: Plan the retained imported EDA media with current target settings
+  ansible.builtin.set_fact:
+    demo_zabbix_imported_media_definitions: >-
+      {{ demo_zabbix_rpc_response.json.result | demo_zabbix_imported_media(
+           demo_zabbix_media_id, demo_zabbix_config, demo_zabbix_media_definition) }}
+
+- name: Retain the exact stale EDA media identities for association cleanup
+  ansible.builtin.set_fact:
+    demo_zabbix_stale_media_ids: "{{ demo_zabbix_imported_media_definitions | map(attribute='mediatypeid') | list }}"
+
+- name: Reconcile imported EDA media while keeping it disabled
+  ansible.builtin.include_tasks: demo_zabbix_rpc.yml
+  vars:
+    demo_zabbix_rpc_method: mediatype.update
+    demo_zabbix_rpc_params: "{{ demo_zabbix_imported_media_definition }}"
+  loop: "{{ demo_zabbix_imported_media_definitions }}"
+  loop_control:
+    loop_var: demo_zabbix_imported_media_definition
+
 - name: Read the copied appliance administrator's notification media
   ansible.builtin.include_tasks: demo_zabbix_rpc.yml
   vars:
@@ -67,7 +93,7 @@
   ansible.builtin.set_fact:
     demo_zabbix_recipient_media: >-
       {{ demo_zabbix_rpc_response.json.result[0].medias | demo_zabbix_recipient_medias(
-           demo_zabbix_media_id, demo_zabbix_delivery.url) }}
+           demo_zabbix_media_id, demo_zabbix_delivery.url, demo_zabbix_stale_media_ids) }}
 
 - name: Configure only the new media association on the existing recipient
   ansible.builtin.include_tasks: demo_zabbix_rpc.yml
@@ -99,7 +125,7 @@
     demo_zabbix_action_definition:
       name: "AIOps {{ demo_zabbix_config.version }} website events"
       eventsource: 0
-      status: "{{ 0 if demo_zabbix_enable_delivery | default(false) else 1 }}"
+      status: 1
       filter:
         evaltype: 0
         conditions:
@@ -130,3 +156,7 @@
     demo_zabbix_rpc_params: >-
       {{ demo_zabbix_action_definition | combine(
            {'actionid': demo_zabbix_existing_action_id} if demo_zabbix_existing_action_id else {}) }}
+
+- name: Retain the selected forwarding action identity for final validation
+  ansible.builtin.set_fact:
+    demo_zabbix_action_id: "{{ demo_zabbix_rpc_response.json.result.actionids[0] }}"

@@ -1,0 +1,41 @@
+---
+- name: Read current copied host identities and address macros
+  ansible.builtin.include_tasks: demo_zabbix_rpc.yml
+  vars:
+    demo_zabbix_rpc_method: host.get
+    demo_zabbix_rpc_params:
+      output: [hostid, host, name, status, description]
+      selectInterfaces: extend
+      selectMacros: extend
+
+- name: Retain the current host snapshot
+  ansible.builtin.set_fact:
+    demo_zabbix_reconcile_hosts: "{{ demo_zabbix_rpc_response.json.result }}"
+
+- name: Read current item URLs and check labels
+  ansible.builtin.include_tasks: demo_zabbix_rpc.yml
+  vars:
+    demo_zabbix_rpc_method: item.get
+    demo_zabbix_rpc_params:
+      hostids: "{{ demo_zabbix_reconcile_hosts | map(attribute='hostid') | list }}"
+      output: [itemid, hostid, templateid, name, key_, url, description, status]
+
+- name: Retain the current item snapshot
+  ansible.builtin.set_fact:
+    demo_zabbix_reconcile_items: "{{ demo_zabbix_rpc_response.json.result }}"
+
+- name: Read current trigger labels and owned host references
+  ansible.builtin.include_tasks: demo_zabbix_rpc.yml
+  vars:
+    demo_zabbix_rpc_method: trigger.get
+    demo_zabbix_rpc_params:
+      hostids: "{{ demo_zabbix_reconcile_hosts | map(attribute='hostid') | list }}"
+      output: [triggerid, templateid, description, comments, url, url_name, status]
+      selectHosts: [hostid]
+
+- name: Retain the complete reconciliation snapshot
+  ansible.builtin.set_fact:
+    demo_zabbix_reconcile_snapshot:
+      hosts: "{{ demo_zabbix_reconcile_hosts }}"
+      items: "{{ demo_zabbix_reconcile_items }}"
+      triggers: "{{ demo_zabbix_rpc_response.json.result }}"

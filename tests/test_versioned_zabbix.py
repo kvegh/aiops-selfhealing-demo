@@ -11,7 +11,9 @@ policy=importlib.util.module_from_spec(spec);spec.loader.exec_module(policy)
 def deployment():
     return {'instance_name':'aap27-test-7','instance_number':7,'aap_fqdn':'aap27.v07.example.invalid','zone':'example.invalid',
         'hypervisor':{'name':'recovery','address':'192.0.2.50','public_ipv4':'8.8.8.8','user':'automation','port':22,'machine_id':'1'*32,'host_keys':['ssh-ed25519 AAAA']},
-        'source_image':{'path':'/opt/vms/zabbix-disk.qcow2','sha256':'a'*64},'vm_network':'isolated','guest_user':'automation','guest_authorized_public_key':'ssh-ed25519 AAAA'}
+        'source_image':{'path':'/opt/vms/zabbix-disk.qcow2','sha256':'a'*64},'vm_network':'isolated','guest_user':'automation','guest_authorized_public_key':'ssh-ed25519 AAAA',
+        'testserver':{'verified':True,'vm_name':'testserver1-v07','address':'192.0.2.124','uuid':'22222222-2222-2222-2222-222222222222',
+          'machine_id':'2'*32,'hypervisor_machine_id':'1'*32,'user':'automation','port':22,'host_keys':['ssh-ed25519 AAAA']}}
 
 class VersionedZabbixTests(unittest.TestCase):
     def test_allocation_controls_every_guest_and_public_resource(self):
@@ -73,26 +75,36 @@ const output=new Function('value',input.source)(JSON.stringify(input.fixture));p
 
 class Api:
     def __init__(self,reject):
-        self.reject=reject;self.calls=[];self.tables={
+        self.reject=reject;self.calls=[];self.frontend_verified=False;self.tables={
             'action':[{'actionid':'7','name':'inherited action','status':'0'}],
-            'mediatype':[{'mediatypeid':'72','name':'inherited media','status':'0'}],
+            'mediatype':[{'mediatypeid':'72','name':'Event-Driven Ansible','status':'0','type':'4'}],
             'drule':[{'druleid':'1','status':'0'}],'httptest':[{'httptestid':'1','status':'0'}],
-            'host':[{'hostid':'1','host':'inherited-host','status':'0'}],
+            'host':[{'hostid':'1','host':'Zabbix server','name':'Zabbix server','status':'0','interfaces':[],'macros':[]},
+                    {'hostid':'2','host':'testserver1','name':'testserver1','status':'0','interfaces':[],'macros':[]},
+                    {'hostid':'3','host':'demo-website-redhat','name':'redhat.example.invalid','status':'0','interfaces':[],'macros':[]},
+                    {'hostid':'4','host':'demo-aap-dashboard','name':'AAP dashboard','status':'0','interfaces':[],'macros':[]}],
             'script':[{'scriptid':'1','type':'0','scope':'1','command':'inherited command','url':''}],
-            'hostgroup':[],'item':[],'trigger':[],
+            'hostgroup':[],'item':[],'trigger':[],'usermacro':[],'hostinterface':[],
             'user':[{'userid':'1','medias':[{'mediatypeid':'72','sendto':'https://source.example.invalid','active':'0','severity':'63','period':'1-7,00:00-24:00'}]}]}
         self.ids={'hostgroup':'groupid',**{x:x+'id' for x in ('host','item','trigger','action','mediatype','drule','httptest','script','user')}}
+        self.ids.update(usermacro='hostmacroid',hostinterface='interfaceid')
     def operation(self,body):
         method=body['method'];params=body['params'];self.calls.append((method,copy.deepcopy(params)))
         if method=='apiinfo.version':return {'result':'7.4.12'}
         if self.reject and method=='action.update':return {'error':{'code':-1,'message':'Synthetic rejected quarantine'}}
         kind,operation=method.split('.');key=self.ids[kind];rows=self.tables[kind]
+        if kind=='action' and operation in ('create','update') and str(params.get('status'))=='0' and not self.frontend_verified:
+            return {'error':{'code':-1,'message':'Synthetic frontend validation has not passed'}}
         if operation=='get':
             chosen=rows
             for field,values in params.get('filter',{}).items():
                 if not isinstance(values,list):values=[values]
                 chosen=[r for r in chosen if str(r.get(field)) in [str(v) for v in values]]
             if params.get('hostids'):chosen=[r for r in chosen if str(r.get('hostid')) in params['hostids']]
+            for field in ('actionids','mediatypeids','userids'):
+                if params.get(field):chosen=[r for r in chosen if str(r.get(key)) in [str(x) for x in params[field]]]
+            if kind=='trigger' and params.get('selectHosts'):
+                chosen=[dict(row,hosts=[{'hostid':row['hostid']}]) for row in chosen]
             return {'result':str(len(chosen)) if params.get('countOutput') else copy.deepcopy(chosen)}
         if operation=='create':
             identity=str(1000+len(rows));row=dict(copy.deepcopy(params),**{key:identity})
@@ -102,10 +114,16 @@ class Api:
         return {'result':{key+'s':[identity]}}
 
 class QuarantineExecutionTests(unittest.TestCase):
-    def run_tasks(self,reject=False,api=None,unsafe=False,vaulted=False):
+    def run_tasks(self,reject=False,api=None,unsafe=False,vaulted=False,finalize=False,delivery=False,frontend_ok=True):
         api=api or Api(reject)
         class Handler(BaseHTTPRequestHandler):
             def log_message(self,*args):pass
+            def do_GET(self):
+                self.send_response(401 if frontend_ok else 503)
+                if frontend_ok:
+                    self.send_header('WWW-Authenticate','Basic realm="Synthetic monitoring"')
+                    api.frontend_verified=True
+                self.end_headers()
             def do_POST(self):
                 body=json.loads(self.rfile.read(int(self.headers['Content-Length'])))
                 if body['method']!='apiinfo.version' and self.headers.get('Authorization')!='Bearer synthetic-clone-bearer':self.send_response(401);self.end_headers();return
@@ -123,7 +141,14 @@ class QuarantineExecutionTests(unittest.TestCase):
                 next(row for row in tasks if row['name']=='Keep the selected guest first in its owned frontend proxy aliases')['ansible.builtin.lineinfile']['path']=str(hosts)
                 tasks[-1].pop('ansible.builtin.systemd_service');tasks[-1]['ansible.builtin.command']={'argv':[sys.executable,'-c','from pathlib import Path;import sys;Path(sys.argv[1]).touch()',str(marker)]};tasks[-1]['changed_when']=True
                 (folder/'files').mkdir();shutil.copy(ROOT/'playbooks/files/demo-zabbix-event-stream.js',folder/'files')
-                variables={'demo_zabbix_config':policy.configuration(deployment()),'demo_zabbix_network':{'gateway':'192.0.2.1','bridge':'vmbr0'},'demo_zabbix_clone_api_token':'synthetic-clone-bearer','demo_zabbix_delivery':{'url':'https://aap27.v07.example.invalid/events','username':'synthetic-user','password':'synthetic-password'},'demo_zabbix_enable_delivery':False}
+                variables={'demo_zabbix_config':policy.configuration(deployment()),'demo_zabbix_network':{'gateway':'192.0.2.1','bridge':'vmbr0'},'demo_zabbix_clone_api_token':'synthetic-clone-bearer','demo_zabbix_delivery':{'url':'https://aap27.v07.example.invalid/events','username':'synthetic-user','password':'synthetic-password'},'demo_zabbix_enable_delivery':delivery}
+                if finalize:
+                    frontend=yaml.safe_load((ROOT/'playbooks/tasks/demo_zabbix_frontend.yml').read_text())[-2:]
+                    frontend[0]['ansible.builtin.uri']['url']=f'http://127.0.0.1:{server.server_address[1]}/frontend'
+                    frontend[0]['ansible.builtin.uri']['timeout']=2
+                    frontend[0]['retries']=2;frontend[0]['delay']=0
+                    tasks.extend(frontend)
+                    tasks.extend(yaml.safe_load((folder/'demo_zabbix_finalize.yml').read_text()))
                 if unsafe:
                     from ansible.utils.unsafe_proxy import wrap_var
                     variables['demo_zabbix_clone_api_token']=wrap_var(variables['demo_zabbix_clone_api_token'])
@@ -179,6 +204,34 @@ class QuarantineExecutionTests(unittest.TestCase):
         media=next(x for x in api.tables['mediatype'] if x.get('name')=='AIOps v07 event stream')
         parameters={x['name']:x['value'] for x in media['parameters']}
         self.assertEqual(parameters['password'],'synthetic-password')
+
+    def test_final_forwarding_enable_follows_frontend_and_exact_target_readbacks(self):
+        result,started,api=self.run_tasks(finalize=True,delivery=True)
+        self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+        self.assertTrue(started);self.assertTrue(api.frontend_verified)
+        enabled=[row for row in api.tables['action'] if str(row['status'])=='0']
+        self.assertEqual(len(enabled),1);self.assertEqual(enabled[0]['name'],'AIOps v07 website events')
+        writes=[(method,params) for method,params in api.calls if not method.endswith('.get') and method!='apiinfo.version']
+        self.assertEqual(writes[-1],('action.update',{'actionid':enabled[0]['actionid'],'status':0}))
+        self.assertEqual([row['mediatypeid'] for row in api.tables['user'][0]['medias']],
+            [next(row['mediatypeid'] for row in api.tables['mediatype'] if row['name']=='AIOps v07 event stream')])
+
+    def test_failed_frontend_never_enables_forwarding(self):
+        result,started,api=self.run_tasks(finalize=True,delivery=True,frontend_ok=False)
+        self.assertNotEqual(result.returncode,0,result.stdout+result.stderr)
+        self.assertTrue(started);self.assertFalse(api.frontend_verified)
+        self.assertTrue(all(str(row['status'])=='1' for row in api.tables['action']))
+        self.assertFalse(any(method in ('action.create','action.update') and str(params.get('status'))=='0' for method,params in api.calls))
+
+    def test_reconciliation_collision_stops_before_frontend_and_forwarding(self):
+        api=Api(False)
+        api.tables['host'].append({'hostid':'88','host':'demo-website-v07-imported',
+                                  'name':'Existing conflicting record','status':'1','interfaces':[],'macros':[]})
+        result,started,api=self.run_tasks(api=api,finalize=True,delivery=True)
+        self.assertNotEqual(result.returncode,0,result.stdout+result.stderr)
+        self.assertFalse(started);self.assertFalse(api.frontend_verified)
+        self.assertTrue(all(str(row['status'])=='1' for row in api.tables['action']))
+        self.assertFalse(any(method in ('action.create','action.update') and str(params.get('status'))=='0' for method,params in api.calls))
 
 class FrontendReadinessExecutionTests(unittest.TestCase):
     def run_probe(self, statuses, challenge=True):

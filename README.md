@@ -206,6 +206,13 @@ Its public frontend readiness check retries within a bounded window while
 requiring trusted HTTPS, HTTP 401 and the expected Basic authentication
 challenge. A persistent failure stops deployment.
 
+Monitoring deployment reconciles copied hostnames, check labels and URLs to
+the selected instance while retaining record IDs and history. It removes stale
+EDA recipient destinations and clears disabled dashboard credentials. The
+selected website forwarding action stays disabled until frontend and exact
+configuration readbacks pass, then the existing delivery flag can enable it as
+the final configuration write. Other copied monitoring and actions stay disabled.
+
 Both new MCP installations have completed their normal jobs and passed real
 read-only queries against their matching testserver and monitoring instance.
 The normal Zabbix deployment has also succeeded, with independently
