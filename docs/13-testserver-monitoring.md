@@ -55,6 +55,51 @@ controlled agent-down event, causing **Run Claude to analyse and fix** to call
 the model provider. That model invocation and a new fault are not part of this
 monitoring verification. The website outage/restore/rearm loop remains intact.
 
+## Agent-remediation readiness
+
+The general agent rule requires the matching agent-unavailable name and numeric
+`event_value: 1`; missing fields, recovery and unrelated events cannot launch
+its job. The maintained webhook uses `Number(parameters.event_value)`, so the
+Zabbix macro strings `"1"` and `"0"` become numeric problem/recovery values.
+The actual selected media script was read back and matched this implementation.
+The separate website problem/restore and recovery/rearm rulebook is unchanged.
+
+The condition uses the documented [Ansible Rulebook condition operators](https://docs.ansible.com/projects/rulebook/en/latest/conditions.html).
+Run the focused payload/condition contract checks with existing Node.js and an
+Ansible-equipped interpreter:
+
+```bash
+ANSIBLE_LOCAL_TEMP=/tmp/aiops-agent-event-tests python3.12 -m unittest discover -s tests -p test_agent_event_guard.py -v
+```
+
+These checks execute the real webhook JavaScript, then evaluate the saved
+condition with native Ansible. They do not start an EDA activation or invoke a
+model, and do not replace a controlled end-to-end rehearsal.
+
+Read-only inspection of the selected instance confirmed the existing **Run
+Claude to analyse and fix** template selects only its `tra` inventory alias and
+uses its existing Machine credential. That alias resolves to the verified TRA
+and the account already owning its private MCP configuration. Both Linux and
+Zabbix stdio servers initialized and listed the expected tools using only local
+images, without a tool call. They create no public MCP listener.
+
+The remaining concrete prerequisites on that TRA are Claude Code in the job
+account's executable path, its own approved provider authentication, the reviewed
+`CLAUDE.md` instructions in its workspace, and an authenticated private AAP MCP
+client connection to the matching AAP. The existing Linux/Zabbix MCP deployment
+does not install or supply these. The TRA still has neither a recovery release
+nor an HTTPS exception, so model-provider connectivity also needs its own
+reviewed policy decision. Do not copy source authentication or weaken recovery
+isolation as a fallback. Provider authentication was inspected only for local
+presence; no provider request or credential refresh was attempted.
+
+After those prerequisites are deliberately configured and verified, review the
+selected agent-event forwarding and activation, sync the published rulebook,
+then authorize and run the controlled agent-down rehearsal. The proof must show
+the agent calls the matching AAP's existing repair template and Zabbix receives
+fresh recovery samples. No CLI installation, provider login, activation, model
+invocation or new outage was performed during this readiness inspection.
+
 ## Verified deployment state
 
 The selected deployment passed its normal Zabbix template and an unchanged

@@ -80,6 +80,12 @@ Solid borders are the working demo. The dashed purple branch is **experimental**
 7. Claude identifies the missing package and launches the "Deploy Zabbix Agent" job template via AAP MCP
 8. Zabbix confirms recovery after its check interval expires
 
+The agent rule matches only a problem event (`event_value: 1`), with both name
+and value present. The maintained Zabbix webhook converts the macro value to a
+number before delivery; a recovery event does not launch the agent. See the
+[monitoring and agent-readiness checks](docs/13-testserver-monitoring.md) before
+enabling this separate flow on a fresh instance.
+
 **Stage 2 — agent-authored remediation (Level 2)** — TBD
 
 The agent generates Ansible playbook content to address an incident with no existing fix, then submits it for machine or human approval before execution.

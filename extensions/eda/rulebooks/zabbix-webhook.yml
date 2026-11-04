@@ -10,7 +10,11 @@
         port: 5000
   rules:
     - name: Zabbix agent down - invoke Claude
-      condition: event.payload.event_name is search("Zabbix agent is not available", ignorecase=true)
+      condition: >-
+        event.payload.event_name is defined and
+        event.payload.event_value is defined and
+        event.payload.event_name is search("Zabbix agent is not available", ignorecase=true) and
+        event.payload.event_value == 1
       action:
         run_job_template:
           name: "Run Claude to analyse and fix"
