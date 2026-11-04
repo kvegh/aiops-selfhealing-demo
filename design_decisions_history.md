@@ -1,5 +1,45 @@
 # Design decisions history
 
+## Deploy Claude with the existing private MCP integrations — 2026-11-04
+
+Implementation `80b7dff` adds one application playbook and its reviewed native
+Claude release/ownership checks. The execution environment downloads the pinned
+official binary with trusted HTTPS and validates its SHA-256 and size before
+copying it to the verified TRA. The pin was checked against Anthropic's signed
+manifest and published signing fingerprint. The actual incident-job account must
+resolve the installed command and report the selected version. A different
+existing command is preserved for review; no full Assistant Team installation
+or new service, credential type or secret store is introduced.
+
+The same job reuses the existing Linux and Zabbix MCP playbooks and their private
+stdio/read-only verification. Their selected workspace now follows the incident
+job's override consistently. Every existing directory component is checked
+without following links before creation, existing directory modes are retained,
+and the existing guardrails seed only a missing instruction file. User edits and
+other MCP project entries remain intact.
+
+The owner explicitly approved reusing the current Vertex authentication. Only
+the selected project/region and approved authorized-user ADC are persisted in
+the existing private runtime Vault and provisioned to that runtime account.
+Conflicting provider/account configuration, unrelated paths and concurrent
+authentication changes stop provisioning. Secret values remain literal and
+protected. Provider recognition is checked without inference; private AAP MCP,
+phase-output correction and functional agent remediation remain separate work.
+
+Fourteen focused Claude/workspace/Vertex tests, ten MCP tests, seven native
+runtime-loader tests and two private ciphertext-maintenance tests passed.
+Native fixtures cover both modes, integrity failure cleanup, path/link refusal,
+existing settings preservation, account conflicts, concurrent changes,
+idempotence and literal secret canaries. Three playbook syntax checks and strict
+production lint across ten files passed. Actual encrypted CaC renders eleven
+templates in both modes with the existing credentials and opaque runtime input.
+These results establish code/configuration readiness, not a live installation
+or model test. The parent coordinates the shared target's normal deployment.
+
+Integration `501821c` preserves the independently published visualization-link
+documentation commits `c13573a` and `3eee49f` through a normal merge. Their source
+and documentation remain intact.
+
 ## Require problem events before launching the agent — 2026-11-04
 
 Implementation `ba7785d` requires the agent-unavailable name and problem value
