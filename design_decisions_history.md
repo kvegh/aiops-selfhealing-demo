@@ -722,3 +722,20 @@ Both runtime syntax checks, all 14 existing tests, and diff checks passed.
 No browser, dependency, or runtime configuration changes were needed.
 
 Implementation commit: `39c4e60`.
+
+## Give Ansible Automation Platform the leading product identity
+
+The user explicitly requested a much larger, bold Ansible Automation Platform
+name because AAP is the central character. Release 1.1.6 gives the full product
+name 32 px SVG type at weight 750, alongside a 20 px Trusted Execution Layer
+label. The product title is bounded to 430 SVG units to preserve clearance
+for the existing job-dispatch and MCP paths. Other components retain their
+large function headings and small product captions. Palette and workflow
+behavior remain unchanged.
+
+Both runtime syntax checks, all 14 existing tests and diff checks passed.
+Automation, rulebooks and agent instructions were verified unchanged. No new
+tests were added for this presentation change; no browser or dependency was
+installed or run. Rendered browser review remains unverified.
+
+Implementation commit: `bf52f59`.
