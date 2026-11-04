@@ -630,3 +630,28 @@ rerun. GitHub Actions run `41824037505`, attempt 2, succeeded at source
 HTTP 200 and matched the committed frontend byte for byte. No Chromium was
 installed, no browser-based layout review was claimed, and no managed
 infrastructure was contacted. Implementation remains `19da250`.
+
+## Separate AAP brand color from incident status
+
+The user requested a more professional, fresh technical palette, proposed
+Red Hat red for AAP, and approved the resulting color set. Release 1.1.1 uses
+the official `#ee0000` as a fixed AAP header and headline accent above a dark
+navy platform. This preserves clear Red Hat identity while keeping brand
+color independent of incident state. White surfaces, blue interactions and
+MCP reads, and teal AI/execution accents replace the softer mixed palette.
+Dark crimson Problem statuses and green Recovered statuses retain the agreed
+monitoring story. Labels, line widths, and dash patterns continue to carry
+meaning alongside color. This is a demo palette, not a claim of full Red Hat
+product-interface compliance. The brand reference is
+https://www.redhat.com/en/about/brand/standards/color.
+
+SVG marker colors match their paths and legend. Muted text is darker for
+readability, and twelve representative text/background combinations meet
+4.5:1 contrast or better; the white AAP heading on brand red measures 4.53:1.
+All 14 existing story and application-handler checks passed, both runtime
+scripts passed syntax checks, and a structure comparison confirmed the CSS
+changes affect color rather than layout or behavior. No new tests were
+added for this visual correction. No browser was installed or run, in line
+with the user's server constraint; rendered review remains unverified.
+
+Implementation commit: `fdd676f`.
