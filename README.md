@@ -222,10 +222,11 @@ content and the selected new AAP webhook were independently verified. Subsequent
 target-local monitoring reconciliation passed a complete normal fault-job test:
 Zabbix delivered the problem and recovery events, EDA ran the existing restore
 and rearm templates, and content and arm endpoints returned HTTP 200 again.
-The new deployment code and matching private CaC are committed locally but
-remain unpublished under the current Git restriction. The live reconciliation
-used the reviewed helper through the existing authenticated API; a normal
-deployment job using this new revision has not yet run.
+The deployment code and matching private CaC have been published. The initial
+live reconciliation used the reviewed helper through the existing authenticated
+API; a subsequent normal monitoring deployment job also passed on that published
+revision. Independent readbacks confirmed idempotent reconciliation, selected
+forwarding, preserved website activation and healthy content and arm endpoints.
 
 The existing Zabbix agent job also passed on the verified new test guest after
 its CaC project reference was corrected and package-download HTTPS was approved.

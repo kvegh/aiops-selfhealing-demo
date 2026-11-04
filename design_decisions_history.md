@@ -1,5 +1,21 @@
 # Design decisions history
 
+## Verify the published monitoring playbook through its normal job — 2026-11-04
+
+Implementation `1172d8a`, published in revision `9b83204`, has now completed the
+normal monitoring deployment using the matching private inputs from `f44193a`.
+This verifies the repeatable playbook after the initial in-place API repair.
+Independent readbacks found no remaining reconciliation changes, exactly the
+selected forwarding action enabled, the website activation still running and
+healthy content and arm endpoints over trusted HTTPS. Copied unrelated hosts
+and actions remain disabled.
+
+The public source, private capture and corresponding hypervisor policy changes
+have been published and their remote heads independently checked. Exact job and
+resource evidence remains encrypted in the private companion repository.
+Verification of a separate repeat-import failure in AutoDeploy's activation
+handling remains open; it did not stop the working website activation.
+
 ## Verify the existing agent job on its intended guest — 2026-11-04
 
 The existing agent playbook completed a normal job after private capture
