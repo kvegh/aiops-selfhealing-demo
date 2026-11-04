@@ -1,5 +1,28 @@
 # Design decisions history
 
+## Match the monitoring container user and native count response — 2026-11-03
+
+Implementation `ef45ec7` fixes two observed failures in the real Zabbix MCP
+deployment. The approved image runs as non-root UID/GID 999:999; its invocation
+now maps the existing TRA user to those image IDs, preserving the owner's 0600
+configuration and read-only mount. The server's unchanged safety disclaimer is
+followed by a JSON string count, so the verifier decodes that exact payload
+before requiring a numeric count. Authentication errors and malformed, empty,
+object or list results still fail.
+
+A native before/after test using the exact saved image reproduces the original
+permission error and then completes stdio discovery and an authenticated
+read-only query with unchanged private configuration. Ten MCP checks, syntax
+and scoped production lint pass. Normal Job Template retry remains a separate
+deployment verification. The website still requires its base tooling, and no
+event delivery, outage, model invocation or public MCP endpoint is enabled.
+
+The same publication documents independently verified Linux MCP and Zabbix
+deployment results. The monitoring clone's identity and object IDs match its
+private capture and source inventory; trusted public and guest-to-own-host HTTPS,
+quarantine and the proxy backend pass. Website health and the full remediation
+loop remain separate work.
+
 ## Wait for the protected monitoring frontend — 2026-11-03
 
 Implementation `ef7af00` gives the final frontend probe a bounded retry window
