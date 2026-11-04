@@ -219,6 +219,13 @@ Controller does not support the earlier proposed inline Vault launch scalars
 or JSON Vault-marker mappings. No custom decoder, credential type or store has
 been introduced.
 
+The focused runtime checks cover scalar and structured credentials, literal
+credential text, wrong instances/keys, protected output and cleanup on failure:
+
+```bash
+ANSIBLE_LOCAL_TEMP=/tmp/aiops-runtime-tests python3.12 -m unittest discover -s tests -p test_runtime_settings.py -v
+```
+
 The following lifecycle instructions describe an existing host whose virtual
 host is already configured. That mode retains its current defaults.
 
