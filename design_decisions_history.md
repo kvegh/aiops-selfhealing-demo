@@ -1,5 +1,44 @@
 # Design decisions history
 
+## Prepare target-local monitoring and the two requested MCP jobs — 2026-11-03
+
+Implementation `fa73fef` adds the separately requested Zabbix deployment and
+Linux/Zabbix MCP playbooks. All components reuse the selected AAP allocation;
+verified guest artifacts and live machine identities prevent a production
+destination fallback. Zabbix clones the saved image without altering it,
+quarantines inherited integrations before starting monitoring, and retains
+trusted public HTTPS with Basic authentication. Delivery is disabled by default.
+
+Both MCP servers preserve their existing on-demand Podman/stdio transports on
+the new TRA. They accept only verified local image archives and signed offline
+runtime RPMs, use the existing guest account and direct guest-bridge SSH, and
+perform read-only protocol checks. Linux MCP generates a private key on TRA
+and installs only its public half on the new testserver. Zabbix MCP requires
+the matching new private API and an explicit token. No public MCP listener,
+Claude Code installation, model invocation or EDA activation is added. The
+platform's separate private native MCP endpoint matches production; the owner
+explicitly excluded public MCP exposure.
+
+Website and frontend checks now respect the permitted DNS resolver and pinned
+hypervisor route. Managed website monitoring requires explicit target-local
+inputs instead of production defaults. Existing production lifecycle behavior
+is preserved.
+
+The runtime secret-input method remains an owner decision. Earlier proposed
+inline Vault launch scalars were rejected by Controller, while JSON Vault
+markers were accepted as ordinary dictionaries rather than decrypted values.
+The documentation corrects that proposal. No replacement decoder, credential
+type, store or input mechanism is implemented. Definitions can be imported
+independently; missing required inputs stop secret-dependent jobs before
+managed writes, and their saved defaults contain no secrets.
+
+Twelve website tests, nine Zabbix tests and eight MCP tests pass. Six playbooks
+pass syntax and twenty-one files pass production lint. The encrypted capture
+renders against actual selected inventory data in both modes, and its ten
+template references resolve against the new target's existing base credentials.
+Publication launches no application, fault test or activation; actual runtime
+proof remains open pending inputs and offline artifacts.
+
 ## Preserve the target-side content checkout across versioned deployment — 2026-11-03
 
 Implementation `cf111b2` integrates the existing upstream content-checkout
