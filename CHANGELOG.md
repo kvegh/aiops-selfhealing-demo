@@ -89,6 +89,77 @@ templates, and the status page are still outstanding.
   stack. All three pages now make zero external requests, so they render
   identically on an audience phone with nothing but venue wifi.
 
+## [1.1.6] — 2026-11-04
+
+### Changed
+
+- Made **Ansible Automation Platform** the dominant 32 px bold platform title,
+  with a prominent 20 px **TRUSTED EXECUTION LAYER** label alongside it.
+  The other components retain their function-first hierarchy. Existing
+  colors, connection paths, and walkthrough behavior are preserved.
+
+## [1.1.5] — 2026-11-04
+
+### Changed
+
+- Renamed the failure step to **An error suddenly arises.** The existing Next
+  arrow is retained, and the missing-Zabbix-agent example remains in the
+  step explanation and technical detail.
+
+## [1.1.4] — 2026-11-04
+
+### Changed
+
+- Made functionality the primary diagram label: **PROD SERVER**, **MONITORING**,
+  **AGENTIC AI**, and **TRUSTED EXECUTION LAYER**. Product names are smaller
+  secondary captions: Red Hat Enterprise Linux, Zabbix in this case, Claude
+  in this case, and Ansible Automation Platform. Existing colors, architecture
+  routes, controls, and monitoring-verification behavior are retained.
+
+## [1.1.3] — 2026-11-04
+
+### Changed
+
+- Generalized the displayed AI runtime label to **Codex/Claude/Copilot etc**,
+  split across two lines inside the existing agent node. Walkthrough narration
+  describes the agent role; technical detail retains the actual Claude Code
+  CLI launcher and does not imply new runtime integrations were implemented.
+
+## [1.1.2] — 2026-11-04
+
+### Changed
+
+- Replaced the dominant red AAP header with deep navy and reduced red to a
+  thin brand accent. The headline returns to dark ink. The user found the
+  large red area visually harsh; blue/teal interactions and explicit
+  incident-status colors are retained.
+
+## [1.1.1] — 2026-11-04
+
+### Changed
+
+- Refined the walkthrough palette with fixed Red Hat red AAP branding, a
+  dark navy platform, white surfaces, crisp blue interactions, and teal AI
+  and execution accents. Dark crimson failures and green recovery remain
+  labeled explicitly; brand color does not indicate incident state.
+- Matched SVG arrows and path legends, increased muted-text contrast,
+  and retained the existing recovery story, controls, and motion behavior.
+
+## [1.1.0] — 2026-11-04
+
+### Added
+
+- A static interactive visualization of the existing missing-Zabbix-agent
+  recovery scenario, with 17 presenter-paced stops, a persistent SVG architecture,
+  all three MCP investigations, distinct reasoning and catalog discovery,
+  AAP-only remediation execution, and subsequent monitoring confirmation.
+- Keyboard and direct-step navigation, motion controls, reduced-motion support,
+  responsive architecture scrolling, and source-linked technical detail.
+- Built-in Node model checks and an allowlisted GitHub Pages workflow that
+  validates pull requests and prepares publication from `main`.
+- Presenter/publication documentation with explicit simulated-evidence and
+  functionality-demo limitations. No live infrastructure configuration changes.
+
 ## [1.0.0] — 2026-10-05
 
 First proven version: Zabbix-agent self-healing (Level 1), demonstrated

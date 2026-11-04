@@ -591,3 +591,151 @@ without replacing unrelated hosts entries or recreating the VM.
 Nine focused cases, native old-entry repair and unrelated-localhost preservation
 checks, syntax and scoped production lint passed. The server remained masked
 during diagnosis; no source monitoring service or credential was changed.
+
+## Visualize missing-agent recovery through the existing AAP catalog
+
+The user requested one continuous missing-`zabbix-agent2` recovery story with
+**AAP as the Trusted Execution Layer**, using the Windows + AAP visualization
+as the presentation reference. Release 1.1.0 adds a buildless static frontend
+in `demo/` with an explicit SVG platform containing EDA, separate MCP interfaces,
+and 17 presenter-paced stops. AI investigation, evidence correlation, catalog
+discovery, job requests, AAP execution, and monitoring confirmation remain
+distinct. A successful remediation job leaves monitoring unresolved until a
+subsequent check confirms recovery. The functionality-demo wording separates
+platform capabilities from configured controls and agent instructions.
+
+The repository had no configured Pages site or workflow when inspected. The
+new workflow follows the reference's GitHub Actions approach and stages only
+an explicit frontend allowlist. This avoids uploading automation or protected
+configuration alongside the walkthrough and needs no frontend build dependency.
+This work changes no live AAP, monitoring, managed-host, or agent configuration.
+
+Validation: both runtime scripts passed syntax checks; 14 built-in Node tests
+passed for story ordering, MCP routes, AAP-originated execution, monitoring
+verification, and actual application handlers in a minimal DOM harness. HTML
+references, relative links, workflow structure, local assets, and sensitive
+patterns were checked. The user declined Chromium installation; no browser was
+installed and rendered desktop/mobile inspection was not performed. The DOM
+harness does not attest to browser layout.
+
+Implementation commit: `19da250`.
+
+Publication outcome: the user explicitly requested pushing the visualization
+and its GitHub Pages link. Both implementation and decision commits were pushed
+to `main` over SSH. The first workflow run failed at Configure GitHub Pages
+because Pages was not enabled. After inspecting that exact error, Pages was
+enabled with the workflow build source and only the failed deployment was
+rerun. GitHub Actions run `41824037505`, attempt 2, succeeded at source
+`777ec46`; both validation and publication succeeded. The public HTML returned
+HTTP 200 and matched the committed frontend byte for byte. No Chromium was
+installed, no browser-based layout review was claimed, and no managed
+infrastructure was contacted. Implementation remains `19da250`.
+
+## Separate AAP brand color from incident status
+
+The user requested a more professional, fresh technical palette, proposed
+Red Hat red for AAP, and approved the resulting color set. Release 1.1.1 uses
+the official `#ee0000` as a fixed AAP header and headline accent above a dark
+navy platform. This preserves clear Red Hat identity while keeping brand
+color independent of incident state. White surfaces, blue interactions and
+MCP reads, and teal AI/execution accents replace the softer mixed palette.
+Dark crimson Problem statuses and green Recovered statuses retain the agreed
+monitoring story. Labels, line widths, and dash patterns continue to carry
+meaning alongside color. This is a demo palette, not a claim of full Red Hat
+product-interface compliance. The brand reference is
+https://www.redhat.com/en/about/brand/standards/color.
+
+SVG marker colors match their paths and legend. Muted text is darker for
+readability, and twelve representative text/background combinations meet
+4.5:1 contrast or better; the white AAP heading on brand red measures 4.53:1.
+All 14 existing story and application-handler checks passed, both runtime
+scripts passed syntax checks, and a structure comparison confirmed the CSS
+changes affect color rather than layout or behavior. No new tests were
+added for this visual correction. No browser was installed or run, in line
+with the user's server constraint; rendered review remains unverified.
+
+Implementation commit: `fdd676f`.
+
+## Reduce the visual dominance of the AAP brand accent
+
+After seeing release 1.1.1 live, the user found the solid Red Hat red header
+visually harsh. Release 1.1.2 restores the deep navy AAP header and dark
+headline, retaining only a thin red brand line and small brand details.
+The blue MCP paths, teal AI and execution accents, and labeled crimson/green
+incident states remain. This makes the large architectural form calm and
+stable while keeping a small brand reference.
+
+Both runtime syntax checks and all 14 existing story/application-handler tests
+passed. This correction changes color emphasis only and adds no browser or
+new dependency. Rendered browser inspection remains unverified under the
+user's no-Chromium constraint.
+
+Implementation commit: `06a06b9`.
+
+## Show an interchangeable AI agent role in the walkthrough
+
+The user requested replacing the displayed Claude Code CLI label with
+**Codex/Claude/Copilot etc**. Release 1.1.3 shows that exact text on two lines
+inside the existing agent node and uses generic runtime wording in the
+walkthrough. The surrounding architecture, MCP paths and AAP execution
+relationship are retained. Technical detail explicitly states that the current
+repository launcher invokes Claude Code CLI and preserves its real source
+excerpt and job-template names; this presentation change does not implement
+additional runtime integrations or alter automation configuration.
+
+Validation: both runtime scripts passed syntax checks, all 14 existing model
+and application-handler tests passed, the SVG label's combined text matched
+the request exactly, and diff checks passed. Automation, agent instructions,
+and rulebooks were verified unchanged. No dependency or browser was installed
+or run; rendered layout review remains unverified.
+
+Implementation commit: `26223e3`.
+
+## Make functionality more prominent than product names
+
+The user clarified that functionality should be the primary visual message.
+Release 1.1.4 makes PROD SERVER, MONITORING, and AGENTIC AI the large headings,
+with smaller captions reading Red Hat Enterprise Linux, Zabbix in this case,
+and Claude in this case. Role headings use 22 px SVG type and product captions
+11 px. The AAP platform follows the same hierarchy: TRUSTED EXECUTION LAYER
+is the 25 px heading and Ansible Automation Platform is the 12 px product
+caption. Existing palette, shapes, connection routes, step controls and
+monitoring-verification behavior remain. Other agent runtimes are still
+mentioned as examples in technical documentation; no runtime configuration
+was changed.
+
+Validation: both runtime syntax checks, all 14 existing story/application
+checks, exact heading/product-caption verification, and diff checks passed.
+Automation, rulebooks, and agent instructions were verified unchanged. No
+new tests were added for this presentation adjustment. No browser or dependency
+was installed or run; rendered browser review remains unverified.
+
+Implementation commit: `b7c1409`.
+
+## Introduce the incident with a general error heading
+
+The user requested replacing One package disappears with An error suddenly
+arises. Release 1.1.5 updates the failure-step heading and initial Next-button
+label, reusing the existing arrow. The underlying missing-agent-package
+scenario, explanation, technical detail, and state transitions remain.
+Both runtime syntax checks, all 14 existing tests, and diff checks passed.
+No browser, dependency, or runtime configuration changes were needed.
+
+Implementation commit: `39c4e60`.
+
+## Give Ansible Automation Platform the leading product identity
+
+The user explicitly requested a much larger, bold Ansible Automation Platform
+name because AAP is the central character. Release 1.1.6 gives the full product
+name 32 px SVG type at weight 750, alongside a 20 px Trusted Execution Layer
+label. The product title is bounded to 430 SVG units to preserve clearance
+for the existing job-dispatch and MCP paths. Other components retain their
+large function headings and small product captions. Palette and workflow
+behavior remain unchanged.
+
+Both runtime syntax checks, all 14 existing tests and diff checks passed.
+Automation, rulebooks and agent instructions were verified unchanged. No new
+tests were added for this presentation change; no browser or dependency was
+installed or run. Rendered browser review remains unverified.
+
+Implementation commit: `bf52f59`.
