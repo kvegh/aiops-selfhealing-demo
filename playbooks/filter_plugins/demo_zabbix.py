@@ -67,7 +67,8 @@ def domain_record(xml, config):
         disks = root.findall("./devices/disk[@device='disk']/source")
         interfaces = root.findall('./devices/interface')
         require(root.findtext('name') == config['vm_name'] and len(disks) == 1
-                and disks[0].attrib == {'file': config['disk']},
+                and disks[0].get('file') == config['disk'] and set(disks[0].attrib) <= {'file', 'index'}
+                and ('index' not in disks[0].attrib or re.fullmatch(r'[1-9][0-9]*', disks[0].get('index', ''))),
                 'The monitoring domain does not own exactly its expected clone disk.')
         require(len(interfaces) == 1 and interfaces[0].get('type') == 'network'
                 and interfaces[0].find('source').get('network') == config['vm_network'],
@@ -152,15 +153,28 @@ def recipient_medias(existing, media_id, endpoint):
 
 
 
-def provenance(config, record, address=None):
+def provenance(config, record, address=None, network=None, machine_id=None):
     result = {'schema_version':1, 'instance_name':config['instance_name'],
               'instance_number':config['instance_number'], 'vm_name':config['vm_name'],
               'uuid':record['uuid'], 'disk':config['disk'], 'mac':record['mac'],
-              'guest_host_keys':record['guest_host_keys'], 'source_sha256':config['source_image']['sha256'],
+              'guest_host_keys':record['guest_host_keys'], 'host_keys':record['guest_host_keys'],
+              'network':config['vm_network'], 'user':config['guest_user'], 'port':22, 'verified':False,
+              'source_sha256':config['source_image']['sha256'],
               'hypervisor_machine_id':config['hypervisor']['machine_id'], 'public_hostname':config['hostname'],
               'nginx_file':config['vhost_file'], 'auth_file':config['auth_file'], 'certificate':config['hostname']}
     if address:
-        result.update(ip=address, api_url='http://' + address + '/api_jsonrpc.php')
+        require(guest_address(record['mac'] + ' ipv4 ' + address + '/32', record['mac']) == address,
+                'Retain only the verified private guest address.')
+        result.update(ip=address, address=address, api_url='http://' + address + '/api_jsonrpc.php')
+    if network is not None:
+        require(isinstance(network, dict) and re.fullmatch(r'[A-Za-z0-9_.:-]{1,15}', network.get('bridge', '')),
+                'Retain the actual verified libvirt bridge.')
+        result['bridge'] = network['bridge']
+    if machine_id is not None:
+        require(address is not None and network is not None and isinstance(machine_id, str)
+                and re.fullmatch(r'[0-9a-f]{32}', machine_id) and machine_id != config['hypervisor']['machine_id'],
+                'Require the pinned SSH guest machine identity before marking ownership verified.')
+        result.update(machine_id=machine_id, verified=True)
     return result
 
 

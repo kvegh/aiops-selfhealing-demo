@@ -57,3 +57,14 @@
       - demo_zabbix_guest_machine_id.stdout | trim != demo_zabbix_config.hypervisor.machine_id
     quiet: true
   no_log: true
+
+- name: Retain complete ownership after authenticated guest identity verification
+  ansible.builtin.set_stats:
+    data:
+      demo_zabbix_instance: >-
+        {{ demo_zabbix_config | demo_zabbix_provenance(
+             demo_zabbix_guest_record, demo_zabbix_guest_ip, demo_zabbix_network,
+             demo_zabbix_guest_machine_id.stdout | trim) }}
+    aggregate: false
+    per_host: false
+  no_log: true

@@ -120,10 +120,14 @@ from the public, certificate-verified HTTPS frontend.
 The protected `demo_zabbix_instance` job artifact first retains ownership before
 startup, then the DHCP route before API configuration. Later failures therefore
 preserve useful cleanup evidence. After success it returns the actual guest UUID,
-disk, MAC, IP, public SSH keys, source hash and owned nginx/TLS paths, plus the
+disk, MAC, IP/address, network, bridge, machine ID, public SSH keys, source hash
+and owned nginx/TLS paths, plus the
 verified private API URL and new website item/trigger IDs. It never returns the
-API token. The deployment coordinator persists this provenance with the existing
-encrypted allocation record so decommissioning can prove ownership. Website
+API token. Early ownership is marked unverified until the fresh guest machine
+identity has been authenticated through its pinned SSH key. The deployment
+coordinator persists verified provenance in the existing source inventory's
+`vm_resource` and the owning use case's encrypted configuration, so decommissioning
+can prove ownership. AutoDeploy allocation retains only primary AAP ownership. Website
 monitoring requires the target-local URL/token/IDs as `demo_website_zabbix`
 in the same instance's private runtime settings.
 

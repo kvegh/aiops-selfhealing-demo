@@ -164,28 +164,14 @@
     - name: Publish this version's DNS, trusted certificate and protected reverse proxy
       ansible.builtin.include_tasks: tasks/demo_zabbix_frontend.yml
 
-    - name: Publish verified monitoring provenance for the existing encrypted allocation record
+    - name: Publish verified monitoring provenance for the owning use case and existing source inventory
       ansible.builtin.set_stats:
         data:
-          demo_zabbix_instance:
-            schema_version: 1
-            instance_name: "{{ demo_zabbix_config.instance_name }}"
-            instance_number: "{{ demo_zabbix_config.instance_number | int }}"
-            vm_name: "{{ demo_zabbix_config.vm_name }}"
-            uuid: "{{ demo_zabbix_guest_record.uuid }}"
-            disk: "{{ demo_zabbix_config.disk }}"
-            mac: "{{ demo_zabbix_guest_record.mac }}"
-            ip: "{{ demo_zabbix_guest_ip }}"
-            guest_host_keys: "{{ demo_zabbix_guest_record.guest_host_keys }}"
-            source_sha256: "{{ demo_zabbix_config.source_image.sha256 }}"
-            hypervisor_machine_id: "{{ demo_zabbix_config.hypervisor.machine_id }}"
-            public_hostname: "{{ demo_zabbix_config.hostname }}"
-            nginx_file: "{{ demo_zabbix_config.vhost_file }}"
-            auth_file: "{{ demo_zabbix_config.auth_file }}"
-            certificate: "{{ demo_zabbix_config.hostname }}"
-            api_url: "http://{{ demo_zabbix_guest_ip }}/api_jsonrpc.php"
-            item_id: "{{ demo_zabbix_monitoring_item_id }}"
-            trigger_id: "{{ demo_zabbix_monitoring_trigger_id }}"
+          demo_zabbix_instance: >-
+            {{ demo_zabbix_config | demo_zabbix_provenance(
+                 demo_zabbix_guest_record, demo_zabbix_guest_ip, demo_zabbix_network,
+                 demo_zabbix_guest_machine_id.stdout | trim) |
+               combine({'item_id': demo_zabbix_monitoring_item_id, 'trigger_id': demo_zabbix_monitoring_trigger_id}) }}
         aggregate: false
         per_host: false
       no_log: true

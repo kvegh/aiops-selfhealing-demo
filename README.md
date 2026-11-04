@@ -191,6 +191,10 @@ The RPM manifest must contain the install set validated against the selected
 guest, including its conditional SELinux dependencies; the procedure explains
 the required dependency solve before installation.
 They create no public MCP listener and do not install or invoke Claude Code.
+Delegated testserver SSH connections read the computed address, user, port and
+temporary trust-file path from the original TRA host. The Zabbix deployment
+publishes its verified machine, disk, network and SSH identities for later MCP
+configuration and guarded cleanup.
 
 ### Audience website lifecycle
 

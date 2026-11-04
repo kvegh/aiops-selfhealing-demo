@@ -5,9 +5,12 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
 import unittest
+
+import yaml
 
 from ansible.errors import AnsibleFilterError
 
@@ -154,6 +157,47 @@ class StdioVerificationTests(unittest.TestCase):
     def test_zabbix_readonly_query_must_succeed(self):
         self.assertTrue(self.check(server="zabbix")["verification_passed"])
         self.assertFalse(self.check(server="zabbix", tool_error=True)["verification_passed"])
+
+
+class NativeDelegatedConnectionTests(unittest.TestCase):
+    def test_delegated_ssh_uses_original_tra_facts_and_pinned_testserver(self):
+        play = yaml.safe_load((ROOT / "playbooks/deploy_linux_mcp.yml").read_text())[0]
+        block = next(task for task in play["tasks"][0]["block"] if task.get("delegate_to") == "testserver1")
+        block["block"] = [block["block"][0]]
+        block["block"][0]["no_log"] = False  # Synthetic fixture only; deployed logging remains protected.
+        with tempfile.TemporaryDirectory(prefix="mcp-delegated-ssh-") as temporary:
+            folder = Path(temporary)
+            recorded = folder / "ssh-arguments.json"
+            recorder = folder / "ssh-recorder"
+            recorder.write_text(
+                "#!" + sys.executable + "\nimport json,sys\nfrom pathlib import Path\n"
+                "Path(" + repr(str(recorded)) + ").write_text(json.dumps(sys.argv[1:]))\n"
+                "print('Synthetic SSH recorder; no connection made',file=sys.stderr)\nraise SystemExit(1)\n"
+            )
+            recorder.chmod(0o700)
+            trust = folder / "known-hosts"
+            tasks = [{"name": "Compute only original-host connection facts", "ansible.builtin.set_fact": {
+                "demo_mcp_config": {"testserver": {"address": "192.0.2.77", "user": "synthetic", "port": 2207, "machine_id": "b" * 32}},
+                "demo_mcp_trust": {"path": str(trust)},
+            }}, block]
+            playbook = folder / "play.yml"; playbook.write_text(yaml.safe_dump([{"hosts": "tra", "gather_facts": False, "tasks": tasks}], sort_keys=False))
+            inventory = folder / "inventory.yml"; inventory.write_text(yaml.safe_dump({"all": {"hosts": {
+                "tra": {"ansible_connection": "local"},
+                "testserver1": {"ansible_connection": "ssh", "ansible_ssh_executable": str(recorder), "ansible_ssh_retries": 0},
+            }}}))
+            environment = dict(os.environ, ANSIBLE_LOCAL_TEMP=str(folder / "local"), ANSIBLE_REMOTE_TEMP=str(folder / "remote"),
+                               ANSIBLE_SSH_CONTROL_PATH_DIR=str(folder / "cp"), ANSIBLE_NOCOLOR="1")
+            result = subprocess.run([sys.executable, "-m", "ansible.cli.playbook", "-i", str(inventory), str(playbook)],
+                                    env=environment, text=True, capture_output=True, timeout=60)
+            self.assertNotEqual(result.returncode, 0)  # The recorder deliberately refuses every SSH command.
+            self.assertTrue(recorded.exists(), result.stdout + result.stderr)
+            self.assertNotIn("is undefined", result.stdout + result.stderr)
+            arguments = json.loads(recorded.read_text())
+            self.assertIn("192.0.2.77", arguments)
+            self.assertIn("Port=2207", arguments)
+            self.assertTrue(any(value in arguments for value in ['User="synthetic"', 'User=synthetic']))
+            self.assertIn("StrictHostKeyChecking=yes", arguments)
+            self.assertIn("UserKnownHostsFile=" + str(trust), arguments)
 
 
 if __name__ == "__main__":

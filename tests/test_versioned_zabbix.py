@@ -34,8 +34,20 @@ class VersionedZabbixTests(unittest.TestCase):
         interface=E.SubElement(devices,'interface',type='network');E.SubElement(interface,'source',network='isolated');E.SubElement(interface,'mac',address='52:54:00:12:34:56')
         xml=E.tostring(root).decode();result=policy.domain_record(xml,config);self.assertEqual(result['guest_host_keys'],record['guest_host_keys'])
         early=policy.provenance(config,result);self.assertNotIn('ip',early)
+        self.assertFalse(early['verified'])
         routed=policy.provenance(config,result,'192.0.2.123');self.assertEqual(routed['api_url'],'http://192.0.2.123/api_jsonrpc.php')
         self.assertNotIn('token',routed);self.assertNotIn('password',routed)
+        verified=policy.provenance(config,result,'192.0.2.123',{'bridge':'vmbr0','gateway':'192.0.2.1'},'2'*32)
+        self.assertTrue(verified['verified']);self.assertEqual(verified['machine_id'],'2'*32)
+        self.assertEqual(verified['address'],'192.0.2.123');self.assertEqual(verified['bridge'],'vmbr0')
+        self.assertEqual(verified['network'],'isolated');self.assertEqual(verified['host_keys'],record['guest_host_keys'])
+        for identity in ('', '1'*32, 'not-a-machine-id'):
+            with self.assertRaises(AnsibleFilterError):policy.provenance(config,result,'192.0.2.123',{'bridge':'vmbr0'},identity)
+        indexed=xml.replace('file="'+config['disk']+'"','file="'+config['disk']+'" index="1"')
+        self.assertEqual(policy.domain_record(indexed,config),result)
+        for source_extra in (' index="0"',' protocol="https"',' index="x"'):
+            invalid=xml.replace('file="'+config['disk']+'"','file="'+config['disk']+'"'+source_extra)
+            with self.assertRaises(AnsibleFilterError):policy.domain_record(invalid,config)
         for invalid in (xml.replace('zabbix-v07.disk','production.disk'),xml.replace('network="isolated"','network="foreign"'),xml.replace('aap27-test-7','aap27-test-8')):
             with self.assertRaises(AnsibleFilterError):policy.domain_record(invalid,config)
         self.assertEqual(policy.guest_address('vnet0 52:54:00:12:34:56 ipv4 192.0.2.123/24',result['mac']),'192.0.2.123')
