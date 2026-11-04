@@ -1,5 +1,20 @@
 # Design decisions history
 
+## Verify the existing agent job on its intended guest — 2026-11-04
+
+The existing agent playbook completed a normal job after private capture
+implementation `f44193a` selected this repository and host implementation
+`223606d` recorded the approved HTTPS bootstrap allowance. Its fixed one-host
+limit and guest machine identity were verified. Installation, selected server
+configuration and enabled service passed, followed by a successful passive
+agent ping from the matching monitoring VM.
+
+The owner's real website button/webhook test also produced successful automatic
+restore and rearm jobs. Exact environment/job details remain in the private
+evidence Vault. Copied testserver monitoring and remaining guest recovery
+restrictions are still separate unfinished work. These checks make no further
+source-code or credential changes; Git publication remains pending.
+
 ## Reconcile copied monitoring before enabling delivery — 2026-11-04
 
 Implementation `1172d8a` follows the owner's requirement to replace copied

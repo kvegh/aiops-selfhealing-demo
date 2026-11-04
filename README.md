@@ -227,6 +227,12 @@ remain unpublished under the current Git restriction. The live reconciliation
 used the reviewed helper through the existing authenticated API; a normal
 deployment job using this new revision has not yet run.
 
+The existing Zabbix agent job also passed on the verified new test guest after
+its CaC project reference was corrected and package-download HTTPS was approved.
+The matching monitoring VM received a successful passive agent ping. Copied
+testserver monitoring remains disabled; guest isolation removal and monitoring
+activation are separate steps.
+
 ### Audience website lifecycle
 
 For a new versioned recovery deployment, use the
