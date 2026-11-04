@@ -89,6 +89,15 @@ templates, and the status page are still outstanding.
   stack. All three pages now make zero external requests, so they render
   identically on an audience phone with nothing but venue wifi.
 
+## [1.1.3] — 2026-11-04
+
+### Changed
+
+- Generalized the displayed AI runtime label to **Codex/Claude/Copilot etc**,
+  split across two lines inside the existing agent node. Walkthrough narration
+  describes the agent role; technical detail retains the actual Claude Code
+  CLI launcher and does not imply new runtime integrations were implemented.
+
 ## [1.1.2] — 2026-11-04
 
 ### Changed

@@ -1,6 +1,6 @@
 # Interactive recovery walkthrough
 
-Version: **1.1.2**. This static presenter walkthrough illustrates the existing
+Version: **1.1.3**. This static presenter walkthrough illustrates the existing
 missing-`zabbix-agent2` recovery scenario. It is separate from the live audience
 website and makes no infrastructure connections. All findings, status changes,
 and timing are simulated; a successful walkthrough is not live recovery proof.
@@ -33,8 +33,12 @@ confirms the result after the remediation job succeeds.
 
 ## What the diagram means
 
-EDA is inside the AAP platform. An AAP job starts Claude Code CLI on its runtime
-host. Every AI interaction with Zabbix, Linux, and AAP is drawn through the
+EDA is inside the AAP platform. An AAP job starts the AI agent runtime, shown
+as **Codex/Claude/Copilot etc**. The current repository implementation still
+launches Claude Code CLI; the broader label describes the agent role, not
+additional implemented integrations. Technical excerpts and source links retain
+the real launcher and job-template names. Every AI interaction with Zabbix,
+Linux, and AAP is drawn through the
 corresponding MCP interface. Dashed blue paths are diagnostic requests and
 responses. Purple paths request an AAP job. Event and job dispatch paths are
 separate; the teal execution path originates from Automation Controller and

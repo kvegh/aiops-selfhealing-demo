@@ -93,7 +93,7 @@ kbd{font-family:inherit;border:1px solid #d7e0e9;border-radius:3px;padding:1px 4
 .agent-node .node-surface{fill:url(#agent-fill);stroke:#a5d9d3}
 .agent-node.is-active>.node-surface{stroke:#007b84}
 .agent-node.is-active .agent-halo{opacity:.5}
-.agent-name{font-size:19px;font-weight:600;fill:#064e4b}
+.agent-name{font-size:17px;font-weight:600;fill:#064e4b}
 .agent-constellation{stroke:#148a8b;fill:#fff;stroke-width:1.2}
 .agent-constellation .agent-core{fill:#007b84;stroke:#fff;stroke-width:2}
 .agent-divider{stroke:#bce2dc}

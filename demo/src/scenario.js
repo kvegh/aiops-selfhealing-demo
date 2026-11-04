@@ -108,8 +108,8 @@
     "id": "agent-awake",
     "phase": "Trigger",
     "title": "The AAP job wakes the AI.",
-    "short": "Claude Code CLI starts headlessly.",
-    "description": "The launcher invokes Claude Code CLI on its runtime host. The agent can now investigate through its configured MCP interfaces. It has not requested a remediation.",
+    "short": "The AI agent runtime starts headlessly.",
+    "description": "The AAP job starts the AI agent runtime, shown here as Codex/Claude/Copilot etc. The agent can now investigate through its configured MCP interfaces. It has not requested a remediation.",
     "caption": "AAP launches the agent runtime. Investigation comes next.",
     "active": [
       "controller",
@@ -350,7 +350,7 @@
       "checks"
     ],
     "source": "README.md",
-    "excerpt": "Monitoring → EDA → AAP investigation job → Claude Code CLI\n→ MCP investigation → diagnosis → AAP catalog selection\n→ AAP remediation job → monitoring-confirmed recovery",
+    "excerpt": "Monitoring → EDA → AAP investigation job → AI agent runtime\n→ MCP investigation → diagnosis → AAP catalog selection\n→ AAP remediation job → monitoring-confirmed recovery",
     "evidence": [
       "AI: investigation and selection",
       "AAP: execution",
@@ -480,7 +480,7 @@
       }
     });
   }
-  const api = freeze({ steps, flows, stateAt, version: '1.1.2', sourceBase: 'https://github.com/kvegh/aiops-selfhealing-demo/blob/main/' });
+  const api = freeze({ steps, flows, stateAt, version: '1.1.3', sourceBase: 'https://github.com/kvegh/aiops-selfhealing-demo/blob/main/' });
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.AIOpsDemo = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

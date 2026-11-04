@@ -8,7 +8,7 @@ AI-driven incident remediation for enterprise infrastructure — with the blast 
 
 **AAP is the Trusted Execution Layer.** Explore one presenter-paced recovery
 story in [`demo/index.html`](demo/index.html): Zabbix detects a missing
-`zabbix-agent2` package, EDA launches an AAP job that wakes Claude Code CLI,
+`zabbix-agent2` package, EDA launches an AAP job that wakes an AI agent runtime,
 the AI investigates all three systems through MCP and selects existing
 automation, AAP executes **Deploy Zabbix Agent**, and monitoring confirms
 recovery afterward. Job success and monitoring recovery are separate steps.
@@ -20,9 +20,12 @@ simulation; the walkthrough distinguishes AAP platform capabilities from the
 agent instructions and hardening still to do. See the
 [presenter, validation, and GitHub Pages guide](docs/12-interactive-recovery-walkthrough.md).
 [Open the published visualization](https://kvegh.github.io/aiops-selfhealing-demo/).
-GitHub Pages uses the included Actions workflow. Frontend release: **1.1.2**.
+GitHub Pages uses the included Actions workflow. Frontend release: **1.1.3**.
 The palette uses a deep navy AAP platform with a thin red brand accent,
 blue MCP paths, teal AI/execution accents, and labeled failure/recovery states.
+The diagram labels the agent role **Codex/Claude/Copilot etc**. The current
+repository launcher still invokes Claude Code CLI; the visualization does
+not provision additional agent integrations.
 
 ## What this is
 
