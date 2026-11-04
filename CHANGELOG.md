@@ -89,6 +89,21 @@ templates, and the status page are still outstanding.
   stack. All three pages now make zero external requests, so they render
   identically on an audience phone with nothing but venue wifi.
 
+## [1.1.0] — 2026-11-04
+
+### Added
+
+- A static interactive visualization of the existing missing-Zabbix-agent
+  recovery scenario, with 17 presenter-paced stops, a persistent SVG architecture,
+  all three MCP investigations, distinct reasoning and catalog discovery,
+  AAP-only remediation execution, and subsequent monitoring confirmation.
+- Keyboard and direct-step navigation, motion controls, reduced-motion support,
+  responsive architecture scrolling, and source-linked technical detail.
+- Built-in Node model checks and an allowlisted GitHub Pages workflow that
+  validates pull requests and prepares publication from `main`.
+- Presenter/publication documentation with explicit simulated-evidence and
+  functionality-demo limitations. No live infrastructure configuration changes.
+
 ## [1.0.0] — 2026-10-05
 
 First proven version: Zabbix-agent self-healing (Level 1), demonstrated

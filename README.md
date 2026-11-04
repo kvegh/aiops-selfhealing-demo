@@ -4,6 +4,24 @@ AI-driven incident remediation for enterprise infrastructure — with the blast 
 
 > **This is a functionality demo, not a production reference architecture.** No attempt is made to follow least-privilege, security hardening, or production-grade guidelines. That is intentional — the goal is to demonstrate the architecture and the self-healing flow, not to provide a deployable solution.
 
+## Interactive recovery walkthrough
+
+**AAP is the Trusted Execution Layer.** Explore one presenter-paced recovery
+story in [`demo/index.html`](demo/index.html): Zabbix detects a missing
+`zabbix-agent2` package, EDA launches an AAP job that wakes Claude Code CLI,
+the AI investigates all three systems through MCP and selects existing
+automation, AAP executes **Deploy Zabbix Agent**, and monitoring confirms
+recovery afterward. Job success and monitoring recovery are separate steps.
+
+The self-contained frontend needs no live infrastructure, credentials, build,
+or external assets. It includes keyboard navigation, reduced-motion support,
+source previews, and a persistent architecture. This is a functionality
+simulation; the walkthrough distinguishes AAP platform capabilities from the
+agent instructions and hardening still to do. See the
+[presenter, validation, and GitHub Pages guide](docs/12-interactive-recovery-walkthrough.md).
+The Pages workflow is prepared; publication still requires repository Pages
+settings and a successful deployment. Frontend release: **1.1.0**.
+
 ## What this is
 
 A reproducible demo in which infrastructure incidents are detected, diagnosed, and remediated automatically — including incidents nobody wrote a runbook for. An AI agent investigates the unknown cases and resolves them, yet at no point holds the ability to change systems directly: every change, without exception, runs through the organization's governed automation platform.
