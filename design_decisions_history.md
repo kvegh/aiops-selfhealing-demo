@@ -437,3 +437,19 @@ The revised procedure resolves the runtime against the selected guest package
 database, includes conditional SELinux providers, and records only the proven
 install set. The real read-only solve required no installed package removals.
 This documentation does not claim the later installation or MCP smoke test.
+
+
+## Preserve original SSH context and complete cloned guest identity
+
+Implementation 06f64ba fixes delegated testserver connection options by reading
+the original TRA facts explicitly. The actual MCP installation reached the
+identity check after installing the verified runtime and image, then Ansible
+failed to resolve the delegated variables before SSH. A native SSH recorder
+reproduces the original error and verifies the corrected pinned connection.
+
+The Zabbix deployment also emits complete verified machine, SSH and network
+ownership once guest identity has been checked, supporting later MCP setup and
+cleanup. Its exact-disk guard accepts the positive numeric index produced by
+libvirt while rejecting foreign source attributes and different files. Nine MCP
+cases and nine Zabbix cases, syntax checks and scoped production lint passed.
+These fixes do not claim the subsequent live deployment has completed.
