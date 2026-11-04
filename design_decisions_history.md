@@ -1,5 +1,28 @@
 # Design decisions history
 
+## Reconcile copied monitoring before enabling delivery — 2026-11-04
+
+Implementation `1172d8a` follows the owner's requirement to replace copied
+production endpoints with the selected deployment's settings before enabling
+event forwarding. It updates known host identities, item labels, trigger labels,
+interfaces and URL macros in place, preserving record IDs and history. The
+canonical website check stays distinct from the disabled imported duplicate.
+Copied dashboard credentials are cleared, and stale administrator EDA media
+associations are removed while unrelated media remain disabled.
+
+The selected website action stays disabled through frontend and exact delivery
+readbacks. The existing delivery flag enables only that action as the last
+configuration write. Other inherited hosts and actions remain disabled. This
+retains the approved quarantine and existing Basic Event Stream authentication.
+
+Nineteen focused tests, including real Ansible execution of final enable and
+failure-before-frontend paths, passed. Syntax, twelve-file production lint and
+whitespace checks passed. The selected live clone's reconciliation readback is
+idempotent, trusted frontend checks passed, and an unmatched diagnostic event
+reached its own Event Stream over trusted HTTPS. Automatic outage recovery has
+not yet been verified. Publication remains pending under the active local-only
+Git rule.
+
 ## Verify the versioned website after base tooling — 2026-11-04
 
 The normal website deployment from implementations `73d6b08` and `cf111b2`
