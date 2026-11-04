@@ -690,3 +690,24 @@ and rulebooks were verified unchanged. No dependency or browser was installed
 or run; rendered layout review remains unverified.
 
 Implementation commit: `26223e3`.
+
+## Make functionality more prominent than product names
+
+The user clarified that functionality should be the primary visual message.
+Release 1.1.4 makes PROD SERVER, MONITORING, and AGENTIC AI the large headings,
+with smaller captions reading Red Hat Enterprise Linux, Zabbix in this case,
+and Claude in this case. Role headings use 22 px SVG type and product captions
+11 px. The AAP platform follows the same hierarchy: TRUSTED EXECUTION LAYER
+is the 25 px heading and Ansible Automation Platform is the 12 px product
+caption. Existing palette, shapes, connection routes, step controls and
+monitoring-verification behavior remain. Other agent runtimes are still
+mentioned as examples in technical documentation; no runtime configuration
+was changed.
+
+Validation: both runtime syntax checks, all 14 existing story/application
+checks, exact heading/product-caption verification, and diff checks passed.
+Automation, rulebooks, and agent instructions were verified unchanged. No
+new tests were added for this presentation adjustment. No browser or dependency
+was installed or run; rendered browser review remains unverified.
+
+Implementation commit: `b7c1409`.
