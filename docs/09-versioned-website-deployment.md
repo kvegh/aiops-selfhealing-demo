@@ -120,3 +120,14 @@ After the actual Enable job, inspect its terminal result, the exact DNS record,
 trusted public HTTPS, nginx validation and the arm-marker's absence. Confirm
 both EDA activation definitions remain disabled. A successful configuration
 import or healthy website alone does not prove the monitoring/remediation loop.
+
+The fresh test deployment has now passed its normal Enable job and independent
+public HTTPS/content, nginx and selected-AAP webhook checks. Its arm marker is
+absent. The matching monitoring item reports HTTP 200 without a problem trigger;
+event delivery remains disabled.
+
+An initial certificate request encountered cached NXDOMAIN immediately after
+record creation. The playbook restored nginx safely. Both A and AAAA lookups
+were checked through two public resolvers before rerunning the existing Enable
+job successfully. Keep a correct owned DNS record and the approved account;
+certificate verification does not require a trust bypass or account registration.

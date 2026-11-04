@@ -1,5 +1,19 @@
 # Design decisions history
 
+## Verify the versioned website after base tooling — 2026-11-04
+
+The normal website deployment from implementations `73d6b08` and `cf111b2`
+has now succeeded after the owner-approved Git prerequisite installation.
+Independent checks cover public trusted HTTPS, healthy content, valid nginx,
+the selected new AAP webhook and enabled upstream certificate verification.
+The matching monitoring item reports HTTP 200 and no problem trigger. The
+button and event delivery remain disabled; no outage or agent execution was run.
+
+The first certificate request saw cached NXDOMAIN after DNS creation. The
+existing rollback preserved nginx; a normal rerun succeeded after independent
+public A/AAAA convergence checks. This is an operational result, with no new
+playbook, workflow, authentication mechanism or certificate-account registration.
+
 ## Verify both MCP jobs on the new TRA — 2026-11-03
 
 The normal Zabbix MCP job and an independent stdio/read-only query now pass on

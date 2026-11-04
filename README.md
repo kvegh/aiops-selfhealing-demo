@@ -210,7 +210,9 @@ Both new MCP installations have completed their normal jobs and passed real
 read-only queries against their matching testserver and monitoring instance.
 The normal Zabbix deployment has also succeeded, with independently
 verified clone authentication, quarantine and trusted public HTTPS protection.
-Website deployment and the complete remediation loop remain separate checks.
+The normal website deployment has also succeeded: versioned DNS, trusted HTTPS,
+content and the selected new AAP webhook were independently verified. Its button
+remains disarmed, and the complete remediation loop remains a separate check.
 
 ### Audience website lifecycle
 
