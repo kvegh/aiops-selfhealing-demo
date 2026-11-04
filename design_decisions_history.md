@@ -655,3 +655,19 @@ added for this visual correction. No browser was installed or run, in line
 with the user's server constraint; rendered review remains unverified.
 
 Implementation commit: `fdd676f`.
+
+## Reduce the visual dominance of the AAP brand accent
+
+After seeing release 1.1.1 live, the user found the solid Red Hat red header
+visually harsh. Release 1.1.2 restores the deep navy AAP header and dark
+headline, retaining only a thin red brand line and small brand details.
+The blue MCP paths, teal AI and execution accents, and labeled crimson/green
+incident states remain. This makes the large architectural form calm and
+stable while keeping a small brand reference.
+
+Both runtime syntax checks and all 14 existing story/application-handler tests
+passed. This correction changes color emphasis only and adds no browser or
+new dependency. Rendered browser inspection remains unverified under the
+user's no-Chromium constraint.
+
+Implementation commit: `06a06b9`.
