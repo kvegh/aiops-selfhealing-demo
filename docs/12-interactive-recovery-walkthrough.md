@@ -1,5 +1,7 @@
 # Interactive recovery walkthrough
 
+**[Open the interactive AIOps visualization](https://kvegh.github.io/aiops-selfhealing-demo/)**
+
 Version: **1.1.6**. This static presenter walkthrough illustrates the existing
 missing-`zabbix-agent2` recovery scenario. It is separate from the live audience
 website and makes no infrastructure connections. All findings, status changes,

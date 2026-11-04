@@ -1,5 +1,7 @@
 # Starting setup
 
+**[Open the interactive AIOps visualization](https://kvegh.github.io/aiops-selfhealing-demo/)**
+
 Baseline environment — all of this is a **prerequisite**. The build guide starts from this state.
 
 ## Environment overview
