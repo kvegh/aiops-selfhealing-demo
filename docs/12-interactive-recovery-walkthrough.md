@@ -93,8 +93,13 @@ keyboard controls, rapid navigation, reduced motion, and desktop/mobile layouts.
 
 At inspection, this repository had no configured Pages site or Pages workflow.
 The implementation follows the existing Windows walkthrough's buildless folder
-and GitHub Actions publishing pattern. This prepares publication; checking in
-the workflow does not enable GitHub Pages in repository settings.
+and GitHub Actions publishing pattern. Pages was subsequently enabled with
+GitHub Actions as the build source. The deployment at `777ec46` succeeded on
+2026-11-04 after the initially missing Pages setting was configured; the public
+HTML returned HTTP 200 and matched the committed frontend byte for byte.
+[Open the published visualization](https://kvegh.github.io/aiops-selfhealing-demo/).
+
+For future updates or recreation:
 
 1. Merge the reviewed visualization changes into `main`.
 2. In repository **Settings → Pages → Build and deployment**, select
@@ -104,7 +109,7 @@ the workflow does not enable GitHub Pages in repository settings.
 4. Check that the validation and Pages deployment jobs both succeed. Use the
    deployment URL returned by the workflow.
 
-Expected project-site URL after successful publication:
+Published project-site URL:
 <https://kvegh.github.io/aiops-selfhealing-demo/>.
 
 The workflow stages an explicit allowlist: `index.html`, `icon.svg`, the three
@@ -117,3 +122,11 @@ Reference presentation and source:
 and its [repository](https://github.com/kvegh/disconnected-windows-patching).
 The [GitHub Pages workflow guide](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)
 describes the publishing actions and required permissions.
+
+## Validation outcome
+
+All 14 model and application-handler tests passed locally and in GitHub Actions.
+The user declined installing Chromium on the server. Playwright's temporary QA
+library was installed with approval, but no browser was installed or run.
+Rendered desktop/mobile layout and real-browser accessibility behavior remain
+unverified; the minimal DOM harness is an interaction check only.

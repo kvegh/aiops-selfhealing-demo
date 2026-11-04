@@ -619,3 +619,14 @@ installed and rendered desktop/mobile inspection was not performed. The DOM
 harness does not attest to browser layout.
 
 Implementation commit: `19da250`.
+
+Publication outcome: the user explicitly requested pushing the visualization
+and its GitHub Pages link. Both implementation and decision commits were pushed
+to `main` over SSH. The first workflow run failed at Configure GitHub Pages
+because Pages was not enabled. After inspecting that exact error, Pages was
+enabled with the workflow build source and only the failed deployment was
+rerun. GitHub Actions run `41824037505`, attempt 2, succeeded at source
+`777ec46`; both validation and publication succeeded. The public HTML returned
+HTTP 200 and matched the committed frontend byte for byte. No Chromium was
+installed, no browser-based layout review was claimed, and no managed
+infrastructure was contacted. Implementation remains `19da250`.

@@ -19,8 +19,8 @@ source previews, and a persistent architecture. This is a functionality
 simulation; the walkthrough distinguishes AAP platform capabilities from the
 agent instructions and hardening still to do. See the
 [presenter, validation, and GitHub Pages guide](docs/12-interactive-recovery-walkthrough.md).
-The Pages workflow is prepared; publication still requires repository Pages
-settings and a successful deployment. Frontend release: **1.1.0**.
+[Open the published visualization](https://kvegh.github.io/aiops-selfhealing-demo/).
+GitHub Pages uses the included Actions workflow. Frontend release: **1.1.0**.
 
 ## What this is
 
