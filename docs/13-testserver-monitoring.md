@@ -83,22 +83,18 @@ and the account already owning its private MCP configuration. Both Linux and
 Zabbix stdio servers initialized and listed the expected tools using only local
 images, without a tool call. They create no public MCP listener.
 
-The remaining concrete prerequisites on that TRA are Claude Code in the job
-account's executable path, its own approved provider authentication, the reviewed
-`CLAUDE.md` instructions in its workspace, and an authenticated private AAP MCP
-client connection to the matching AAP. The existing Linux/Zabbix MCP deployment
-does not install or supply these. The TRA still has neither a recovery release
-nor an HTTPS exception, so model-provider connectivity also needs its own
-reviewed policy decision. Do not copy source authentication or weaken recovery
-isolation as a fallback. Provider authentication was inspected only for local
-presence; no provider request or credential refresh was attempted.
+The combined Claude/MCP installer now supplies the selected private AAP client
+and additive application-scoped CA from the existing encrypted instance/runtime
+records. Follow the [Claude deployment procedure](14-claude-deployment.md) for
+normal base/CaC backfill and the bounded runner. Initial Linux/Zabbix read-only
+model access alone is not a remediation proof.
 
-After those prerequisites are deliberately configured and verified, review the
-selected agent-event forwarding and activation, sync the published rulebook,
-then authorize and run the controlled agent-down rehearsal. The proof must show
-the agent calls the matching AAP's existing repair template and Zabbix receives
-fresh recovery samples. No CLI installation, provider login, activation, model
-invocation or new outage was performed during this readiness inspection.
+After those prerequisites are deliberately configured, review selected agent
+forwarding and activation, sync the rulebook, then separately authorize one
+controlled agent-down rehearsal. Existing **Run Claude to analyse and fix** may
+launch only the checked saved **Deploy Zabbix Agent** template. Native child-job,
+selected service and fresh monitoring recovery checks determine success; model
+text does not. The working website action and activation remain separate.
 
 ## Verified deployment state
 

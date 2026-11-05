@@ -17,6 +17,7 @@ ALLOWED_SETTINGS = {
     "demo_zabbix_event_stream",
     "demo_zabbix_mcp_api_token",
     "demo_claude_vertex_auth",
+    "demo_aap_mcp",
 }
 
 

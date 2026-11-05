@@ -1,0 +1,66 @@
+---
+- name: Choose a public CA file only inside the verified application workspace
+  ansible.builtin.set_fact:
+    demo_claude_ca_path: "{{ demo_mcp_workspace.path }}/.aiops-aap-ca.pem"
+
+- name: Inspect the application CA without following a link
+  ansible.builtin.stat:
+    path: "{{ demo_claude_ca_path }}"
+    follow: false
+    checksum_algorithm: sha256
+  register: demo_claude_ca_before
+
+- name: Preserve a different authority or unrelated path for explicit review
+  ansible.builtin.assert:
+    that: >-
+      not demo_claude_ca_before.stat.exists or
+      (demo_claude_ca_before.stat.isreg | default(false) and
+       not demo_claude_ca_before.stat.islnk | default(false) and
+       demo_claude_ca_before.stat.uid == demo_mcp_user.uid and
+       demo_claude_ca_before.stat.checksum == (demo_claude_aap.ca_pem | hash('sha256')))
+    quiet: true
+    fail_msg: Preserve the different existing application CA and review its selected instance.
+
+- name: Install only the selected public CA without changing system trust
+  ansible.builtin.copy:
+    content: "{{ demo_claude_aap.ca_pem }}"
+    dest: "{{ demo_claude_ca_path }}"
+    owner: "{{ demo_mcp_user.name }}"
+    group: "{{ demo_mcp_user.gid }}"
+    mode: '0600'
+  diff: false
+
+- name: Inspect existing client storage without following a link
+  ansible.builtin.stat:
+    path: "{{ demo_mcp_user.home }}/.claude.json"
+    follow: false
+  register: demo_claude_client_before
+
+- name: Require the existing runtime account's regular client configuration
+  ansible.builtin.assert:
+    that: >-
+      not demo_claude_client_before.stat.exists or
+      (demo_claude_client_before.stat.isreg | default(false) and
+       not demo_claude_client_before.stat.islnk | default(false) and
+       demo_claude_client_before.stat.uid == demo_mcp_user.uid)
+    quiet: true
+
+- name: Read the client without logging its stored bearer values
+  ansible.builtin.slurp:
+    src: "{{ demo_mcp_user.home }}/.claude.json"
+  register: demo_claude_client_previous
+  when: demo_claude_client_before.stat.exists
+
+- name: Merge only the matching private AAP MCP entry
+  ansible.builtin.copy:
+    content: >-
+      {{ (demo_claude_client_previous.content | default('') | b64decode) |
+         demo_claude_aap_client(demo_mcp_workspace.path, demo_claude_aap.definition) | to_nice_json }}
+    dest: "{{ demo_mcp_user.home }}/.claude.json"
+    owner: "{{ demo_mcp_user.name }}"
+    group: "{{ demo_mcp_user.gid }}"
+    mode: '0600'
+  diff: false
+
+- name: Verify only the selected native private AAP MCP connection
+  ansible.builtin.include_tasks: demo_claude_aap_probe.yml

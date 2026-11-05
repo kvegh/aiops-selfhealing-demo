@@ -1,42 +1,381 @@
 ---
-- name: Run Claude to analyse and fix Zabbix alert
+# Verify this TRA, the private MCPs and existing saved repair before one bounded
+# agent run. Only that AAP repair may change the selected testserver. Tokens stay
+# in private files; native permission checks and existing hooks remain active.
+- name: Run bounded Claude diagnosis and the selected existing AAP repair
   hosts: all
   gather_facts: false
-
+  vars:
+    demo_agent_allowed_tools:
+      - mcp__linux-mcp__get_system_information
+      - mcp__linux-mcp__get_cpu_information
+      - mcp__linux-mcp__get_disk_usage
+      - mcp__linux-mcp__get_hardware_information
+      - mcp__linux-mcp__get_journal_logs
+      - mcp__linux-mcp__get_listening_ports
+      - mcp__linux-mcp__get_memory_information
+      - mcp__linux-mcp__get_network_connections
+      - mcp__linux-mcp__get_network_interfaces
+      - mcp__linux-mcp__get_process_info
+      - mcp__linux-mcp__get_service_logs
+      - mcp__linux-mcp__get_service_status
+      - mcp__linux-mcp__list_block_devices
+      - mcp__linux-mcp__list_directories
+      - mcp__linux-mcp__list_files
+      - mcp__linux-mcp__list_processes
+      - mcp__linux-mcp__list_services
+      - mcp__linux-mcp__read_file
+      - mcp__linux-mcp__read_log_file
+      - mcp__zabbix__host_get
+      - mcp__zabbix__hostgroup_get
+      - mcp__zabbix__problem_get
+      - mcp__zabbix__trigger_get
+      - mcp__zabbix__event_get
+      - mcp__zabbix__item_get
+      - mcp__zabbix__history_get
+      - mcp__aap-mcp__jobs_list
+      - mcp__aap-mcp__jobs_retrieve
+      - mcp__aap-mcp__jobs_job_events_list
+      - mcp__aap-mcp__job_templates_list
+      - mcp__aap-mcp__job_templates_retrieve
+      - mcp__aap-mcp__job_templates_launch_retrieve
+      - mcp__aap-mcp__job_templates_launch_create
   tasks:
-    # No default on purpose — a play-level var would outrank the inventory
-    # and silently shadow whatever AAP supplies.
-    - name: Require the agent user
-      ansible.builtin.assert:
-        that:
-          - claude_agent_user is defined
-          - claude_agent_user | length > 0
-        fail_msg: >-
-          claude_agent_user is not set. Supply it from the AAP inventory, a job
-          template extra variable, or -e claude_agent_user=... on the CLI.
-        quiet: true
+    - name: Verify selected resources and execute one bounded agent
+      no_log: true
+      block:
+        - name: Load the selected encrypted runtime
+          ansible.builtin.include_tasks: tasks/demo_runtime_settings.yml
+          vars:
+            demo_runtime_expected_instance: "{{ demo_mcp_deployment.instance_name }}"
 
-    - name: Run Claude Code CLI
-      # shell, not command — command breaks on quoted arguments in the CLI invocation.
-      # Model pinned: the "opus" alias moved to Opus 5.5 with CLI 2.1.305, and
-      # inter-phase findings/conclusions stopped appearing from that run on.
-      ansible.builtin.shell: >-
-        claude -p
-        "There is an alert on Zabbix, root cause analyse the alert and the state
-        of the affected server, and fix it autonomously. Afterwards create an
-        incident report and suggested further steps."
-        --model claude-opus-5
-        --dangerously-skip-permissions
-      args:
-        # Claude Code needs a working directory with CLAUDE.md guardrails.
-        # Defaulted inline, not at play level, so inventory still wins.
-        chdir: "{{ claude_agent_workdir | default('/home/' ~ claude_agent_user ~ '/claude-wd') }}"
-      # Controller connects as the ansible user, but Claude must run as the
-      # agent user (owns ~/.claude config, API keys, MCP wiring)
-      become: true
-      become_user: "{{ claude_agent_user }}"
-      register: claude_output
+        - name: Verify TRA using existing pinned guest checks
+          ansible.builtin.include_tasks: tasks/demo_mcp_target.yml
 
-    - name: Display incident report
-      ansible.builtin.debug:
-        var: claude_output.stdout_lines
+        - name: Require the existing runtime user and native AAP job context
+          ansible.builtin.assert:
+            that:
+              - claude_agent_user == demo_mcp_user.name
+              - awx_inventory_id is defined
+              - awx_project_id is defined
+            quiet: true
+
+        - name: Resolve the configured workspace and selected private connection
+          ansible.builtin.set_fact:
+            demo_mcp_workspace: "{{ demo_mcp_user | demo_mcp_workspace(claude_agent_workdir | default(none)) }}"
+            demo_claude_aap: "{{ demo_aap_mcp | default({}) | demo_claude_aap_mcp(demo_mcp_deployment.instance_name) }}"
+            demo_agent_zabbix: "{{ demo_mcp_deployment | demo_mcp_zabbix_configuration(demo_zabbix_mcp_api_token) }}"
+
+        - name: Inspect installed workspace instructions and application CA
+          ansible.builtin.stat:
+            path: "{{ item }}"
+            follow: false
+            checksum_algorithm: sha256
+          loop:
+            - "{{ demo_mcp_workspace.path }}"
+            - "{{ demo_mcp_workspace.path }}/CLAUDE.md"
+            - "{{ demo_mcp_workspace.path }}/.aiops-aap-ca.pem"
+          register: demo_agent_paths
+
+        - name: Require completed installation without changing user files
+          ansible.builtin.assert:
+            that:
+              - demo_agent_paths.results[0].stat.isdir | default(false)
+              - demo_agent_paths.results[0].stat.uid == demo_mcp_user.uid
+              - not demo_agent_paths.results[0].stat.islnk | default(false)
+              - demo_agent_paths.results[1].stat.isreg | default(false)
+              - not demo_agent_paths.results[1].stat.islnk | default(false)
+              - demo_agent_paths.results[1].stat.uid == demo_mcp_user.uid
+              - demo_agent_paths.results[1].stat.checksum == (lookup('ansible.builtin.file', playbook_dir + '/../AI_Instructions_Guardrails/CLAUDE.md', rstrip=false) | hash('sha256'))
+              - demo_agent_paths.results[2].stat.isreg | default(false)
+              - not demo_agent_paths.results[2].stat.islnk | default(false)
+              - demo_agent_paths.results[2].stat.uid == demo_mcp_user.uid
+              - demo_agent_paths.results[2].stat.checksum == (demo_claude_aap.ca_pem | hash('sha256'))
+            quiet: true
+            fail_msg: Complete the selected Claude/MCP installer; preserve unrelated user edits.
+
+        - name: Read installed private client and selected MCP SSH configuration
+          ansible.builtin.slurp:
+            src: "{{ item }}"
+          loop:
+            - "{{ demo_mcp_user.home }}/.claude.json"
+            - "{{ demo_mcp_user.home }}/.local/share/linux-mcp-server/ssh/config"
+          register: demo_agent_files
+
+        - name: Keep only existing selected servers and verified remote alias
+          ansible.builtin.set_fact:
+            demo_agent_servers: >-
+              {{ (demo_agent_files.results[0].content | b64decode) |
+                 demo_claude_agent_servers(demo_mcp_workspace.path, demo_claude_aap.definition) }}
+            demo_agent_alias: >-
+              {{ (demo_agent_files.results[1].content | b64decode) | demo_claude_linux_alias(demo_mcp_config.testserver) }}
+
+        - name: Read the existing same-project repair through trusted private HTTPS
+          ansible.builtin.uri:
+            url: >-
+              {{ demo_claude_aap.api_origin }}/api/controller/v2/job_templates/?name=Deploy%20Zabbix%20Agent&inventory={{ awx_inventory_id | int }}&project={{ awx_project_id | int }}
+            headers:
+              Authorization: "Bearer {{ demo_aap_mcp.token }}"
+            ca_path: "{{ demo_mcp_workspace.path }}/.aiops-aap-ca.pem"
+            validate_certs: true
+            follow_redirects: none
+            return_content: true
+            status_code: 200
+          register: demo_agent_repair_read
+
+        - name: Precheck saved repair inventory limit credentials and no-override settings
+          ansible.builtin.set_fact:
+            demo_agent_repair_id: >-
+              {{ demo_agent_repair_read.json | demo_claude_repair_template(awx_inventory_id | int, awx_project_id | int) }}
+
+        - name: Read only the repair's selected inventory host
+          ansible.builtin.uri:
+            url: "{{ demo_claude_aap.api_origin }}/api/controller/v2/inventories/{{ awx_inventory_id | int }}/hosts/?name=testserver1"
+            headers:
+              Authorization: "Bearer {{ demo_aap_mcp.token }}"
+            ca_path: "{{ demo_mcp_workspace.path }}/.aiops-aap-ca.pem"
+            validate_certs: true
+            follow_redirects: none
+            status_code: 200
+          register: demo_agent_repair_host_read
+
+        - name: Reject repair inventory drift before the agent can launch anything
+          ansible.builtin.assert:
+            that: >-
+              {{ demo_agent_repair_host_read.json |
+                 demo_claude_repair_host(demo_mcp_config.testserver, demo_mcp_config.instance_name) }}
+            quiet: true
+
+        - name: Check only current private AAP MCP availability without repeating stdio proofs
+          ansible.builtin.include_tasks: tasks/demo_claude_aap_probe.yml
+          vars:
+            demo_claude_ca_path: "{{ demo_mcp_workspace.path }}/.aiops-aap-ca.pem"
+
+        - name: Deny other native AAP tools in addition to the invocation-only request guard
+          ansible.builtin.set_fact:
+            demo_agent_denied_tools: >-
+              {{ demo_claude_aap_tool_names |
+                 difference(demo_agent_allowed_tools | select('match', '^mcp__aap-mcp__') |
+                   map('regex_replace', '^mcp__aap-mcp__', '') | list) |
+                 map('regex_replace', '^', 'mcp__aap-mcp__') | list }}
+
+        - name: Read the selected supported monitoring incident before invoking the model
+          ansible.builtin.uri:
+            url: "{{ demo_agent_zabbix.origin }}/api_jsonrpc.php"
+            method: POST
+            headers:
+              Authorization: "Bearer {{ demo_agent_zabbix.token }}"
+              Content-Type: application/json-rpc
+            body_format: json
+            body:
+              jsonrpc: '2.0'
+              method: host.get
+              params:
+                filter: {host: ["{{ demo_mcp_config.testserver.vm_name }}"]}
+                output: [hostid, host, status]
+                selectTriggers: [triggerid, description, status, value]
+              id: 1
+            follow_redirects: none
+            status_code: 200
+          register: demo_agent_incident_read
+
+        - name: Require the selected active agent-unavailable incident
+          ansible.builtin.set_fact:
+            demo_agent_incident: "{{ demo_agent_incident_read.json | demo_claude_agent_incident(demo_mcp_config.testserver.vm_name) }}"
+
+        - name: Allocate private invocation-only configuration
+          ansible.builtin.tempfile:
+            state: directory
+            prefix: aiops-agent-
+            path: /tmp
+          become: true
+          become_user: "{{ demo_mcp_user.name }}"
+          register: demo_agent_temporary
+
+        - name: Install the invocation-only deny check
+          ansible.builtin.copy:
+            src: "{{ playbook_dir }}/../src/check_demo_tool_request.py"
+            dest: "{{ demo_agent_temporary.path }}/check.py"
+            owner: "{{ demo_mcp_user.name }}"
+            group: "{{ demo_mcp_user.gid }}"
+            mode: '0500'
+
+        - name: Save selected definitions without putting bearer data in arguments
+          ansible.builtin.copy:
+            content: "{{ demo_agent_servers | to_nice_json }}"
+            dest: "{{ demo_agent_temporary.path }}/mcp.json"
+            owner: "{{ demo_mcp_user.name }}"
+            group: "{{ demo_mcp_user.gid }}"
+            mode: '0600'
+          diff: false
+
+        - name: Add the deny-only hook without editing saved settings
+          ansible.builtin.copy:
+            content: >-
+              {{ {'hooks': {'PreToolUse': [{'matcher': 'mcp__.*',
+                'hooks': [{'type': 'command', 'command': '/usr/bin/python3 ' ~ (demo_agent_temporary.path | quote) ~ '/check.py',
+                           'timeout': 10}]}]}} | to_nice_json }}
+            dest: "{{ demo_agent_temporary.path }}/settings.json"
+            owner: "{{ demo_mcp_user.name }}"
+            group: "{{ demo_mcp_user.gid }}"
+            mode: '0600'
+
+        - name: Run the bounded agent with native permissions
+          ansible.builtin.command:
+            argv: >-
+              {{ ['/usr/bin/timeout', '--signal=TERM', '--kill-after=10s', '600', '/usr/local/bin/claude', '-p',
+                  'Investigate only the current Zabbix alert on ' ~ demo_mcp_config.testserver.vm_name ~
+                  '. The verified Linux SSH alias is ' ~ demo_agent_alias ~
+                  '. Follow the maintained phases. All changes must use the existing Deploy Zabbix Agent template ID ' ~
+                  (demo_agent_repair_id | string) ~ ' on this AAP, with saved inputs and no overrides. Do not launch another template, change another host, modify tools/settings/authentication, or use a shell. Verify fresh monitoring recovery and report findings; report no ticket action if no ticket integration is configured.',
+                  '--model', 'claude-opus-5', '--max-turns', '24', '--output-format', 'stream-json', '--verbose',
+                  '--no-session-persistence', '--permission-mode', 'dontAsk', '--permission-prompts', 'none',
+                  '--tools', '', '--strict-mcp-config', '--mcp-config', demo_agent_temporary.path ~ '/mcp.json',
+                  '--settings', demo_agent_temporary.path ~ '/settings.json', '--disable-slash-commands', '--no-chrome',
+                  '--allowedTools'] + demo_agent_allowed_tools + (['--disallowedTools'] + demo_agent_denied_tools if demo_agent_denied_tools else []) }}
+            chdir: "{{ demo_mcp_workspace.path }}"
+          become: true
+          become_user: "{{ demo_mcp_user.name }}"
+          environment:
+            NODE_EXTRA_CA_CERTS: "{{ demo_mcp_workspace.path }}/.aiops-aap-ca.pem"
+            XDG_RUNTIME_DIR: "/run/user/{{ demo_mcp_user.uid }}"
+            DISABLE_AUTOUPDATER: '1'
+            ENABLE_TOOL_SEARCH: 'false'
+            AIOPS_ALLOWED_REPAIR_JT_ID: "{{ demo_agent_repair_id | string }}"
+            AIOPS_ALLOWED_LINUX_HOST: "{{ demo_agent_alias }}"
+            AIOPS_ALLOWED_TOOL_NAMES: "{{ demo_agent_allowed_tools | join(',') }}"
+          timeout: 630
+          register: claude_output
+
+        - name: Retain ordered assistant findings and the final report
+          ansible.builtin.set_fact:
+            demo_agent_report: "{{ claude_output.stdout | demo_claude_agent_report }}"
+            demo_agent_children: "{{ claude_output.stdout | demo_claude_launched_repairs(demo_agent_repair_id | int) }}"
+
+        - name: Display ordered phase findings and the incident report
+          ansible.builtin.debug:
+            msg: "{{ item }}"
+          loop: "{{ demo_agent_report }}"
+          no_log: false
+
+        - name: Wait for actually launched repairs with the certified Controller module
+          ansible.controller.job_wait:
+            job_id: "{{ item }}"
+            controller_host: "{{ demo_claude_aap.api_origin }}"
+            controller_oauthtoken: "{{ demo_aap_mcp.token }}"
+            validate_certs: true
+            request_timeout: 3
+            interval: 3
+            timeout: 90
+          environment:
+            SSL_CERT_FILE: "{{ demo_mcp_workspace.path }}/.aiops-aap-ca.pem"
+          loop: "{{ demo_agent_children }}"
+
+        - name: Read actual repair children with the certified Controller module
+          ansible.controller.job_list:
+            query: {id: "{{ item }}"}
+            controller_host: "{{ demo_claude_aap.api_origin }}"
+            controller_oauthtoken: "{{ demo_aap_mcp.token }}"
+            validate_certs: true
+            request_timeout: 3
+          environment:
+            SSL_CERT_FILE: "{{ demo_mcp_workspace.path }}/.aiops-aap-ca.pem"
+          loop: "{{ demo_agent_children }}"
+          register: demo_agent_child_readbacks
+
+        - name: Require saved target identity and success for every native child
+          ansible.builtin.assert:
+            that:
+              - item.count == 1
+              - item.results | length == 1
+              - item.results[0].status == 'successful'
+              - item.results[0].job_template == (demo_agent_repair_id | int)
+              - item.results[0].inventory == (awx_inventory_id | int)
+              - item.results[0].project == (awx_project_id | int)
+              - item.results[0].limit == 'testserver1'
+            quiet: true
+          loop: "{{ demo_agent_child_readbacks.results }}"
+
+        - name: Verify the selected guest's actual Zabbix agent service is running
+          ansible.builtin.command:
+            argv: [systemctl, is-active, zabbix-agent2]
+          delegate_to: testserver1
+          become: false
+          vars:
+            ansible_connection: ssh
+            ansible_host: "{{ hostvars[inventory_hostname].demo_mcp_config.testserver.address }}"
+            ansible_user: "{{ hostvars[inventory_hostname].demo_mcp_config.testserver.user }}"
+            ansible_port: "{{ hostvars[inventory_hostname].demo_mcp_config.testserver.port }}"
+            ansible_host_key_checking: true
+            ansible_ssh_host_key_checking: true
+            ansible_ssh_common_args: >-
+              -o StrictHostKeyChecking=yes
+              -o UserKnownHostsFile={{ hostvars[inventory_hostname].demo_mcp_trust.path | quote }}
+          register: demo_agent_service
+          changed_when: false
+          failed_when: demo_agent_service.stdout | trim != 'active'
+
+        - name: Mark the beginning of independent fresh recovery verification
+          ansible.builtin.command:
+            argv: [date, '+%s']
+          changed_when: false
+          register: demo_agent_recovery_clock
+
+        - name: Require a fresh selected agent ping and recovery of the original trigger
+          ansible.builtin.uri:
+            url: "{{ demo_agent_zabbix.origin }}/api_jsonrpc.php"
+            method: POST
+            headers:
+              Authorization: "Bearer {{ demo_agent_zabbix.token }}"
+              Content-Type: application/json-rpc
+            body_format: json
+            body:
+              jsonrpc: '2.0'
+              method: host.get
+              params:
+                hostids: ["{{ demo_agent_incident.host_id }}"]
+                output: [hostid, host, status]
+                selectItems: [key_, lastclock, lastvalue, state, status]
+                selectTriggers: [triggerid, description, status, value]
+              id: 1
+            follow_redirects: none
+            status_code: 200
+            timeout: 3
+          register: demo_agent_health
+          until: >-
+            demo_agent_health.json | demo_claude_monitoring_recovered(
+              demo_mcp_config.testserver.vm_name, demo_agent_incident, demo_agent_recovery_clock.stdout | int)
+          retries: 30
+          delay: 3
+
+        - name: Publish only the independently verified supported recovery result
+          ansible.builtin.set_stats:
+            data:
+              aiops_agent_recovery:
+                instance_name: "{{ demo_mcp_config.instance_name }}"
+                repair_job_ids: "{{ demo_agent_children }}"
+                selected_service_active: true
+                fresh_agent_ping_and_original_trigger_recovered: true
+      rescue:
+        - name: Report the failed bounded stage without credential-bearing diagnostics
+          ansible.builtin.fail:
+            msg: >-
+              The supported agent recovery did not pass at {{ ansible_failed_task.name }}.
+              No additional model run was started; credential-bearing diagnostics remain protected.
+          no_log: false
+      always:
+        - name: Remove only this invocation's private settings and hook
+          ansible.builtin.file:
+            path: "{{ demo_agent_temporary.path }}"
+            state: absent
+          become: true
+          become_user: "{{ demo_mcp_user.name }}"
+          when: demo_agent_temporary.path | default('') is match('^/tmp/aiops-agent-[A-Za-z0-9_]+$')
+
+        - name: Remove the execution environment's temporary SSH trust
+          ansible.builtin.file:
+            path: "{{ demo_mcp_trust.path }}"
+            state: absent
+          delegate_to: localhost
+          become: false
+          when: demo_mcp_trust.path is defined

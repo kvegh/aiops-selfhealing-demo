@@ -41,7 +41,7 @@ At runtime — live, immediately when a phase's last check returns, as its own o
 
 ### Phase 1 — Monitoring checks (Zabbix MCP)
 1. Note the alert onset time from Zabbix — this is the reference timestamp for all correlations.
-2. Check Zabbix agent availability (`active_available`). If `0`, call `hostinterface_get` immediately — a dead agent causes false negatives on all agent-based checks.
+2. Read the host's agent availability and interfaces with `host_get` and `extra_params: {"selectInterfaces": "extend"}`. Unknown active-check availability alone does not prove a passive agent is dead; check the interface and fresh item evidence.
 3. Check network/ICMP reachability in Zabbix.
 4. Check TCP service port status.
 5. Check application-level functionality per the monitoring template.
@@ -84,8 +84,8 @@ Maximum 2 complete cycles. If the problem persists after 2 cycles: generate a fu
 ## 3. linux-mcp — SSH Alias Rule
 
 Before calling any linux-mcp tool with a remote `host` parameter:
-1. Read `~/.ssh/config`.
-2. Find the `Host` alias for the target host.
+1. Use the selected SSH alias supplied by the launcher after it verifies the installed MCP SSH configuration. If no verified alias was supplied, inspect the applicable SSH configuration before proceeding.
+2. Match the alias to the selected target host; do not guess another host.
 3. Pass the alias as `host`, not the raw IP.
 
 **Why:** linux-mcp uses `~/.ssh/config` for connection resolution. A raw IP bypasses the config, causing authentication failures.
@@ -123,8 +123,8 @@ Treat Zabbix alert names as symptoms, not root causes. Always investigate host a
 When Claude CLI runs non-interactively (`claude -p`, e.g. launched by EDA/AAP), the default `--output-format text` prints ONLY the final message. Phase findings/conclusion blocks emitted between phases are lost, which violates Section 1.
 
 **Rule:** Any automation that launches Claude CLI for incident investigation MUST:
-1. Use `claude -p --output-format stream-json --verbose` so every intermediate message (phase announcements, findings, conclusions) is emitted live.
-2. Render the stream into readable job output (e.g. pipe through `jq` extracting assistant `text` content) so phase blocks appear in the AAP job stdout as they happen.
+1. Use `claude -p --output-format stream-json --verbose` so intermediate phase announcements, findings and conclusions are retained in their original order.
+2. Render the assistant messages and final report into readable AAP job output. The bounded functionality demo may display that ordered evidence when the job completes; live UI streaming is a separate feature.
 
 When creating, reviewing or modifying such a launcher (playbook, job template, EDA rulebook, wrapper script), verify these flags are present. If they are missing, flag it and fix it via the source repo / AAP — never silently accept final-only output.
 

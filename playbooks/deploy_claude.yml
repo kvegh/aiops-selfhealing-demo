@@ -27,6 +27,10 @@
             demo_claude_zabbix_preflight: >-
               {{ demo_mcp_deployment | demo_mcp_zabbix_configuration(demo_zabbix_mcp_api_token | default('')) }}
 
+        - name: Validate only the selected private AAP MCP connection before managed writes
+          ansible.builtin.set_fact:
+            demo_claude_aap: "{{ demo_aap_mcp | default({}) | demo_claude_aap_mcp(demo_mcp_deployment.instance_name) }}"
+
         - name: Reuse the existing TRA and SSH identity verification
           ansible.builtin.include_tasks: tasks/demo_mcp_target.yml
 
@@ -168,6 +172,7 @@
           ansible.builtin.stat:
             path: "{{ demo_mcp_workspace.path }}/CLAUDE.md"
             follow: false
+            checksum_algorithm: sha256
           register: demo_claude_guardrails_before
 
         - name: Preserve unrelated instruction paths for explicit review
@@ -176,18 +181,21 @@
               not demo_claude_guardrails_before.stat.exists or
               (demo_claude_guardrails_before.stat.isreg | default(false) and
                not demo_claude_guardrails_before.stat.islnk | default(false) and
-               demo_claude_guardrails_before.stat.uid == demo_mcp_user.uid)
+               demo_claude_guardrails_before.stat.uid == demo_mcp_user.uid and
+               demo_claude_guardrails_before.stat.checksum in
+                 ['bdee9f8410bff86489108c687f18968a3bf39c1c7bbd542e39dc3f4689046469',
+                  lookup('ansible.builtin.file', playbook_dir + '/../AI_Instructions_Guardrails/CLAUDE.md', rstrip=false) | hash('sha256')])
             quiet: true
             fail_msg: Preserve the unrelated workspace instructions and review their ownership.
 
-        - name: Seed only missing instructions from the maintained existing guardrails
+        - name: Install or update only the unchanged maintained guardrails
           ansible.builtin.copy:
             src: "{{ playbook_dir }}/../AI_Instructions_Guardrails/CLAUDE.md"
             dest: "{{ demo_mcp_workspace.path }}/CLAUDE.md"
             owner: "{{ demo_mcp_user.name }}"
             group: "{{ demo_mcp_user.gid }}"
             mode: '0600'
-            force: false
+            force: true
 
         - name: Provision the explicitly approved encrypted Vertex authentication
           ansible.builtin.include_tasks: tasks/demo_claude_vertex_apply.yml
@@ -211,6 +219,9 @@
               - (demo_claude_auth_status.stdout | from_json).authMethod == 'third_party'
               - (demo_claude_auth_status.stdout | from_json).apiProvider == 'vertex'
             quiet: true
+
+        - name: Configure and verify the selected private AAP MCP without a model
+          ansible.builtin.include_tasks: tasks/demo_claude_aap_mcp.yml
 
       always:
         - name: Remove the private download after success or failure
@@ -248,6 +259,7 @@
             instance_number: "{{ demo_mcp_config.instance_number }}"
             linux_mcp_verified: true
             zabbix_mcp_verified: true
+            aap_mcp_verified: true
             workspace_guardrails_present: true
             vertex_authentication_configured: true
             model_invoked: false

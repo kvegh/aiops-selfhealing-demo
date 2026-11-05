@@ -15,16 +15,24 @@
           template extra variable, or -e zabbix_server=... on the CLI.
         quiet: true
 
+    - name: Trust the fingerprint-pinned official Zabbix signing key
+      ansible.builtin.rpm_key:
+        key: https://repo.zabbix.com/RPM-GPG-KEY-ZABBIX-B5333005
+        fingerprint: "4C3D6F2CC75F5146754FC374D913219AB5333005"
+        state: present
+        validate_certs: true
+
     - name: Install Zabbix repo
       ansible.builtin.dnf:
         name: https://repo.zabbix.com/zabbix/7.4/release/rhel/9/noarch/zabbix-release-latest.el9.noarch.rpm
         state: present
-        disable_gpg_check: true
+        disable_gpg_check: false
 
     - name: Install zabbix-agent2
       ansible.builtin.dnf:
         name: zabbix-agent2
         state: present
+        disable_gpg_check: false
 
     - name: Configure Zabbix server address
       ansible.builtin.lineinfile:

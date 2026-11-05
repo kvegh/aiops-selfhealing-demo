@@ -229,7 +229,14 @@ playbooks below. It verifies the actual job user's command/version, preserves
 existing workspace instructions and unrelated settings, and performs no model
 request or activation. See the [Claude deployment procedure](docs/14-claude-deployment.md)
 for ownership/conflict checks, the shared workspace override and the separate
-functional-model/AAP-MCP prerequisites.
+functional checks. The installer also configures the selected private AAP MCP
+using the existing API/MCP token and application-scoped CA. The bounded runner
+permits only the checked saved agent repair and requires native child-job,
+service and fresh monitoring recovery checks.
+
+The existing production SCM Project retains an owner-approved tested-commit
+pin until its runtime is deliberately migrated. Shared desired CaC stays on
+`main`; see the [production migration boundary](docs/14-claude-deployment.md#preserve-the-existing-production-runner-during-migration).
 
 The two requested MCP deployment jobs use
 `playbooks/deploy_linux_mcp.yml` and `playbooks/deploy_zabbix_mcp.yml`. They

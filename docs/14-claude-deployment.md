@@ -1,4 +1,4 @@
-# Deploy Claude and both private MCP integrations
+# Deploy Claude and private MCP integrations
 
 **Deploy Claude and MCP Servers** runs `playbooks/deploy_claude.yml` on the
 selected TRA. It installs only Claude Code, provisions the explicitly approved
@@ -41,7 +41,7 @@ directory owned by the runtime user; links, files and unrelated ownership stop
 the job before directory creation. Existing directory permissions are preserved.
 
 The existing `AI_Instructions_Guardrails/CLAUDE.md` seeds only a missing workspace
-instruction file. Existing user edits remain intact. The Linux and Zabbix
+instruction file. It updates only the known unchanged previously managed copy; user edits or unrelated ownership stop for review. The Linux and Zabbix
 deployment playbooks keep their current private Podman/stdio transports, pinned
 images, instance-local targets and read-only checks. No public MCP listener is
 created. Their existing offline image/RPM manifests must already be prepared;
@@ -66,12 +66,74 @@ overwritten. Existing authentication directories are not chmodded or replaced.
 configuration readiness, not proof that a model request succeeds. The installer
 does not log in, invoke a model, enable an EDA activation or simulate a fault.
 The short approved read-only model/MCP test and full agent repair are separate
-coordinated functional checks. Private AAP MCP also remains a separate prerequisite
-for the guardrails' AAP investigation and remediation phases.
+coordinated functional checks.
 
-The current incident launcher still needs the streaming phase-output correction
-required by the maintained guardrails before complete remediation acceptance.
-This installation change does not silently redesign that launcher.
+## Selected private AAP MCP and bounded repair
+
+After compatible readers are published, run the existing AutoDeploy base
+configuration for the selected instance to publish its verified public CA and
+private MCP endpoint alongside its unchanged API/MCP token. Refresh AutoDeploy
+CaC on the receiving AAP, then AIOps CaC. Existing AIOps preparation copies only
+that selected connection into the existing whole-file runtime Vault; it never
+uses SSH or copies another instance's token. The normal combined installer
+merges its private HTTP client entry and verifies native read access. It adds no
+public MCP route, global trust, credential type or secret store.
+
+The CA file stays in the validated application workspace.
+`NODE_EXTRA_CA_CERTS` adds it only to the agent process; system trust and other
+Claude settings stay unchanged. Native child-job modules use `SSL_CERT_FILE`
+only in their process for the same verified CA. The native client bearer remains in private
+files, never the model prompt or command arguments. Provider authentication
+requires its own explicit per-instance approval and is not automatically copied
+into later namespaces.
+
+**Run Claude to analyse and fix** supports the selected agent-unavailable demo.
+It verifies the existing same-project repair template, saved inventory/limit and
+selected guest identity before invoking Claude. Native permissions remain on;
+no general command/edit tools or permission bypass are enabled. A tiny
+invocation-only [PreToolUse check](https://code.claude.com/docs/en/hooks)
+denies another repair ID, launch overrides or remote Linux host. Its successful
+return grants no permissions and preserves other native denials/hooks. The
+existing administrator/write token remains broader than one template; this is
+a controlled functionality demo, not per-template RBAC.
+
+One run is limited to 24 turns and 600 seconds. The existing saved Job Template
+has an outer timeout; private invocation files are removed on success/failure.
+Ordered phase messages and the final report are displayed after completion;
+live UI streaming is not required for this functional test. Completion also
+requires successful native repair children, an active selected agent service,
+a new successful monitoring sample and recovery of the original trigger.
+A successful model narrative cannot satisfy these checks. Unsupported incidents
+fail clearly rather than expanding into other repairs.
+
+The existing agent playbook imports the official repository signing key using
+its full verified fingerprint and leaves RPM signature verification enabled.
+General agent forwarding/activation and a controlled fault remain separate
+explicit launch steps; publishing these changes starts none of them.
+
+HTTP MCP checks use native `uri`/assert tasks; child monitoring uses the
+certified `ansible.controller.job_wait` and `job_list` modules. The existing
+stdio MCP verifier, selected-data/stream filters and invocation hook remain
+custom code for their protocol/tool-request boundaries. Consolidating such code into suitable standard content is tracked
+separately; this change introduces no service or orchestration framework.
+
+The collection requirement pins certified `ansible.controller` to the version
+already declared in the existing AIOps PAH prerequisites; normal project sync
+uses that content and retains the existing community collection dependency.
+
+## Preserve the existing production runner during migration
+
+The existing production SCM Project intentionally stays pinned to its tested
+commit `b32ceb675d2699205400daee327f9b89ddb5f10a`. Its older runner lacks the
+encrypted runtime input and associated Vault credential required by this version.
+The owner approved this production-only exception before publication. The
+Controller's automatic update after saving the pin succeeded at that revision;
+no production runner or guest configuration was changed.
+
+Shared desired CaC remains on `main` for test and future instances. Remove the
+production pin only after deliberately supplying and verifying its selected
+runtime, Vault credential, private MCP connection and maintained instructions.
+Do not remove it merely because the newer test deployment has passed.
 
 ## Local validation
 
