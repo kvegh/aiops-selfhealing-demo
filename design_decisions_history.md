@@ -851,3 +851,32 @@ diffs. This is documentation only: frontend version 1.1.6 and all runtime,
 workflow, configuration and dependency files are unchanged.
 
 Implementation commit: `c13573a`.
+
+## Bound the existing agent repair and trust only the selected private AAP
+
+Implementation `8422662` carries the selected private AAP MCP connection through
+the existing encrypted runtime and installer. Application-scoped verified CA
+trust leaves system trust unchanged, preserves unrelated Claude settings, and
+does not publish an MCP endpoint. The existing runner keeps native permission
+checks and uses a small deny-only invocation hook for the verified repair
+template and Linux host. It reports success only after actual repair children,
+the selected agent service and fresh monitoring recovery pass independent checks.
+The existing agent installer now verifies packages using the fingerprint-pinned
+official signing key.
+
+Native HTTP and certified Controller modules cover network probes and child-job
+verification. Remaining protocol/selected-data filters and the invocation hook
+have explicit boundaries; broader standard-content cleanup is separate work.
+Twenty focused tests, syntax checks and compilation passed, including failed
+child, stale monitoring, wrong CA, target/override refusal and preservation of
+edited instructions. Optional lint was not verified. These checks do not claim
+a completed live remediation rehearsal.
+
+Before publication, the owner approved pinning only the original production
+SCM Project to tested commit `b32ceb675d2699205400daee327f9b89ddb5f10a` because
+its legacy runner lacks the new encrypted runtime inputs. API readback and the
+automatic SCM update confirmed that pin; production execution was unchanged.
+Shared desired CaC remains on `main` for test and future instances. Removing
+the production exception requires an explicit runtime migration. No new
+credential type, store, repository, Job Template, public listener or service was
+introduced, and no model call, fault or activation was started by publication.
