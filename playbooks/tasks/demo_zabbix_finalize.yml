@@ -99,26 +99,47 @@
         demo_zabbix_monitoring_trigger_id, demo_zabbix_delivery.url, demo_zabbix_stale_media_ids)
     quiet: true
 
-- name: Enable only this deployment forwarding action as the final configuration write
+- name: Require exact agent delivery through the same current event stream
+  ansible.builtin.assert:
+    that: >-
+      demo_zabbix_final_media | demo_zabbix_delivery_ready(
+        demo_zabbix_final_actions, demo_zabbix_rpc_response.json.result,
+        demo_zabbix_media_definition, demo_zabbix_media_id, demo_zabbix_agent_action_id,
+        demo_zabbix_agent_trigger_id, demo_zabbix_delivery.url, demo_zabbix_stale_media_ids)
+    quiet: true
+  when: demo_zabbix_enable_testserver_monitoring | default(false) | bool
+
+- name: Retain only the verified deployment forwarding actions
+  ansible.builtin.set_fact:
+    demo_zabbix_forwarding_action_ids: >-
+      {{ [demo_zabbix_action_id] +
+         ([demo_zabbix_agent_action_id] if demo_zabbix_enable_testserver_monitoring | default(false) | bool else []) }}
+
+- name: Enable only verified deployment forwarding actions as the final configuration writes
   ansible.builtin.include_tasks: demo_zabbix_rpc.yml
   vars:
     demo_zabbix_rpc_method: action.update
     demo_zabbix_rpc_params:
-      actionid: "{{ demo_zabbix_action_id }}"
+      actionid: "{{ demo_zabbix_forwarding_action_id }}"
       status: 0
+  loop: "{{ demo_zabbix_forwarding_action_ids }}"
+  loop_control:
+    loop_var: demo_zabbix_forwarding_action_id
   when: demo_zabbix_enable_delivery | default(false) | bool
 
-- name: Read back the final selected action state
+- name: Read back the final selected action states
   ansible.builtin.include_tasks: demo_zabbix_rpc.yml
   vars:
     demo_zabbix_rpc_method: action.get
     demo_zabbix_rpc_params:
-      actionids: ["{{ demo_zabbix_action_id }}"]
+      actionids: "{{ demo_zabbix_forwarding_action_ids }}"
       output: [actionid, status]
 
 - name: Verify the requested final forwarding state
   ansible.builtin.assert:
     that:
-      - demo_zabbix_rpc_response.json.result | length == 1
-      - demo_zabbix_rpc_response.json.result[0].status | int == (0 if demo_zabbix_enable_delivery | default(false) | bool else 1)
+      - demo_zabbix_rpc_response.json.result | length == demo_zabbix_forwarding_action_ids | length
+      - >-
+        demo_zabbix_rpc_response.json.result | map(attribute='status') | map('int') | unique | list
+        == [0 if demo_zabbix_enable_delivery | default(false) | bool else 1]
     quiet: true

@@ -287,7 +287,7 @@ def delivery_ready(media, actions, admin, definition, media_id, action_id, trigg
     conditions = selected[0].get('filter', {}).get('conditions', [])
     require(len(conditions) == 1 and str(conditions[0].get('conditiontype')) == '2'
             and str(conditions[0].get('operator', '0')) == '0' and str(conditions[0].get('value')) == str(trigger_id),
-            'The selected forwarding action must refer to this exact website trigger.')
+            'The selected forwarding action must refer to this exact monitored trigger.')
     for field in ('operations', 'recovery_operations'):
         operations = selected[0].get(field, [])
         require(len(operations) == 1 and str(operations[0].get('operationtype')) == '0'

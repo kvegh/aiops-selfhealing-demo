@@ -91,7 +91,9 @@
     that:
       - demo_aap_mcp_tool_result.id == 2
       - demo_aap_mcp_tool_result.error is not defined
-      - "['jobs_list', 'jobs_retrieve', 'job_templates_retrieve', 'job_templates_launch_create'] | difference(demo_aap_mcp_tool_result.result.tools | map(attribute='name') | list) | length == 0"
+      - >-
+        ['jobs_list', 'jobs_retrieve', 'job_templates_retrieve', 'job_templates_launch_create'] |
+        difference(demo_aap_mcp_tool_result.result.tools | map(attribute='name') | list) | length == 0
     quiet: true
 
 - name: Retain only native tool names for this invocation's deny rules

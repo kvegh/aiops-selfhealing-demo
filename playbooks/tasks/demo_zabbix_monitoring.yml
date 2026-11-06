@@ -223,9 +223,6 @@
   ansible.builtin.set_fact:
     demo_zabbix_monitoring_trigger_id: "{{ demo_zabbix_rpc_response.json.result.triggerids[0] }}"
 
-- name: Configure delivery only to the selected AAP event stream
-  ansible.builtin.include_tasks: demo_zabbix_delivery.yml
-
 - name: Reconcile every known copied host and check to this selected deployment
   ansible.builtin.include_tasks: demo_zabbix_reconcile.yml
 
@@ -240,6 +237,9 @@
 - name: Enable reviewed testserver checks only after explicit readiness verification
   ansible.builtin.include_tasks: demo_zabbix_testserver_monitoring.yml
   when: demo_zabbix_enable_testserver_monitoring | default(false) | bool
+
+- name: Configure selected website and agent delivery after target checks are reconciled
+  ansible.builtin.include_tasks: demo_zabbix_delivery.yml
 
 - name: Unmask the monitoring server only after quarantine and target configuration succeed
   ansible.builtin.systemd_service:

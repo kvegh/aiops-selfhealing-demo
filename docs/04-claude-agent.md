@@ -198,107 +198,50 @@ for the full content — it includes phase-disciplined investigation,
 AAP-only remediation constraints, SSH alias rules, RHEL prerequisites,
 and response format requirements.
 
-## 7. Configure headless execution
+## 7. Use the bounded AAP runner
 
-Claude Code runs headlessly with `--print` (`-p`) mode: it reads a prompt
-from the command line, executes the task, prints the result, and exits.
-No interactive terminal required.
+Run **Run Claude to analyse and fix** through AAP after completing
+[Deploy Claude and MCP Servers](14-claude-deployment.md). The maintained
+[runner playbook](../playbooks/run_claude_analyse_fix.yml) is the executable
+procedure; do not copy an older shell invocation into another template.
 
-### Permission mode
+The runner uses native `dontAsk` permissions, an explicit read-only diagnostic
+tool list, and a temporary deny-only hook. Built-in shell tools are disabled.
+Only the checked **Deploy Zabbix Agent** template can make changes, using its
+saved selected-host limit and no launch overrides. Existing permission checks
+and hooks remain effective.
 
-In automated execution, there is no operator to approve tool calls.
-Use `--dangerously-skip-permissions` to skip all permission prompts:
+One invocation is limited to 600 seconds and 24 turns. It may launch at most
+two instances of that repair. There is no configured monetary spending cap.
+The private AAP MCP connection must use its selected trusted certificate; the
+runner does not weaken TLS or expose a public MCP endpoint.
 
-```bash
-claude -p "diagnose the alert" --dangerously-skip-permissions
-```
+## 8. Verify the selected alert-to-repair demo
 
-> **Security note:** This flag grants the agent unrestricted tool access.
-> The architecture mitigates this: linux-mcp and Zabbix MCP are read-only
-> by construction, and AAP enforces RBAC on every job launch. The blast
-> radius is bounded by the MCP servers, not by the permission mode.
+Prepare the selected testserver with its Zabbix agent installed and healthy.
+The target-local agent action must forward only that host's agent-availability
+trigger through the current Event Stream. Enable the matching agent rulebook
+activation only for the agreed demo test; the website has a separate rulebook.
 
-### Transcripts
+For one controlled test, an operator stops only the selected guest's
+`zabbix-agent2` service. Zabbix must report the problem and EDA must launch the
+saved runner. The agent cannot inject the fault itself.
 
-Headless runs (`-p`) create JSONL transcript files under
-`~/.claude/projects/.../` with a UUID filename. These transcripts are
-the primary way to review what the agent did during an AAP-triggered
-run. Headless sessions do **not** appear in `claude --resume` — this
-is expected behavior, not a bug. However, you can extract the session
-ID from the transcript filename and resume it explicitly with
-`claude --resume SESSION_ID`.
+A successful result requires at least one actual saved repair job, matching
+project, inventory and host limit, followed by an active agent service, a fresh
+`agent.ping=1` sample and recovery of the original trigger. Model prose alone is
+not proof. On failure, stop further agent invocations and use the existing repair
+template to restore the selected service before repeating the test.
 
-## 8. Test the agent
+## 9. Read the findings
 
-Run a manual test from the agent directory:
-
-```bash
-cd ~/claude-wd
-
-claude -p "List the hosts monitored by Zabbix and check if the target server is reachable via linux-mcp. Report what you find." \
-  --dangerously-skip-permissions \
-  --max-turns 10
-```
-
-The agent should:
-1. Query Zabbix MCP for monitored hosts
-2. Run a connectivity check via linux-mcp
-3. Return a summary of findings
-
-## 9. Full invocation (EDA integration)
-
-EDA launches the agent via an AAP job template that runs the playbook
-[`playbooks/run_claude_analyse_fix.yml`](../playbooks/run_claude_analyse_fix.yml):
-
-```yaml
----
-- name: Run Claude to analyse and fix Zabbix alert
-  hosts: all
-  gather_facts: false
-
-  tasks:
-    # No default on purpose — a play-level var would outrank the inventory
-    # and silently shadow whatever AAP supplies.
-    - name: Require the agent user
-      ansible.builtin.assert:
-        that:
-          - claude_agent_user is defined
-          - claude_agent_user | length > 0
-        fail_msg: >-
-          claude_agent_user is not set. Supply it from the AAP inventory, a job
-          template extra variable, or -e claude_agent_user=... on the CLI.
-        quiet: true
-
-    - name: Run Claude Code CLI
-      # shell, not command — command breaks on quoted arguments in the CLI invocation
-      ansible.builtin.shell: >-
-        claude -p
-        "There is an alert on Zabbix, root cause analyse the alert and the state
-        of the affected server, and fix it autonomously. Afterwards create an
-        incident report and suggested further steps."
-        --dangerously-skip-permissions
-      args:
-        # Claude Code needs a working directory with CLAUDE.md guardrails.
-        # Defaulted inline, not at play level, so inventory still wins.
-        chdir: "{{ claude_agent_workdir | default('/home/' ~ claude_agent_user ~ '/claude-wd') }}"
-      # Controller connects as the ansible user, but Claude must run as the
-      # agent user (owns ~/.claude config, API keys, MCP wiring)
-      become: true
-      become_user: "{{ claude_agent_user }}"
-      register: claude_output
-
-    - name: Display incident report
-      ansible.builtin.debug:
-        var: claude_output.stdout_lines
-```
-
-The prompt does not inject the alert payload — the agent discovers the
-active alert itself via Zabbix MCP. The `CLAUDE.md` guardrails
-(phase discipline, AAP-only remediation) govern what happens next.
-
-> **Optional tuning:** See [`docs/todo/demo-design.md`](todo/demo-design.md#playbook-invocation-tuning)
-> for planned refinements (tool restrictions, turn limits, payload
-> injection, structured output).
+The runner captures ordered streaming assistant findings and the final incident
+report in the protected AAP job, then performs independent native recovery
+checks. It uses no persistent CLI session. Review the AAP runner and child-job
+results; do not rely on a manually resumed CLI transcript as acceptance evidence.
+Temporary invocation settings, the tool-request hook and temporary SSH trust
+are removed when the job finishes or fails. Provider authentication and existing
+workspace settings are preserved.
 
 ## Explicitly out of scope
 

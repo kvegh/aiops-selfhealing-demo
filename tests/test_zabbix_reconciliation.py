@@ -113,6 +113,10 @@ class ReconciliationTests(unittest.TestCase):
         actions=[{'actionid':'10','status':'1','filter':{'conditions':[{'conditiontype':'2','value':'101'}]},'operations':[operation],'recovery_operations':[operation]}, {'actionid':'7','status':'1'}]
         admin=[{'userid':'1','medias':[{'mediaid':'702','mediatypeid':'104','sendto':[endpoint],'active':'0','severity':'63','period':'1-7,00:00-24:00'}]}]
         self.assertTrue(policy.delivery_ready(media,actions,admin,definition,'104','10','101',endpoint,['72']))
+        agent=deepcopy(actions[0]);agent['actionid']='11';agent['filter']['conditions'][0]['value']='102'
+        both=actions+[agent]
+        self.assertTrue(policy.delivery_ready(media,both,admin,definition,'104','11','102',endpoint,['72']))
+        with self.assertRaises(AnsibleFilterError):policy.delivery_ready(media,both,admin,definition,'104','11','101',endpoint,['72'])
         wrong=deepcopy(media);wrong[0]['parameters'][1]['value']='wrong'
         with self.assertRaises(AnsibleFilterError) as error:policy.delivery_ready(wrong,actions,admin,definition,'104','10','101',endpoint,['72'])
         self.assertNotIn('synthetic-private-password',str(error.exception))

@@ -160,3 +160,61 @@
 - name: Retain the selected forwarding action identity for final validation
   ansible.builtin.set_fact:
     demo_zabbix_action_id: "{{ demo_zabbix_rpc_response.json.result.actionids[0] }}"
+
+- name: Configure only the verified testserver's agent alert delivery
+  when: demo_zabbix_enable_testserver_monitoring | default(false) | bool
+  block:
+    - name: Resolve the selected host's existing agent-availability trigger
+      ansible.builtin.set_fact:
+        demo_zabbix_agent_triggers: >-
+          {{ demo_zabbix_testserver_triggers |
+             selectattr('description', 'search', 'Zabbix agent is not available') | list }}
+
+    - name: Require one reviewed agent trigger before creating delivery
+      ansible.builtin.assert:
+        that:
+          - demo_zabbix_agent_triggers | length == 1
+          - demo_zabbix_agent_triggers[0].triggerid | string is match('^[1-9][0-9]*$')
+        quiet: true
+
+    - name: Retain the selected agent trigger identity
+      ansible.builtin.set_fact:
+        demo_zabbix_agent_trigger_id: "{{ demo_zabbix_agent_triggers[0].triggerid }}"
+
+    - name: Read only this allocation's agent-delivery action
+      ansible.builtin.include_tasks: demo_zabbix_rpc.yml
+      vars:
+        demo_zabbix_rpc_method: action.get
+        demo_zabbix_rpc_params:
+          output: [actionid]
+          filter:
+            name: ["AIOps {{ demo_zabbix_config.version }} agent events"]
+
+    - name: Require an unambiguous target agent action
+      ansible.builtin.assert:
+        that: demo_zabbix_rpc_response.json.result | length <= 1
+        quiet: true
+
+    - name: Retain the existing agent action identity
+      ansible.builtin.set_fact:
+        demo_zabbix_existing_agent_action_id: "{{ demo_zabbix_rpc_response.json.result[0].actionid if demo_zabbix_rpc_response.json.result | length else '' }}"
+
+    - name: Declare disabled delivery for only the selected agent trigger
+      ansible.builtin.set_fact:
+        demo_zabbix_agent_action_definition: >-
+          {{ demo_zabbix_action_definition | combine({
+               'name': 'AIOps ' + demo_zabbix_config.version + ' agent events',
+               'filter': {'evaltype': 0, 'conditions': [
+                 {'conditiontype': 2, 'operator': 0, 'value': demo_zabbix_agent_trigger_id}]}}) }}
+
+    - name: Create or update only this allocation's agent action
+      ansible.builtin.include_tasks: demo_zabbix_rpc.yml
+      vars:
+        demo_zabbix_rpc_method: "{{ 'action.update' if demo_zabbix_existing_agent_action_id else 'action.create' }}"
+        demo_zabbix_rpc_params: >-
+          {{ demo_zabbix_agent_action_definition | combine(
+               {'actionid': demo_zabbix_existing_agent_action_id} if demo_zabbix_existing_agent_action_id else {}) }}
+
+    - name: Retain the selected agent action identity for final validation
+      ansible.builtin.set_fact:
+        demo_zabbix_agent_action_id: "{{ demo_zabbix_rpc_response.json.result.actionids[0] }}"

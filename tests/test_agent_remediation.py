@@ -116,8 +116,8 @@ class NativeRecoveryTests(unittest.TestCase):
         try:
             play=yaml.safe_load((ROOT/'playbooks/run_claude_analyse_fix.yml').read_text())[0]
             tasks=play['tasks'][0]['block']
-            names=['Wait for actually launched repairs with the certified Controller module','Read actual repair children with the certified Controller module','Require saved target identity and success for every native child','Require a fresh selected agent ping and recovery of the original trigger']
-            for child,fresh,trust,success in [('successful',True,True,True),('failed',True,True,False),('successful',False,True,False),('successful',True,False,False)]:
+            names=['Require an actual native repair job for remediation acceptance','Wait for actually launched repairs with the certified Controller module','Read actual repair children with the certified Controller module','Require saved target identity and success for every native child','Require a fresh selected agent ping and recovery of the original trigger']
+            for child,fresh,trust,children,success in [('successful',True,True,[51],True),('failed',True,True,[51],False),('successful',False,True,[51],False),('successful',True,False,[51],False),('successful',True,True,[],False)]:
                 state.update(child=child,fresh=fresh)
                 with tempfile.TemporaryDirectory(prefix='agent-native-recovery-') as temporary:
                     folder=Path(temporary);(folder/'.aiops-aap-ca.pem').write_bytes((ca/'cert').read_bytes());fixture_tasks=[copy.deepcopy(next(t for t in tasks if t['name']==name)) for name in names]
@@ -131,7 +131,7 @@ class NativeRecoveryTests(unittest.TestCase):
                     marker=folder/'verified';fixture_tasks.append({'name':'Mark only native confirmed recovery','ansible.builtin.copy':{'dest':str(marker),'content':'verified','mode':'0600'}})
                     origin='https://127.0.0.1:'+str(server.server_port)
                     variables={'demo_claude_aap':{'api_origin':origin},'demo_aap_mcp':{'token':'synthetic-secret-canary'},
-                        'demo_mcp_workspace':{'path':str(folder)},'demo_agent_children':[51],'demo_agent_repair_id':17,
+                        'demo_mcp_workspace':{'path':str(folder)},'demo_agent_children':children,'demo_agent_repair_id':17,
                         'awx_inventory_id':2,'awx_project_id':3,'demo_agent_zabbix':{'origin':origin,'token':'synthetic-secret-canary'},
                         'demo_mcp_config':{'testserver':{'vm_name':'testserver1-v07'}},'demo_agent_incident':{'host_id':'31','trigger_id':'41'},
                         'demo_agent_recovery_clock':{'stdout':'1000'},'model_text':'SUCCESS: everything repaired'}
@@ -139,7 +139,7 @@ class NativeRecoveryTests(unittest.TestCase):
                     env=dict(os.environ,ANSIBLE_LOCAL_TEMP=str(folder/'local'),ANSIBLE_REMOTE_TEMP=str(folder/'remote'),
                         ANSIBLE_FILTER_PLUGINS=str(ROOT/'playbooks/filter_plugins'),ANSIBLE_NOCOLOR='1')
                     result=subprocess.run([sys.executable,'-m','ansible.cli.playbook','-i','localhost,',str(fixture)],env=env,capture_output=True,text=True,timeout=30)
-                    with self.subTest(child=child,fresh=fresh,trust=trust):
+                    with self.subTest(child=child,fresh=fresh,trust=trust,children=children):
                         self.assertEqual(result.returncode==0,success,result.stdout+result.stderr)
                         self.assertEqual(marker.exists(),success)
                         self.assertNotIn('synthetic-secret-canary',result.stdout+result.stderr)

@@ -232,7 +232,8 @@ for ownership/conflict checks, the shared workspace override and the separate
 functional checks. The installer also configures the selected private AAP MCP
 using the existing API/MCP token and application-scoped CA. The bounded runner
 permits only the checked saved agent repair and requires native child-job,
-service and fresh monitoring recovery checks.
+service and fresh monitoring recovery checks. A supported recovery requires at
+least one actual saved repair job; model prose cannot substitute for it.
 
 The existing production SCM Project retains an owner-approved tested-commit
 pin until its runtime is deliberately migrated. Shared desired CaC stays on
@@ -268,15 +269,19 @@ challenge. A persistent failure stops deployment.
 Monitoring deployment reconciles copied hostnames, check labels and URLs to
 the selected instance while retaining record IDs and history. It removes stale
 EDA recipient destinations and clears disabled dashboard credentials. The
-selected website forwarding action stays disabled until frontend and exact
-configuration readbacks pass, then the existing delivery flag can enable it as
-the final configuration write. Other copied hosts and actions stay disabled.
+selected website and agent forwarding actions stay disabled until frontend and exact
+configuration readbacks pass, then the existing delivery flag can enable them as
+the final configuration writes. The agent action matches only the verified
+testserver's agent-availability trigger and shares the current target Event
+Stream media. Other copied hosts and actions stay disabled.
 An explicit per-instance opt-in can also enable the verified testserver's Linux
 and ICMP monitoring after its agent is installed. The normal deployment checks
 the actual domain/lease and agent identity before stopping monitoring, keeps
 inapplicable Apache checks disabled without deleting their history, and requires
-fresh agent ping, uptime and ICMP samples before finishing. It enables no general
-Claude forwarding or activation. See [selected testserver monitoring](docs/13-testserver-monitoring.md).
+fresh agent ping, uptime and ICMP samples before finishing. The agent action is
+configured only when that testserver monitoring is requested. Setup enables no
+Claude rulebook activation and runs no model or fault. See
+[selected testserver monitoring](docs/13-testserver-monitoring.md).
 
 Both new MCP installations have completed their normal jobs and passed real
 read-only queries against their matching testserver and monitoring instance.

@@ -65,12 +65,19 @@ external Event Stream UUID returned after AIOps CaC import. Credentials stay
 out of event payloads, diagnostics, Git plaintext and returned artifacts.
 
 `demo_zabbix_enable_delivery` is an explicit Boolean, default `false`. Setup
-always creates or updates the target action disabled. When the selected Job
+always creates or updates the target actions disabled. When the selected Job
 Template explicitly saves this flag as `true`, the final configuration write
-enables only that action, after the frontend and exact target-setting readbacks
+enables only the verified website action and, when testserver monitoring is
+requested, the selected agent action, after frontend and exact target readbacks
 pass. Any earlier failure leaves forwarding disabled. The job never enables an
 AAP EDA activation, sends a test outage, or arms the audience button. Prepare the
 healthy versioned website before enabling monitoring delivery.
+
+The agent action resolves only the reconciled testserver's existing
+`Zabbix agent is not available` trigger and uses the same current Event Stream
+media and recipient. Copied unfiltered actions and imported media remain
+disabled. A controlled agent-remediation test additionally requires the matching
+EDA activation and the installed bounded runner; setup does not start that test.
 
 ## Clone preparation and runtime access
 

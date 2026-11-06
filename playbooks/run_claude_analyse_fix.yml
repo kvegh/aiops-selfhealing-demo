@@ -86,7 +86,9 @@
               - demo_agent_paths.results[1].stat.isreg | default(false)
               - not demo_agent_paths.results[1].stat.islnk | default(false)
               - demo_agent_paths.results[1].stat.uid == demo_mcp_user.uid
-              - demo_agent_paths.results[1].stat.checksum == (lookup('ansible.builtin.file', playbook_dir + '/../AI_Instructions_Guardrails/CLAUDE.md', rstrip=false) | hash('sha256'))
+              - >-
+                demo_agent_paths.results[1].stat.checksum ==
+                (lookup('ansible.builtin.file', playbook_dir + '/../AI_Instructions_Guardrails/CLAUDE.md', rstrip=false) | hash('sha256'))
               - demo_agent_paths.results[2].stat.isreg | default(false)
               - not demo_agent_paths.results[2].stat.islnk | default(false)
               - demo_agent_paths.results[2].stat.uid == demo_mcp_user.uid
@@ -113,7 +115,8 @@
         - name: Read the existing same-project repair through trusted private HTTPS
           ansible.builtin.uri:
             url: >-
-              {{ demo_claude_aap.api_origin }}/api/controller/v2/job_templates/?name=Deploy%20Zabbix%20Agent&inventory={{ awx_inventory_id | int }}&project={{ awx_project_id | int }}
+              {{ demo_claude_aap.api_origin ~ '/api/controller/v2/job_templates/?name=Deploy%20Zabbix%20Agent' ~
+                 '&inventory=' ~ (awx_inventory_id | int | string) ~ '&project=' ~ (awx_project_id | int | string) }}
             headers:
               Authorization: "Bearer {{ demo_aap_mcp.token }}"
             ca_path: "{{ demo_mcp_workspace.path }}/.aiops-aap-ca.pem"
@@ -227,7 +230,9 @@
                   'Investigate only the current Zabbix alert on ' ~ demo_mcp_config.testserver.vm_name ~
                   '. The verified Linux SSH alias is ' ~ demo_agent_alias ~
                   '. Follow the maintained phases. All changes must use the existing Deploy Zabbix Agent template ID ' ~
-                  (demo_agent_repair_id | string) ~ ' on this AAP, with saved inputs and no overrides. Do not launch another template, change another host, modify tools/settings/authentication, or use a shell. Verify fresh monitoring recovery and report findings; report no ticket action if no ticket integration is configured.',
+                  (demo_agent_repair_id | string) ~ ' on this AAP, with saved inputs and no overrides. ' ~
+                  'Do not launch another template, change another host, modify tools/settings/authentication, or use a shell. ' ~
+                  'Verify fresh monitoring recovery and report findings; report no ticket action if no ticket integration is configured.',
                   '--model', 'claude-opus-5', '--max-turns', '24', '--output-format', 'stream-json', '--verbose',
                   '--no-session-persistence', '--permission-mode', 'dontAsk', '--permission-prompts', 'none',
                   '--tools', '', '--strict-mcp-config', '--mcp-config', demo_agent_temporary.path ~ '/mcp.json',
@@ -246,11 +251,18 @@
             AIOPS_ALLOWED_TOOL_NAMES: "{{ demo_agent_allowed_tools | join(',') }}"
           timeout: 630
           register: claude_output
+          changed_when: true
 
         - name: Retain ordered assistant findings and the final report
           ansible.builtin.set_fact:
             demo_agent_report: "{{ claude_output.stdout | demo_claude_agent_report }}"
             demo_agent_children: "{{ claude_output.stdout | demo_claude_launched_repairs(demo_agent_repair_id | int) }}"
+
+        - name: Require an actual native repair job for remediation acceptance
+          ansible.builtin.assert:
+            that: demo_agent_children | length > 0
+            quiet: true
+            fail_msg: The supported remediation must launch the selected saved repair before reporting recovery.
 
         - name: Display ordered phase findings and the incident report
           ansible.builtin.debug:
