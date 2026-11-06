@@ -943,3 +943,21 @@ ninety seconds to three minutes. The controlled cleanup exposed a real
 followed by a fresh agent item sample. This accommodates the existing passive
 availability/item polling without weakening service, child-job, target or TLS
 checks. The model's six-minute turn budget and maximum repair count are unchanged.
+
+## Keep useful failure metadata without exposing model output — 2026-11-06
+
+The first real bounded model invocation launched the correct existing repair,
+which succeeded. Independent checks confirmed the selected service and fresh
+monitoring recovered. The parent runner nevertheless exited unsuccessfully
+inside its CLI command before its acceptance checks. Protected command output
+was censored and no persistent session/debug log was available, so the exact CLI
+cause remains unknown; successful remediation acceptance is not claimed.
+
+Implementation `671b4a8` adds only numeric CLI exit code and an explicit whitelist
+of known completion markers to the existing failure message. Raw model/tool
+output and stderr remain protected. This does not recover discarded output from
+the prior attempt or change its model budget, permissions or cleanup. The
+existing native fixture verifies recognized diagnostics are visible and secrets
+in stdout, stderr and unrecognized status values stay absent. Focused tests,
+syntax and strict offline production lint passed. A further controlled model
+attempt remains a separately reviewed action.
