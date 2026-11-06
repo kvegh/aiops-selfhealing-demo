@@ -880,3 +880,25 @@ Shared desired CaC remains on `main` for test and future instances. Removing
 the production exception requires an explicit runtime migration. No new
 credential type, store, repository, Job Template, public listener or service was
 introduced, and no model call, fault or activation was started by publication.
+
+## Forward only selected agent incidents and require a real repair — 2026-11-06
+
+Implementation `c618d1f` adds one allocation-local Zabbix action for the verified
+testserver's existing agent-availability trigger. It reuses the current Event
+Stream media and recipient, and resolves the trigger only after copied monitoring
+has been reconciled. Both selected actions remain disabled until final delivery
+validation; the existing delivery setting can then enable them. Imported
+unfiltered actions and media remain disabled, and no EDA activation is enabled.
+
+The bounded runner now requires at least one native repair child before accepting
+recovery. Existing target checks, child success, service and fresh monitoring
+proof remain in place. The manual guide now describes the maintained native
+permissions and bounded job rather than duplicating an obsolete bypass command.
+The runner's non-idempotent invocation is reported as changed, and its long
+expressions were wrapped for the existing production lint profile.
+
+Focused native checks reject an absent or failed repair, stale monitoring and
+untrusted TLS; selected-action checks preserve imported restrictions. Both
+playbooks passed syntax and thirteen files passed offline production lint.
+Code readiness is separate from normal monitoring setup and the controlled
+alert-to-repair test, which remain pending at this publication checkpoint.
