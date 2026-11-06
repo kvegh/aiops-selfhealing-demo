@@ -381,7 +381,9 @@
           until: >-
             demo_agent_health.json | demo_claude_monitoring_recovered(
               demo_mcp_config.testserver.vm_name, demo_agent_incident, demo_agent_recovery_clock.stdout | int)
-          retries: 30
+          # The selected passive agent can need its unavailable retry plus an
+          # item polling interval after the repair has already succeeded.
+          retries: 60
           delay: 3
 
         - name: Publish only the independently verified supported recovery result
