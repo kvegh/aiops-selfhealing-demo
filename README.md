@@ -247,6 +247,12 @@ completion markers; raw model/tool output and credentials remain protected.
 The invocation allows 48 turns within the unchanged 600-second hard timeout;
 the lower turn limit was exhausted after a verified successful repair.
 
+The controlled alert-to-repair rehearsal passed on an isolated demo instance:
+one stopped agent service produced a monitoring event, EDA launched one bounded
+agent invocation, and one saved AAP repair succeeded. Native checks confirmed
+the selected service and fresh monitoring recovery. This rehearsed a service
+outage; package removal and production migration were outside that test.
+
 The existing production SCM Project retains an owner-approved tested-commit
 pin until its runtime is deliberately migrated. Shared desired CaC stays on
 `main`; see the [production migration boundary](docs/14-claude-deployment.md#preserve-the-existing-production-runner-during-migration).

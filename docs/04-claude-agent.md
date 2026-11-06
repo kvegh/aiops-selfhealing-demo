@@ -233,6 +233,13 @@ project, inventory and host limit, followed by an active agent service, a fresh
 not proof. On failure, stop further agent invocations and use the existing repair
 template to restore the selected service before repeating the test.
 
+After a successful reviewed rehearsal, leave the selected scoped forwarding and
+agent activation enabled when that is the intended demo state. Preserve the
+separate website activation. The existing CaC capture records this desired state;
+the generic importer preserves live activation state rather than silently
+starting newly created activations. A fresh instance still needs the explicit
+reviewed activation step before its first controlled test.
+
 ## 9. Read the findings
 
 The runner captures ordered streaming assistant findings and the final incident

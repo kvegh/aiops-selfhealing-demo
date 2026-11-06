@@ -106,6 +106,11 @@ a new successful monitoring sample and recovery of the original trigger.
 A successful model narrative cannot satisfy these checks. Unsupported incidents
 fail clearly rather than expanding into other repairs.
 
+The isolated service-outage rehearsal passed with one real monitoring event,
+one EDA-launched agent invocation and one successful saved repair. The native
+service and fresh original-trigger recovery checks also passed. Package removal
+and migration of the pinned production runner were outside that rehearsal.
+
 The existing agent playbook imports the official repository signing key using
 its full verified fingerprint and leaves RPM signature verification enabled.
 General agent forwarding/activation and a controlled fault remain separate

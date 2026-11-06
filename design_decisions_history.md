@@ -976,3 +976,25 @@ fixture now asserts both 48 turns and the unchanged timeout. Focused native
 tests, syntax and strict offline production lint passed. This publication does
 not claim that a subsequent full remediation acceptance has passed; its live
 test requires the separately reviewed finite window.
+
+## Verify the complete controlled agent-remediation chain — 2026-11-06
+
+The reviewed runtime at `3da21af`, including bounded-turn implementation
+`67a6e69`, passed the real isolated service-outage rehearsal. One operator stop
+on the identity-pinned selected guest produced a new agent problem, reached the
+current Event Stream and intended EDA rule, and launched one native runner.
+The single model invocation launched one saved repair, which succeeded. The
+runner independently verified the child target, active service, fresh agent
+sample and original-trigger recovery before reporting success.
+
+The reviewed scoped agent activation remains enabled after success, alongside
+the unchanged website activation; imported unfiltered forwarding stays disabled.
+This matches the existing captured desired state without adding an autostart
+framework. The generic importer still preserves existing activation runtime and
+requires the explicit reviewed enable step for a fresh definition. The shared
+writer window was released immediately after the actual success/proof.
+
+The test exercised a stopped service rather than package removal. It establishes
+this controlled demo flow, not a production migration, unrestricted remediation
+catalogue or completed formal code review. The production tested-commit pin was
+not changed.
