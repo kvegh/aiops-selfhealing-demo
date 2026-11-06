@@ -904,3 +904,20 @@ untrusted TLS; selected-action checks preserve imported restrictions. Both
 playbooks passed syntax and thirteen files passed offline production lint.
 Code readiness is separate from normal monitoring setup and the controlled
 alert-to-repair test, which remain pending at this publication checkpoint.
+
+## Read project identity from the actual Controller job — 2026-11-06
+
+Implementation `269a2e7` fixes the first live event-driven runner attempt, which
+stopped before model invocation because Controller does not inject a project-ID
+variable. The runner now uses the existing certified Controller job-list module
+to read its native job ID through selected trusted HTTPS. It verifies the
+injected inventory and exact saved limit, then uses that native project ID for
+repair selection and child verification. No target restriction was removed.
+
+The real monitoring event reached the Event Stream, the intended EDA rule and
+the saved runner. After the pre-model failure, the agent activation was stopped
+and the existing repair restored the service; fresh monitoring confirmed recovery
+of the original problem. The model repair remains unverified and needs a new
+controlled test. The existing native fixture now covers a Controller context
+without a synthetic project variable and rejects a mismatched current-job
+inventory. Syntax checks and focused offline production lint passed.
