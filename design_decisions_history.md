@@ -961,3 +961,18 @@ existing native fixture verifies recognized diagnostics are visible and secrets
 in stdout, stderr and unrecognized status values stay absent. Focused tests,
 syntax and strict offline production lint passed. A further controlled model
 attempt remains a separately reviewed action.
+
+## Allow the observed investigation to finish within the same timeout — 2026-11-06
+
+Implementation `67a6e69` raises only the existing invocation turn limit from
+24 to 48. A reviewed diagnostic episode exposed CLI exit code one and
+`error_max_turns` after the selected native repair succeeded. Independent
+service, fresh item and original-trigger recovery were verified, and the
+activation was stopped before any further inference.
+
+The existing 600-second hard timeout, at most two repair children, selected
+target, prompts, deny hook and TLS checks are unchanged. The actual argument
+fixture now asserts both 48 turns and the unchanged timeout. Focused native
+tests, syntax and strict offline production lint passed. This publication does
+not claim that a subsequent full remediation acceptance has passed; its live
+test requires the separately reviewed finite window.
