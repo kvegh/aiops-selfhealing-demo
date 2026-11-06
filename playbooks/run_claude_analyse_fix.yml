@@ -62,7 +62,7 @@
 
         - name: Resolve the configured workspace and selected private connection
           ansible.builtin.set_fact:
-            demo_mcp_workspace: "{{ demo_mcp_user | demo_mcp_workspace(claude_agent_workdir | default(none)) }}"
+            demo_mcp_workspace: "{{ demo_mcp_user | demo_mcp_workspace(claude_agent_workdir | default('')) }}"
             demo_claude_aap: "{{ demo_aap_mcp | default({}) | demo_claude_aap_mcp(demo_mcp_deployment.instance_name) }}"
             demo_agent_zabbix: "{{ demo_mcp_deployment | demo_mcp_zabbix_configuration(demo_zabbix_mcp_api_token) }}"
 

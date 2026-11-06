@@ -230,9 +230,11 @@ class NativeArgvTests(unittest.TestCase):
     def test_actual_cli_argument_expression_is_a_list_and_contains_no_bearer(self):
         play=yaml.safe_load((ROOT/'playbooks/run_claude_analyse_fix.yml').read_text())[0]
         task=next(x for x in play['tasks'][0]['block'] if x['name']=='Run the bounded agent with native permissions')
+        workspace=next(x for x in play['tasks'][0]['block'] if x['name']=='Resolve the configured workspace and selected private connection')['ansible.builtin.set_fact']['demo_mcp_workspace']
         for native in ['false','true']:
             with tempfile.TemporaryDirectory(prefix='agent-native-argv-') as temporary:
                 folder=Path(temporary);variables={'argument_vector':task['ansible.builtin.command']['argv'],
+                    'workspace_expression':workspace,'demo_mcp_user':{'home':'/home/synthetic'},
                     'demo_mcp_config':{'testserver':{'vm_name':'testserver1-v07'}},'demo_agent_alias':'testserver1',
                     'demo_agent_repair_id':17,'demo_agent_temporary':{'path':'/tmp/synthetic-agent'},
                     'demo_agent_allowed_tools':play['vars']['demo_agent_allowed_tools'],'demo_agent_denied_tools':[],
@@ -240,7 +242,9 @@ class NativeArgvTests(unittest.TestCase):
                 fixture=folder/'play.yml';fixture.write_text(yaml.safe_dump([{'hosts':'localhost','connection':'local','gather_facts':False,'vars':variables,
                     'tasks':[{'name':'Check actual typed arguments without executing the model','ansible.builtin.assert':{'that':[
                         "argument_vector | type_debug == 'list'","'--permission-mode' in argument_vector", "'--dangerously-skip-permissions' not in argument_vector",
-                        "'synthetic-secret-canary' not in (argument_vector | join(' '))"]}}]}],sort_keys=False))
-                env=dict(os.environ,ANSIBLE_LOCAL_TEMP=str(folder/'local'),ANSIBLE_JINJA2_NATIVE=native,ANSIBLE_NOCOLOR='1')
+                        "'synthetic-secret-canary' not in (argument_vector | join(' '))",
+                        "workspace_expression.path == '/home/synthetic/claude-wd'"]}}]}],sort_keys=False))
+                env=dict(os.environ,ANSIBLE_LOCAL_TEMP=str(folder/'local'),ANSIBLE_JINJA2_NATIVE=native,ANSIBLE_NOCOLOR='1',
+                         ANSIBLE_FILTER_PLUGINS=str(ROOT/'playbooks/filter_plugins'))
                 result=subprocess.run([sys.executable,'-m','ansible.cli.playbook','-i','localhost,',str(fixture)],env=env,capture_output=True,text=True,timeout=20)
                 self.assertEqual(result.returncode,0,result.stdout+result.stderr)

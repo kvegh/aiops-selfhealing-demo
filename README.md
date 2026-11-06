@@ -238,6 +238,8 @@ least one actual saved repair job; model prose cannot substitute for it.
 The runner reads its own native Controller job to obtain the project ID;
 Controller's injected inventory and job IDs are checked against that record.
 It does not require a nonexistent injected project-ID variable.
+Without a workspace override, it uses the installer's existing account-local
+`claude-wd` default.
 
 The existing production SCM Project retains an owner-approved tested-commit
 pin until its runtime is deliberately migrated. Shared desired CaC stays on
