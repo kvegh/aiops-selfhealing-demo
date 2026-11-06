@@ -133,16 +133,15 @@ Add to `~/.claude.json` under `mcpServers`:
 
 > **No `:Z` flag** — the SELinux label was set in step 4.
 
-## 7. Test from Claude Code
+## 7. Verify the selected MCP server
 
-```bash
-cd ~/claude-wd
-claude -p "Use Zabbix to list all monitored hosts." \
-    --dangerously-skip-permissions \
-    --max-turns 5
-```
+For the managed demo, run **Deploy Zabbix MCP Server** or the combined
+**Deploy Claude and MCP Servers** job. The normal playbook verifies the selected
+private server with a read-only query and performs no model invocation.
+See [MCP deployment](10-mcp-deployment.md).
 
-The agent should return the list of hosts from Zabbix.
+Use the [bounded AAP runner](04-claude-agent.md#7-use-the-bounded-aap-runner) for
+the separately reviewed alert-to-repair test after setup succeeds.
 
 ## Explicitly out of scope
 

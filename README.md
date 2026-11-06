@@ -232,7 +232,8 @@ for ownership/conflict checks, the shared workspace override and the separate
 functional checks. The installer also configures the selected private AAP MCP
 using the existing API/MCP token and application-scoped CA. The bounded runner
 permits only the checked saved agent repair and requires native child-job,
-service and fresh monitoring recovery checks. A supported recovery requires at
+service and fresh monitoring recovery checks. The agent and integration guides
+link to this executable procedure. A supported recovery requires at
 least one actual saved repair job; model prose cannot substitute for it.
 
 The existing production SCM Project retains an owner-approved tested-commit

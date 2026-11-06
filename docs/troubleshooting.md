@@ -103,7 +103,7 @@ Cosmetic; verify by sending a prompt.
 
 **CloudCLI self-hosted is single-user.**
 htpasswd identities are a door, not isolation — all sessions share one `~/.claude`,
-one MCP config, one AAP token, one `--dangerously-skip-permissions` process family.
+one MCP config, one AAP token, and one CLI process family.
 
 ## Known upstream issues
 

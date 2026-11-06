@@ -125,16 +125,14 @@ Claude Code launches the container automatically at startup — no manual `podma
 
 ## 6. Verify
 
-Start Claude Code from the agent directory and test:
+For the managed demo, run **Deploy Linux MCP Server** or the combined
+**Deploy Claude and MCP Servers** job. Its normal verification initializes the
+selected private server and performs the documented read-only check without
+requesting model inference. See [MCP deployment](10-mcp-deployment.md).
 
-```bash
-cd ~/claude-wd
-claude -p "Use linux-mcp to check the OS version on testserver1." \
-    --dangerously-skip-permissions \
-    --max-turns 5
-```
-
-The agent should return the RHEL version of the target host.
+Model-backed incident recovery is a separate controlled test through the
+[bounded AAP runner](04-claude-agent.md#7-use-the-bounded-aap-runner); a healthy
+connectivity check alone does not prove that repair loop.
 
 ## Explicitly out of scope
 

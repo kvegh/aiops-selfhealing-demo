@@ -341,42 +341,17 @@ conditions will POST the alert payload to the Event Stream URL.
 
 ## 10. AAP job template and playbook
 
-The job template **Run Claude to analyse and fix** must exist in AAP
-and point to the playbook that invokes Claude Code CLI.
+**Run Claude to analyse and fix** uses the maintained
+[bounded runner](../playbooks/run_claude_analyse_fix.yml). Target the selected TRA,
+attach its Machine and runtime Vault credentials, and retain its selected-instance
+runtime settings. Complete the normal Claude/MCP installer first.
 
-File: [`playbooks/run_claude_analyse_fix.yml`](../playbooks/run_claude_analyse_fix.yml)
-
-```yaml
----
-- name: Run Claude to analyse and fix Zabbix alert
-  hosts: all
-  gather_facts: false
-
-  tasks:
-    - name: Run Claude Code CLI
-      ansible.builtin.shell: >-
-        claude -p
-        "There is an alert on Zabbix, root cause analyse the alert and the state
-        of the affected server, and fix it autonomously. Afterwards create an
-        incident report and suggested further steps."
-        --dangerously-skip-permissions
-      args:
-        chdir: "{{ claude_agent_workdir | default('/home/' ~ claude_agent_user ~ '/claude-wd') }}"
-      become: true
-      become_user: "{{ claude_agent_user }}"
-      register: claude_output
-
-    - name: Display incident report
-      ansible.builtin.debug:
-        var: claude_output.stdout_lines
-```
-
-The job template in AAP should:
-
-- Point to the project containing this playbook
-- Target the TRA VM (where Claude Code CLI is installed)
-- Use credentials that allow becoming the agent user on the TRA VM
-- Supply `claude_agent_user` (inventory variable or job template extra variable)
+The runner verifies the private MCP connection, selected host and saved repair
+before one bounded invocation. Native permissions, the explicit tool list and
+the temporary deny-only hook remain active. Recovery requires actual native
+repair-job success and fresh monitoring, not only an assistant report. See the
+[current agent procedure](04-claude-agent.md#7-use-the-bounded-aap-runner) for
+limits, prerequisites and the controlled test.
 
 ## 11. End-to-end flow
 

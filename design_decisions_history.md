@@ -894,6 +894,8 @@ The bounded runner now requires at least one native repair child before acceptin
 recovery. Existing target checks, child success, service and fresh monitoring
 proof remain in place. The manual guide now describes the maintained native
 permissions and bounded job rather than duplicating an obsolete bypass command.
+Active MCP, EDA and walkthrough guides link to that procedure as well; archived
+historical notes retain their original context.
 The runner's non-idempotent invocation is reported as changed, and its long
 expressions were wrapped for the existing production lint profile.
 

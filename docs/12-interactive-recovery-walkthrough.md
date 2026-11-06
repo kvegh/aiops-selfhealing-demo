@@ -63,10 +63,11 @@ checks and AI confirmation through Zabbix MCP and Linux MCP.
 
 AAP supports RBAC, credential handling, job logging, and activity auditing.
 Showing those capabilities does not establish that all possible controls are
-configured in this demo. The actual launcher uses
-`--dangerously-skip-permissions`; agent instructions prescribe AAP-only changes.
-The repository documents remaining catalog-access and tool-restriction work.
-This is a functionality demo, not an attestation of enforced isolation.
+configured in this demo. The maintained launcher uses native permissions,
+read-only diagnostic tools and an invocation-only deny hook restricting changes
+to the selected saved AAP repair. It verifies native child-job success and fresh
+monitoring recovery. The API token retains its configured AAP permissions;
+client-side restrictions do not establish narrower server-side RBAC.
 
 Source references:
 
