@@ -942,7 +942,7 @@ ninety seconds to three minutes. The controlled cleanup exposed a real
 107-second delay between a successful repair and original-trigger recovery,
 followed by a fresh agent item sample. This accommodates the existing passive
 availability/item polling without weakening service, child-job, target or TLS
-checks. The model's six-minute turn budget and maximum repair count are unchanged.
+checks. The model's 600-second hard timeout and maximum repair count are unchanged.
 
 ## Keep useful failure metadata without exposing model output — 2026-11-06
 

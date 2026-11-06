@@ -211,7 +211,7 @@ Only the checked **Deploy Zabbix Agent** template can make changes, using its
 saved selected-host limit and no launch overrides. Existing permission checks
 and hooks remain effective.
 
-One invocation is limited to 600 seconds and 24 turns. It may launch at most
+One invocation is limited to 600 seconds and 48 turns. It may launch at most
 two instances of that repair. There is no configured monetary spending cap.
 The private AAP MCP connection must use its selected trusted certificate; the
 runner does not weaken TLS or expose a public MCP endpoint.

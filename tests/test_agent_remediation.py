@@ -260,6 +260,8 @@ class NativeArgvTests(unittest.TestCase):
                 fixture=folder/'play.yml';fixture.write_text(yaml.safe_dump([{'hosts':'localhost','connection':'local','gather_facts':False,'vars':variables,
                     'tasks':[{'name':'Check actual typed arguments without executing the model','ansible.builtin.assert':{'that':[
                         "argument_vector | type_debug == 'list'","'--permission-mode' in argument_vector", "'--dangerously-skip-permissions' not in argument_vector",
+                        "argument_vector[argument_vector.index('--max-turns') + 1] == '48'",
+                        "argument_vector[3] == '600'",
                         "'synthetic-secret-canary' not in (argument_vector | join(' '))",
                         "workspace_expression.path == '/home/synthetic/claude-wd'"]}}]}],sort_keys=False))
                 env=dict(os.environ,ANSIBLE_LOCAL_TEMP=str(folder/'local'),ANSIBLE_JINJA2_NATIVE=native,ANSIBLE_NOCOLOR='1',

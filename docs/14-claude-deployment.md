@@ -97,7 +97,7 @@ return grants no permissions and preserves other native denials/hooks. The
 existing administrator/write token remains broader than one template; this is
 a controlled functionality demo, not per-template RBAC.
 
-One run is limited to 24 turns and 600 seconds. The existing saved Job Template
+One run is limited to 48 turns and 600 seconds. The existing saved Job Template
 has an outer timeout; private invocation files are removed on success/failure.
 Ordered phase messages and the final report are displayed after completion;
 live UI streaming is not required for this functional test. Completion also
