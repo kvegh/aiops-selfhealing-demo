@@ -242,6 +242,8 @@ Without a workspace override, it uses the installer's existing account-local
 `claude-wd` default.
 The independent monitoring check allows three minutes for passive-agent
 availability and item polling to catch up after a successful repair.
+On failure, the job reports its stage, numeric CLI exit code and only recognized
+completion markers; raw model/tool output and credentials remain protected.
 
 The existing production SCM Project retains an owner-approved tested-commit
 pin until its runtime is deliberately migrated. Shared desired CaC stays on

@@ -227,6 +227,24 @@ class ManagedGuardrailTests(unittest.TestCase):
                     self.assertEqual(guard.read_bytes(),(ROOT/'AI_Instructions_Guardrails/CLAUDE.md').read_bytes() if mode=='managed' else outside.read_bytes())
 
 class NativeArgvTests(unittest.TestCase):
+    def test_failure_reports_only_exit_code_and_whitelisted_completion_markers(self):
+        play=yaml.safe_load((ROOT/'playbooks/run_claude_analyse_fix.yml').read_text())[0]
+        task=play['tasks'][0]['rescue'][0]
+        for subtype in ['error_max_turns','synthetic-secret-canary']:
+            with tempfile.TemporaryDirectory(prefix='agent-safe-failure-') as temporary:
+                folder=Path(temporary);variables={'ansible_failed_task':{'name':'synthetic bounded stage'},
+                    'claude_output':{'rc':1,'stdout':json.dumps({'type':'result','subtype':subtype,
+                        'result':'synthetic-secret-canary'}),'stderr':'synthetic-secret-canary'}}
+                fixture=folder/'play.yml';fixture.write_text(yaml.safe_dump([{'hosts':'localhost','connection':'local',
+                    'gather_facts':False,'vars':variables,'tasks':[task]}],sort_keys=False))
+                env=dict(os.environ,ANSIBLE_LOCAL_TEMP=str(folder/'local'),ANSIBLE_NOCOLOR='1')
+                result=subprocess.run([sys.executable,'-m','ansible.cli.playbook','-i','localhost,',str(fixture)],
+                    env=env,capture_output=True,text=True,timeout=20)
+                self.assertNotEqual(result.returncode,0)
+                self.assertIn('CLI exit code: 1',result.stdout+result.stderr)
+                self.assertNotIn('synthetic-secret-canary',result.stdout+result.stderr)
+                if subtype=='error_max_turns':self.assertIn('error_max_turns',result.stdout+result.stderr)
+
     def test_actual_cli_argument_expression_is_a_list_and_contains_no_bearer(self):
         play=yaml.safe_load((ROOT/'playbooks/run_claude_analyse_fix.yml').read_text())[0]
         task=next(x for x in play['tasks'][0]['block'] if x['name']=='Run the bounded agent with native permissions')

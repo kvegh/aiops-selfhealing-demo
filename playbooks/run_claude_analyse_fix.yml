@@ -399,6 +399,10 @@
           ansible.builtin.fail:
             msg: >-
               The supported agent recovery did not pass at {{ ansible_failed_task.name }}.
+              CLI exit code: {{ claude_output.rc | default('not_started') }}.
+              CLI completion markers: {{ claude_output.stdout | default('') |
+                regex_findall('"subtype"\s*:\s*"(success|error_max_turns|error_during_execution|error_during_api_access|error_max_budget_usd)"') |
+                unique | list }}.
               No additional model run was started; credential-bearing diagnostics remain protected.
           no_log: false
       always:
