@@ -57,7 +57,7 @@
             that:
               - claude_agent_user == demo_mcp_user.name
               - awx_inventory_id is defined
-              - awx_project_id is defined
+              - awx_job_id is defined
             quiet: true
 
         - name: Resolve the configured workspace and selected private connection
@@ -96,6 +96,28 @@
             quiet: true
             fail_msg: Complete the selected Claude/MCP installer; preserve unrelated user edits.
 
+        - name: Read the current native Controller job through selected trusted HTTPS
+          ansible.controller.job_list:
+            query: {id: "{{ awx_job_id | int }}"}
+            controller_host: "{{ demo_claude_aap.api_origin }}"
+            controller_oauthtoken: "{{ demo_aap_mcp.token }}"
+            validate_certs: true
+            request_timeout: 3
+          environment:
+            SSL_CERT_FILE: "{{ demo_mcp_workspace.path }}/.aiops-aap-ca.pem"
+          register: demo_agent_current_job
+
+        - name: Require this job's native inventory and project before selecting a repair
+          ansible.builtin.assert:
+            that:
+              - demo_agent_current_job.count == 1
+              - demo_agent_current_job.results | length == 1
+              - demo_agent_current_job.results[0].id == (awx_job_id | int)
+              - demo_agent_current_job.results[0].inventory == (awx_inventory_id | int)
+              - demo_agent_current_job.results[0].project | int > 0
+              - demo_agent_current_job.results[0].limit == inventory_hostname
+            quiet: true
+
         - name: Read installed private client and selected MCP SSH configuration
           ansible.builtin.slurp:
             src: "{{ item }}"
@@ -116,7 +138,8 @@
           ansible.builtin.uri:
             url: >-
               {{ demo_claude_aap.api_origin ~ '/api/controller/v2/job_templates/?name=Deploy%20Zabbix%20Agent' ~
-                 '&inventory=' ~ (awx_inventory_id | int | string) ~ '&project=' ~ (awx_project_id | int | string) }}
+                 '&inventory=' ~ (awx_inventory_id | int | string) ~
+                 '&project=' ~ (demo_agent_current_job.results[0].project | int | string) }}
             headers:
               Authorization: "Bearer {{ demo_aap_mcp.token }}"
             ca_path: "{{ demo_mcp_workspace.path }}/.aiops-aap-ca.pem"
@@ -129,7 +152,8 @@
         - name: Precheck saved repair inventory limit credentials and no-override settings
           ansible.builtin.set_fact:
             demo_agent_repair_id: >-
-              {{ demo_agent_repair_read.json | demo_claude_repair_template(awx_inventory_id | int, awx_project_id | int) }}
+              {{ demo_agent_repair_read.json | demo_claude_repair_template(
+                awx_inventory_id | int, demo_agent_current_job.results[0].project | int) }}
 
         - name: Read only the repair's selected inventory host
           ansible.builtin.uri:
@@ -303,7 +327,7 @@
               - item.results[0].status == 'successful'
               - item.results[0].job_template == (demo_agent_repair_id | int)
               - item.results[0].inventory == (awx_inventory_id | int)
-              - item.results[0].project == (awx_project_id | int)
+              - item.results[0].project == (demo_agent_current_job.results[0].project | int)
               - item.results[0].limit == 'testserver1'
             quiet: true
           loop: "{{ demo_agent_child_readbacks.results }}"
