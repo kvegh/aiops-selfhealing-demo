@@ -921,3 +921,18 @@ of the original problem. The model repair remains unverified and needs a new
 controlled test. The existing native fixture now covers a Controller context
 without a synthetic project variable and rejects a mismatched current-job
 inventory. Syntax checks and focused offline production lint passed.
+
+## Match the installer's default workspace — 2026-11-06
+
+Implementation `d81e7e6` fixes the next live attempt. The event reached the saved
+runner and passed its initial context
+check, but stopped before model invocation because an absent workspace override
+was supplied as null. The existing workspace filter expects an empty string to
+select the installer's account-local default. The correction uses that same
+default without changing installed files or allowing a different destination.
+
+The existing native argument fixture now evaluates the actual default-workspace
+expression under both supported Jinja modes. Read-only checks against the selected
+installed user, instructions, application CA and private MCP definitions passed.
+The activation was stopped and the normal repair succeeded after the failed
+attempt. No model inference ran; full automatic remediation remains unproved.
