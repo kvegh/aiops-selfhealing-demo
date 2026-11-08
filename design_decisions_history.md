@@ -1,5 +1,33 @@
 # Design decisions history
 
+## Require actual website monitoring before enabling delivery — 2026-11-08
+
+Implementation `f1b5d6421de10c3bb86358605f64e5eb72c592d2` adds two standard tasks to the existing monitoring
+finalization: mark the readiness time, then wait through the existing private
+`item.get` API for a normal HTTP 200 sample at or after that time. The sample
+must pass before forwarding is enabled. The earlier configuration and frontend
+checks did not establish that the monitoring guest could reach the website.
+The real event test exposed that gap: a missing approved guest-to-host HTTPS
+permission left the item unsupported and generated no event.
+
+The new unsupported-sample execution test initially exposed another failure-path
+issue: an explicit false failure expression could override retry exhaustion.
+Both website and existing testserver health polls now retain standard URI and
+bounded retry failure handling instead. Target identity, credentials, protected
+logging and readiness predicates remain unchanged. No helper or publisher was
+introduced; the exact host permission and aligned shared policy records remain
+operator-prepared prerequisites.
+
+All 15 existing and added versioned-monitoring tests passed in 187.499 seconds,
+including healthy delivery, unsupported-sample refusal, quarantine, ownership,
+protected inputs and repeated apply. Strict production lint, YAML/Python syntax
+and whitespace checks passed. Changelog version 1.1.8 identifies this source
+correction. Live HTTP sampling and event recovery remain unverified until the
+pending firewall-record ownership decision permits the existing policy update.
+The website was restored, its button disarmed and both activations disabled;
+no model request or private MCP installation was performed.
+
+
 ## Bound monitoring DNS readiness through the observed negative cache — 2026-11-08
 
 Implementation `93a30e36554c7e640ef2f711d00b6e1fc5d36d40` changes only the existing monitoring frontend's DNS
