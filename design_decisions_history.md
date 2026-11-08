@@ -1,5 +1,25 @@
 # Design decisions history
 
+## Bound monitoring DNS readiness through the observed negative cache — 2026-11-08
+
+Implementation `93a30e36554c7e640ef2f711d00b6e1fc5d36d40` changes only the existing monitoring frontend's DNS
+retry count from30to65, retaining its ten-second retry delay and immediate
+success when the original assertions pass. The controlled zone's SOA permits
+600seconds of negative caching; its provider and an independent public resolver
+already returned the correct address while the hypervisor lookup still failed.
+The previous300second window expired after the guest had been authenticated.
+
+The selected IPv4, absent-IPv6, TLS, ownership and rollback checks remain
+unchanged. No resolver fallback, fixed sleep, DNS record change, listener,
+credential transfer or helper was added. The same deployment template reuses
+its authenticated owned clone; VM ownership can be retained separately without
+claiming its frontend is ready. All14 existing versioned-Zabbix regressions,
+strict production lint of the changed task file, YAML parsing and whitespace
+checks passed. A normal AAP retry remains the live acceptance step; publication
+alone does not prove the complete demo. The changelog identifies deployment
+correction1.1.7 and retains the unfinished2.0roadmap.
+
+
 ## Deploy Claude with the existing private MCP integrations — 2026-11-04
 
 Implementation `80b7dff` adds one application playbook and its reviewed native
