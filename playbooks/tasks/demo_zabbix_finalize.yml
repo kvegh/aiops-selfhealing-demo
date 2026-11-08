@@ -49,10 +49,45 @@
         demo_zabbix_testserver_health_samples.json.result | default([]) |
         demo_zabbix_testserver_samples_ready(demo_zabbix_testserver_plan.health_items,
           demo_zabbix_testserver_polling_started.stdout | int)
-      failed_when: demo_zabbix_testserver_health_samples.json.error is defined
       retries: 30
       delay: 5
       no_log: true
+
+- name: Mark the earliest valid website sample for this readiness check
+  ansible.builtin.command:
+    argv: [date, '+%s']
+  register: demo_zabbix_website_polling_started
+  changed_when: false
+
+- name: Wait for a fresh successful website sample from the selected Zabbix server
+  ansible.builtin.uri:
+    url: http://127.0.0.1/api_jsonrpc.php
+    method: POST
+    headers:
+      Authorization: "Bearer {{ demo_zabbix_clone_api_token }}"
+      Content-Type: application/json-rpc
+    body_format: json
+    body:
+      jsonrpc: '2.0'
+      method: item.get
+      params:
+        itemids: ["{{ demo_zabbix_monitoring_item_id }}"]
+        output: [itemid, state, lastvalue, lastclock]
+      id: 1
+    follow_redirects: none
+    validate_certs: true
+    status_code: 200
+  register: demo_zabbix_website_health_sample
+  changed_when: false
+  until: >-
+    (demo_zabbix_website_health_sample.json.result | default([]) | length == 1) and
+    (demo_zabbix_website_health_sample.json.result[0].state | string == '0') and
+    (demo_zabbix_website_health_sample.json.result[0].lastvalue | string == '200') and
+    (demo_zabbix_website_health_sample.json.result[0].lastclock | int >=
+      demo_zabbix_website_polling_started.stdout | int)
+  retries: 30
+  delay: 5
+  no_log: true
 
 - name: Read back the selected forwarding script and authentication parameters
   ansible.builtin.include_tasks: demo_zabbix_rpc.yml

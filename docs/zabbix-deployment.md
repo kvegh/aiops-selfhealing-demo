@@ -79,6 +79,25 @@ media and recipient. Copied unfiltered actions and imported media remain
 disabled. A controlled agent-remediation test additionally requires the matching
 EDA activation and the installed bounded runner; setup does not start that test.
 
+## Website sampling prerequisite
+
+The selected website must already be healthy. The verified new monitoring guest
+also needs its approved `guest_host_clients` permission to the hypervisor's own
+bridge on TCP 443. Guest creation and a working private API do not establish
+that connection. Prepare the exact bridge/IP/MAC association through the existing
+recovery-policy process and keep its existing canonical host-policy records
+aligned. This is an operator-prepared prerequisite; this playbook does not
+publish those shared records or grant broad public egress.
+
+Before enabling forwarding, the job waits for the selected website item's
+normal state, HTTP 200 value and a sample timestamp from this readiness check.
+It uses the existing private `item.get` API with a bounded retry. A missing,
+unsupported, stale or unreachable sample fails while the forwarding action
+remains disabled. Configuration readback alone is not monitoring acceptance.
+The website and testserver readiness polls retain standard URI failure and
+bounded retry handling. An exhausted readiness condition is a failure; a false
+custom failure expression must not override that result.
+
 ## Clone preparation and runtime access
 
 The single target's SSH public keys, machine ID and current isolation policy are

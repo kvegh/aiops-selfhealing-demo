@@ -210,7 +210,11 @@ selected instance's verified hypervisor, testserver and TRA. Importing it
 creates AAP configuration and launches no application or EDA activation.
 Secret-dependent jobs receive a whole-file Vault ciphertext string and stop
 before managed host, DNS or API writes when required settings are missing.
-Deployment correction **1.1.7** is documented in [CHANGELOG.md](CHANGELOG.md).
+Deployment correction **1.1.8** is documented in [CHANGELOG.md](CHANGELOG.md).
+Monitoring setup now requires a fresh HTTP 200 sample from the selected Zabbix
+server before forwarding can be enabled. Prepare its exact approved bridge
+HTTPS permission in the existing recovery policy first; this job does not
+publish shared firewall records automatically.
 Monitoring frontend deployment retains its bounded DNS readiness probe while
 allowing the controlled zone's ten-minute negative cache to expire. It continues
 as soon as the selected names resolve and preserves the owned clone on failure;

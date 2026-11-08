@@ -1,5 +1,5 @@
 """Exercise clone ownership, safe startup and secret-free native webhook delivery."""
-import copy, importlib.util, json, os, shutil, subprocess, sys, tempfile, threading, unittest
+import copy, importlib.util, json, os, shutil, subprocess, sys, tempfile, threading, time, unittest
 from pathlib import Path
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import yaml
@@ -75,7 +75,7 @@ const output=new Function('value',input.source)(JSON.stringify(input.fixture));p
 
 class Api:
     def __init__(self,reject):
-        self.reject=reject;self.calls=[];self.frontend_verified=False;self.tables={
+        self.reject=reject;self.calls=[];self.frontend_verified=False;self.website_ready=True;self.tables={
             'action':[{'actionid':'7','name':'inherited action','status':'0'}],
             'mediatype':[{'mediatypeid':'72','name':'Event-Driven Ansible','status':'0','type':'4'}],
             'drule':[{'druleid':'1','status':'0'}],'httptest':[{'httptestid':'1','status':'0'}],
@@ -101,8 +101,12 @@ class Api:
                 if not isinstance(values,list):values=[values]
                 chosen=[r for r in chosen if str(r.get(field)) in [str(v) for v in values]]
             if params.get('hostids'):chosen=[r for r in chosen if str(r.get('hostid')) in params['hostids']]
-            for field in ('actionids','mediatypeids','userids'):
+            for field in ('actionids','mediatypeids','userids','itemids'):
                 if params.get(field):chosen=[r for r in chosen if str(r.get(key)) in [str(x) for x in params[field]]]
+            if kind=='item' and params.get('itemids'):
+                chosen=[dict(row,state='0' if self.website_ready else '1',
+                    lastvalue='200' if self.website_ready else '0',
+                    lastclock=str(int(time.time())) if self.website_ready else '0') for row in chosen]
             if kind=='trigger' and params.get('selectHosts'):
                 chosen=[dict(row,hosts=[{'hostid':row['hostid']}]) for row in chosen]
             return {'result':str(len(chosen)) if params.get('countOutput') else copy.deepcopy(chosen)}
@@ -149,6 +153,8 @@ class QuarantineExecutionTests(unittest.TestCase):
                     frontend[0]['retries']=2;frontend[0]['delay']=0
                     tasks.extend(frontend)
                     tasks.extend(yaml.safe_load((folder/'demo_zabbix_finalize.yml').read_text()))
+                    probe=next(row for row in tasks if row['name']=='Wait for a fresh successful website sample from the selected Zabbix server')
+                    probe['retries']=2;probe['delay']=0
                 if unsafe:
                     from ansible.utils.unsafe_proxy import wrap_var
                     variables['demo_zabbix_clone_api_token']=wrap_var(variables['demo_zabbix_clone_api_token'])
@@ -170,6 +176,15 @@ class QuarantineExecutionTests(unittest.TestCase):
                 self.assertEqual(hosts.read_text(),'127.0.0.1 localhost\n192.0.2.1 zabbix.v07.example.invalid redhat.v07.example.invalid aap27.v07.example.invalid\n')
                 return response,marker.exists(),api
         finally:server.shutdown();server.server_close();thread.join(timeout=5)
+    def test_unsupported_website_sample_never_enables_forwarding(self):
+        api=Api(False);api.website_ready=False
+        result,started,api=self.run_tasks(api=api,finalize=True,delivery=True)
+        self.assertNotEqual(result.returncode,0,result.stdout+result.stderr)
+        self.assertTrue(started)
+        self.assertIn('Wait for a fresh successful website sample',result.stdout)
+        self.assertFalse(any(method=='action.update' and str(params.get('status'))=='0'
+            for method,params in api.calls))
+
     def test_rejected_quarantine_never_starts_the_server(self):
         result,started,api=self.run_tasks(True);self.assertNotEqual(result.returncode,0,result.stdout+result.stderr);self.assertFalse(started);self.assertIn('action.update',[x[0] for x in api.calls])
     def test_only_target_monitoring_starts_after_inherited_integrations_are_disabled(self):

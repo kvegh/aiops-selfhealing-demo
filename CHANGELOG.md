@@ -89,6 +89,18 @@ templates, and the status page are still outstanding.
   stack. All three pages now make zero external requests, so they render
   identically on an audience phone with nothing but venue wifi.
 
+## [1.1.8] — 2026-11-08
+
+### Fixed
+
+- Require a fresh successful website HTTP sample from the selected Zabbix server
+  before enabling event forwarding. Unsupported or unreachable checks stop
+  deployment instead of treating configuration readback as monitoring readiness.
+  Website and testserver polls use normal retry exhaustion, so an unsupported
+  sample cannot be reported successful by an overriding failure expression.
+  The existing exact guest-to-host HTTPS permission remains an operator-prepared
+  recovery-policy prerequisite, not an automatic publisher.
+
 ## [1.1.7] — 2026-11-08
 
 ### Fixed
