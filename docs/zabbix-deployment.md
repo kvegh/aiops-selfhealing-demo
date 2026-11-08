@@ -154,6 +154,11 @@ public HTTPS and the source deployment's additional Basic-auth gate. nginx uses
 The new hash file and certificate are specific to this deployment version.
 nginx is validated before reload, and its previous managed vhost is restored on
 a failed publication. No production virtual host is edited.
+The existing DNS readiness check allows up to roughly eleven minutes for the
+controlled zone's ten-minute negative cache. It returns as soon as both selected
+names resolve correctly, preserves the IPv4-only checks, and stops on expiry.
+A DNS timeout preserves the authenticated clone for the existing deployment
+template's normal idempotent retry; it does not authorize a second clone or a resolver exception.
 After publication, the trusted HTTPS probe waits within a bounded readiness
 window for the required HTTP 401 response, then requires the Basic challenge.
 Certificate validation and refusal of redirects remain enabled on every attempt;

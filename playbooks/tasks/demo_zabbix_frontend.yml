@@ -173,7 +173,9 @@
         quiet: true
       register: demo_zabbix_dns_propagation
       until: demo_zabbix_dns_propagation is not failed
-      retries: 30
+      # The controlled demo zone can cache NXDOMAIN for ten minutes. Keep the
+      # existing readiness probe bounded and finish immediately when it resolves.
+      retries: 65
       delay: 10
     - name: Obtain the monitoring frontend certificate with the existing account and webroot renewal
       ansible.builtin.command:

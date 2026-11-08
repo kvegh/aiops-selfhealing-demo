@@ -210,6 +210,12 @@ selected instance's verified hypervisor, testserver and TRA. Importing it
 creates AAP configuration and launches no application or EDA activation.
 Secret-dependent jobs receive a whole-file Vault ciphertext string and stop
 before managed host, DNS or API writes when required settings are missing.
+Deployment correction **1.1.7** is documented in [CHANGELOG.md](CHANGELOG.md).
+Monitoring frontend deployment retains its bounded DNS readiness probe while
+allowing the controlled zone's ten-minute negative cache to expire. It continues
+as soon as the selected names resolve and preserves the owned clone on failure;
+see [Zabbix deployment](docs/zabbix-deployment.md).
+
 The [protected runtime settings procedure](docs/11-protected-runtime-settings.md)
 uses the existing private AIOps repository and runtime Vault credential.
 Application launch is a separate readiness step.

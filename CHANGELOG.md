@@ -89,6 +89,14 @@ templates, and the status page are still outstanding.
   stack. All three pages now make zero external requests, so they render
   identically on an audience phone with nothing but venue wifi.
 
+## [1.1.7] — 2026-11-08
+
+### Fixed
+
+- Keep the monitoring frontend's existing DNS readiness check bounded while
+  allowing the controlled zone's ten-minute negative cache to expire. Address,
+  IPv6 and certificate checks stay unchanged; retry reuses the owned clone.
+
 ## [1.1.6] — 2026-11-04
 
 ### Changed
