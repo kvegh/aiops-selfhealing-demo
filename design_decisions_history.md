@@ -1,5 +1,27 @@
 # Design decisions history
 
+## Prepare RHEL subscription prerequisites before MCP builds — 2026-11-09
+
+Implementation `d8bb6c25883cf1604849298afba0e2edcd065278`, deployment release
+1.3.0, fixes the observed package-installation failure on the selected new TRA:
+no RHEL repositories were enabled. Organization and activation keys belong only
+to the selected instance's existing encrypted runtime settings. The standalone
+Linux MCP job now loads that same protected document before preparing packages.
+
+The certified RHEL System Roles collection is pinned to 1.120.5. Its complete
+`rhc` entrypoint also changes Insights, while its bundled modules prohibit direct
+use. The existing MCP path invokes only the shipped role initialization and
+subscription task files. These task-file names are explicitly coupled to the
+pinned version and must be reviewed on upgrade. Registration retains an existing
+identity; repository enabling preserves unrelated repositories. No Insights,
+remediation, forced re-registration, RPM transfer or additional job is added.
+
+Three native subscription tests resolve the actual vendor task graph and check
+selected input routing, existing-registration arguments and repository
+preservation. Four target-build fixtures, eight runtime/Vault checks, strict
+production lint and combined-playbook syntax pass. These local checks do not
+establish live registration, container builds or end-to-end repair success.
+
 ## Build MCP images on the selected target — 2026-11-09
 
 Implementation `7a973353e2c7e0215473b1d9393b5b984d54be57`, deployment release
