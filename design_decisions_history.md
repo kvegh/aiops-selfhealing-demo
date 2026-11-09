@@ -1,5 +1,35 @@
 # Design decisions history
 
+## Install CloudCLI for the two selected accounts through the existing installer — 2026-11-09
+
+Implementation `3d2309822815523ca746b05b20b9fa6c2fc4b29e`, deployment release
+1.5.0, adds optional CloudCLI setup to the existing Claude/MCP installation job.
+The operator selected the currently installed web account's release for both
+accounts on new TRA deployments, while retaining existing production software.
+Account names, exact version, private listeners, service lifecycle and environment
+values belong to the selected instance's existing encrypted runtime namespace.
+Native account, npm and systemd tasks supply the installation without another
+Job Template, proxy, DNS route or credential type.
+
+An optional captured Codex MCP connection keeps that account's original HTTPS
+destination, bearer and approval setting together. It never substitutes the
+current demo's AAP credentials or copies provider sign-in files. A short native
+template supports absent or exactly matching managed TOML; a different file,
+link or foreign-owned path is preserved and refused. Arbitrary TOML merging was
+unnecessary for the controlled setup and would require a parser unavailable in
+the declared collection version. Checksum, owner and mode readback verify the
+managed file without a new parser, writer or dependency.
+
+Nine native CloudCLI checks and nine existing runtime-loader checks passed,
+including private service/environment rendering, account/input refusal,
+standard-library TOML parsing in tests, repeat idempotence and preservation
+failures. Syntax, compilation, whitespace and scoped strict lint checks passed.
+The local collection/core compatibility warning was retained and reported.
+These are source and local fixture results; execution in the declared EE,
+new-account package/service deployment and authenticated browser/MCP/model
+acceptance remain unverified. No production installation or private capture
+changed during this preparation.
+
 ## Authenticate the private firewall dependency through existing runtime settings — 2026-11-09
 
 Implementation `d83097a76496a840bee154e7a8b0f05b2d36de64`, release 1.4.1,
