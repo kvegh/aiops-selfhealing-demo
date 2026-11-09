@@ -4,6 +4,7 @@ These tests do not run Git, libvirt, nft or firewalld. Hactar owns the actual
 native parser/readback tests; this suite verifies its caller and failure bounds.
 """
 import copy
+import base64
 import json
 import os
 from pathlib import Path
@@ -57,6 +58,50 @@ def inputs():
 
 
 class ZabbixNativeFirewallTests(unittest.TestCase):
+    def run_source_auth(self, token, repository):
+        """Exercise native validation and Git URL scoping without network access."""
+        with tempfile.TemporaryDirectory(prefix='aiops-source-auth-test-') as temporary:
+            root = Path(temporary)
+            prepare = yaml.safe_load((TASKS / 'demo_zabbix_firewall_prepare.yml').read_text())
+            checkout = next(task for task in prepare if 'ansible.builtin.git' in task)
+            values = inputs()
+            if token is not None:
+                values['hactar_source_git_token'] = token
+            header = 'Authorization: Basic ' + base64.b64encode(('x-access-token:' + (token or '')).encode()).decode()
+            tasks = [prepare[0], {
+                'name': 'Inspect the native Git URL-scoped authorization without connecting',
+                'ansible.builtin.command': {'argv': ['git', 'config', '--get-urlmatch', 'http.extraheader', repository]},
+                'environment': checkout['environment'], 'register': 'fixture_git_auth',
+                'changed_when': False, 'failed_when': 'fixture_git_auth.rc not in [0, 1]', 'no_log': True,
+            }, {
+                'name': 'Require authentication only for the exact dependency repository',
+                'ansible.builtin.assert': {'that': [
+                    'fixture_git_auth.stdout == ' + repr(header if repository.startswith(checkout['ansible.builtin.git']['repo'] + '/') else '')
+                ], 'quiet': True}, 'no_log': True,
+            }]
+            play = root / 'check.yml'
+            play.write_text(yaml.safe_dump([{'name': 'Check private source authentication',
+                'hosts': 'localhost', 'connection': 'local', 'gather_facts': False,
+                'vars': values, 'tasks': tasks}], sort_keys=False))
+            result = subprocess.run([sys.executable, '-m', 'ansible.cli.playbook', '-i', 'localhost,', str(play)],
+                env=dict(os.environ, ANSIBLE_LOCAL_TEMP=str(root / 'local'), ANSIBLE_REMOTE_TEMP=str(root / 'remote'),
+                         ANSIBLE_NOCOLOR='1', GIT_CONFIG_GLOBAL=os.devnull, GIT_CONFIG_NOSYSTEM='1'),
+                text=True, capture_output=True, timeout=30)
+            self.assertNotIn(token or 'synthetic-source-reader', result.stdout + result.stderr)
+            self.assertNotIn(header, result.stdout + result.stderr)
+            return result
+
+    def test_existing_reader_is_delivered_only_to_the_fixed_git_repository_without_logging(self):
+        for repository in ('https://github.com/kvegh/hactarconfig.git/info/refs',
+                           'https://github.com/example/unrelated.git/info/refs'):
+            result = self.run_source_auth('synthetic-source-reader', repository)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_missing_or_multiline_reader_fails_before_retrieval(self):
+        for token in (None, 'synthetic-source-reader\nextra-header'):
+            result = self.run_source_auth(token, 'https://github.com/kvegh/hactarconfig.git/info/refs')
+            self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+
     def run_case(self, mode='grant', change=None):
         with tempfile.TemporaryDirectory(prefix='aiops-native-firewall-test-') as temporary:
             root = Path(temporary)

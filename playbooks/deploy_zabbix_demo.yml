@@ -234,7 +234,7 @@
               ansible.builtin.debug:
                 msg: The selected monitoring clone is configured with target-local website monitoring and a protected HTTPS frontend.
       always:
-        - name: Remove only this job's temporary public firewall checkout
+        - name: Remove only this job's temporary private firewall checkout
           ansible.builtin.file:
             path: '{{ demo_zabbix_firewall_workspace.path }}'
             state: absent

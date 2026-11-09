@@ -88,6 +88,19 @@ templates, and the status page are still outstanding.
   stack. All three pages now make zero external requests, so they render
   identically on an audience phone with nothing but venue wifi.
 
+## [1.4.1] — 2026-11-09
+
+### Fixed
+
+- Retrieve the reviewed private Hactar firewall source using its existing reader
+  from the selected encrypted runtime settings. The previous unauthenticated
+  checkout failed before policy changes. Authentication is scoped to that fixed
+  repository in Git's process environment; source pins, TLS verification,
+  redirect refusal and temporary checkout cleanup remain enforced.
+- Focused native fixtures check private runtime delivery, Git header scoping,
+  missing/multiline credential refusal and absence of secret output. Real v17
+  source retrieval and monitoring/repair acceptance remain pending.
+
 ## [1.4.0] — 2026-11-09
 
 ### Changed

@@ -32,6 +32,13 @@ fixed allowed variable names are listed in `playbooks/filter_plugins/demo_runtim
 the application procedures describe their required values. Unknown names,
 unexpected document fields and missing selected-instance namespaces are rejected.
 
+The monitoring firewall source uses `hactar_source_git_token` in that same selected
+namespace. Reuse the existing private Hactar read credential; do not add a new
+credential type or expose it in template defaults. Its Git authentication header
+is restricted to the fixed dependency repository and exists only in the fetch
+process environment. The immutable source revision and verified HTTPS checks
+remain mandatory.
+
 The existing encrypted CaC capture contains an unchanged copy of this file's
 ciphertext in `aiops_runtime_settings_vault`. The existing Enable, Zabbix Demo,
 Linux/Zabbix MCP and combined Claude templates receive it as the ordinary string variable

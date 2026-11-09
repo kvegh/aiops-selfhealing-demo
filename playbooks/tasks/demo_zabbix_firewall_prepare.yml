@@ -7,11 +7,15 @@
       - demo_zabbix_deployment.firewall.hactar_source_revision is match('^[0-9a-f]{40}$')
       - demo_zabbix_deployment.firewall.protected_production_ipv4 is string
       - demo_zabbix_deployment.firewall.protected_production_ipv4 not in [demo_zabbix_config.hypervisor.address, demo_zabbix_config.hypervisor.public_ipv4]
+      - hactar_source_git_token is defined
+      - hactar_source_git_token is string
+      - hactar_source_git_token | length > 0
+      - "'\n' not in hactar_source_git_token and '\r' not in hactar_source_git_token"
     quiet: true
-    fail_msg: Supply the reviewed Hactar commit and independent protected production address in this instance's AIOps CaC.
+    fail_msg: Supply the reviewed Hactar commit, existing read token and independent protected production address in this instance's encrypted AIOps settings.
   no_log: true
 
-- name: Allocate this job's public firewall source checkout
+- name: Allocate this job's private firewall source checkout
   ansible.builtin.tempfile:
     state: directory
     prefix: aiops-firewall-source-
@@ -23,7 +27,7 @@
   check_mode: false
   no_log: true
 
-- name: Retrieve only the exact reviewed public Hactar source revision
+- name: Retrieve only the exact reviewed private Hactar source revision
   ansible.builtin.git:
     repo: https://github.com/kvegh/hactarconfig.git
     dest: '{{ demo_zabbix_firewall_workspace.path }}/source'
@@ -32,13 +36,17 @@
     recursive: false
   environment:
     GIT_TERMINAL_PROMPT: '0'
-    GIT_CONFIG_COUNT: '3'
+    GIT_CONFIG_COUNT: '4'
     GIT_CONFIG_KEY_0: credential.helper
     GIT_CONFIG_VALUE_0: ''
     GIT_CONFIG_KEY_1: http.followRedirects
     GIT_CONFIG_VALUE_1: 'false'
     GIT_CONFIG_KEY_2: http.sslVerify
     GIT_CONFIG_VALUE_2: 'true'
+    # Git receives the existing reader only in its process environment, scoped
+    # to this fixed repository. It never enters the URL or saved Git config.
+    GIT_CONFIG_KEY_3: http.https://github.com/kvegh/hactarconfig.git.extraheader
+    GIT_CONFIG_VALUE_3: "Authorization: Basic {{ ('x-access-token:' ~ hactar_source_git_token) | b64encode }}"
   delegate_to: localhost
   become: false
   vars:

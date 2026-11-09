@@ -7,6 +7,7 @@ from ansible.utils.unsafe_proxy import wrap_var
 
 
 ALLOWED_SETTINGS = {
+    "hactar_source_git_token",
     "demo_website_dns_api_token",
     "demo_website_fault_template_id",
     "demo_website_webhook_key",

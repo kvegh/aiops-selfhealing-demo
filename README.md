@@ -210,7 +210,7 @@ selected instance's verified hypervisor, testserver and TRA. Importing it
 creates AAP configuration and launches no application or EDA activation.
 Secret-dependent jobs receive a whole-file Vault ciphertext string and stop
 before managed host, DNS or API writes when required settings are missing.
-Deployment release **1.4.0** is documented in [CHANGELOG.md](CHANGELOG.md).
+Deployment release **1.4.1** is documented in [CHANGELOG.md](CHANGELOG.md).
 Failed MCP builds now retain protected stdout/stderr in the runtime user's
 private server `logs/build.log`, then fail and remove the temporary checkout.
 Four native build fixtures verify logging permissions, failure and cleanup;
@@ -241,6 +241,12 @@ Hactar revision), `protected_production_ipv4` (the independent exclusion), and
 `guest` (the existing verified Zabbix provenance). Its `isolation_policy` is the
 complete CaC policy for that hypervisor, including the matching AIOps grants.
 The existing Machine and runtime Vault credentials remain sufficient.
+The Hactar source repository is private. Each selected runtime namespace also
+supplies `hactar_source_git_token`, reusing its existing read credential. Git
+receives it only through a repository-scoped process-environment header;
+TLS verification stays enabled and redirects are disabled. The token is never
+saved in the checkout or plaintext template variables. The temporary checkout
+is removed on success or failure.
 
 The normal Zabbix job verifies the pinned hypervisor, native guest identity and
 saved owner; compares the complete native policy against CaC; then allows only
