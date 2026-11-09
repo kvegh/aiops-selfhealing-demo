@@ -1,5 +1,32 @@
 # Design decisions history
 
+## Apply the selected monitoring grant through native Ansible — 2026-11-09
+
+Implementation `5a3baad70dc01b6fa5d3942c6799579ac08d4508`, deployment release
+1.4.0, completes the AIOps consumer of the approved Hactar firewall migration.
+The normal Zabbix deployment no longer invokes the retired isolation helper.
+It loads the immutable reviewed public Hactar tasks, asserts complete native
+policy readback and verifies the selected hypervisor and saved guest identity.
+Only the declared own-bridge TCP 443 grant is applied, using the certified
+firewall role for ordinary runtime/permanent rules and native Hactar nft tasks
+for early isolation. The approved temporary lock covers both layers and bounded
+restoration; native service persistence checks and production exclusions remain.
+
+The existing Machine and runtime Vault credentials are retained. All policy and
+ownership inputs stay in the selected encrypted AIOps section; no custom host
+JSON, new credential type, implicit Git publisher or additional job chain is
+introduced. Fresh cloning still emits provenance without publishing a grant.
+Fully unattended fresh-instance ownership publication remains a separate
+factory decision; the consumer stops without a verified saved owner.
+
+Eight focused native-Ansible orchestration fixtures and fifteen existing Zabbix
+regressions passed. Strict production lint passed eighteen discovered Ansible
+files; syntax checks resolved the actual installed certified role 1.120.5.
+The reviewed functional files were preserved exactly while merging the published
+MCP 1.3.1 diagnostics and RHSM work. These are local source/fixture results on
+core 2.16.19 and Python 3.12.14, not live host application, vendor-role application
+or a completed website outage/EDA restoration demonstration.
+
 ## Retain failed MCP build output privately — 2026-11-09
 
 Implementation `6f3a297c9d7c106f9481765e2d74ffc0e5d39a4f`, deployment release
