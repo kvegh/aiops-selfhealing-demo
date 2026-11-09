@@ -10,6 +10,7 @@ policy=importlib.util.module_from_spec(spec);spec.loader.exec_module(policy)
 
 def deployment():
     return {'instance_name':'aap27-test-7','instance_number':7,'aap_fqdn':'aap27.v07.example.invalid','zone':'example.invalid',
+        'cac_import':{'controller_host':'https://aap27.v07.example.invalid','inventory_id':101,'job_template_id':102,'group_id':103,'aap_instance_key':'aap27-v07'},
         'hypervisor':{'name':'recovery','address':'192.0.2.50','public_ipv4':'8.8.8.8','user':'automation','port':22,'machine_id':'1'*32,'host_keys':['ssh-ed25519 AAAA']},
         'source_image':{'path':'/opt/vms/zabbix-disk.qcow2','sha256':'a'*64},'vm_network':'isolated','guest_user':'automation','guest_authorized_public_key':'ssh-ed25519 AAAA',
         'testserver':{'verified':True,'vm_name':'testserver1-v07','address':'192.0.2.124','uuid':'22222222-2222-2222-2222-222222222222',

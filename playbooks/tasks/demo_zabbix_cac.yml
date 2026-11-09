@@ -1,0 +1,160 @@
+---
+# Keep publication in native Controller objects and the existing CaC importer.
+# Justification: ../../README.md#native-monitoring-record-publication.
+- name: Record the authenticated VM and refresh it through the existing AIOps importer
+  no_log: true
+  block:
+    - name: Require native AAP job identity and this selected instance's API access
+      ansible.builtin.assert:
+        that:
+          - awx_inventory_id | string is match('^[1-9][0-9]*$')
+          - awx_job_template_id | string is match('^[1-9][0-9]*$')
+          - demo_aap_mcp.instance_name == demo_zabbix_config.instance_name
+          - demo_zabbix_config.cac_import.controller_host == 'https://' ~ demo_zabbix_config.aap_hostname
+        quiet: true
+        fail_msg: Run the existing Zabbix template with its selected instance API token and native AAP job context.
+
+    - name: Validate the existing API token and retain the explicit selected public origin
+      ansible.builtin.set_fact:
+        demo_zabbix_api_access: '{{ demo_aap_mcp | demo_claude_aap_mcp(demo_zabbix_config.instance_name) }}'
+        demo_zabbix_cac_binding: '{{ demo_zabbix_config.cac_import }}'
+
+    - name: Read the existing importer, source inventory, placement group and survey
+      ansible.builtin.set_fact:
+        demo_zabbix_native_importer: >-
+          {{ query('ansible.controller.controller_api', 'job_templates/' ~ (demo_zabbix_cac_binding.job_template_id | string),
+               host=demo_zabbix_cac_binding.controller_host, oauth_token=demo_aap_mcp.token, verify_ssl=true, expect_one=true)[0] }}
+        demo_zabbix_source_hosts: >-
+          {{ query('ansible.controller.controller_api', 'hosts',
+               query_params={'inventory': demo_zabbix_cac_binding.inventory_id},
+               host=demo_zabbix_cac_binding.controller_host, oauth_token=demo_aap_mcp.token,
+               verify_ssl=true, return_all=true, max_objects=256) }}
+        demo_zabbix_source_group: >-
+          {{ query('ansible.controller.controller_api', 'groups/' ~ (demo_zabbix_cac_binding.group_id | string),
+               host=demo_zabbix_cac_binding.controller_host, oauth_token=demo_aap_mcp.token, verify_ssl=true, expect_one=true)[0] }}
+        demo_zabbix_import_survey: >-
+          {{ query('ansible.controller.controller_api', 'job_templates/' ~ (demo_zabbix_cac_binding.job_template_id | string) ~ '/survey_spec',
+               host=demo_zabbix_cac_binding.controller_host, oauth_token=demo_aap_mcp.token, verify_ssl=true)[0] }}
+
+    - name: Require the existing importer, selected target input and actual placement group
+      ansible.builtin.assert:
+        that:
+          - demo_zabbix_native_importer.inventory == demo_zabbix_cac_binding.inventory_id
+          - demo_zabbix_native_importer.playbook == 'deploy-cac-project.yml'
+          - (demo_zabbix_native_importer.extra_vars | from_yaml).aap_cac_project_id == 'aiops-selfhealing-demo'
+          - demo_zabbix_native_importer.survey_enabled is sameas true
+          - demo_zabbix_import_targets | length == 1
+          - demo_zabbix_import_targets[0].required is sameas true
+          - demo_zabbix_source_group.inventory == demo_zabbix_cac_binding.inventory_id
+          - (demo_zabbix_source_group.variables | from_yaml).hypervisor_host == demo_zabbix_config.hypervisor.name
+        quiet: true
+      vars:
+        demo_zabbix_import_targets: >-
+          {{ demo_zabbix_import_survey.spec | selectattr('variable', 'equalto', 'aap_instance_key') | list }}
+
+    - name: Prepare only this authenticated VM's native source record
+      ansible.builtin.set_fact:
+        demo_zabbix_source_variables: >-
+          {{ demo_zabbix_config | demo_zabbix_source_inventory_variables(
+               demo_zabbix_config | demo_zabbix_provenance(demo_zabbix_guest_record,
+                 demo_zabbix_guest_ip, demo_zabbix_network, demo_zabbix_guest_machine_id.stdout | trim),
+               demo_zabbix_source_hosts) }}
+
+    - name: Register only the selected verified guest without replacing unrelated host variables
+      ansible.controller.host:
+        inventory: '{{ demo_zabbix_cac_binding.inventory_id | string }}'
+        name: '{{ demo_zabbix_config.vm_name }}'
+        variables: '{{ demo_zabbix_source_variables }}'
+        state: present
+        controller_host: '{{ demo_zabbix_cac_binding.controller_host }}'
+        controller_oauthtoken: '{{ demo_aap_mcp.token }}'
+        validate_certs: true
+        max_retries: 0
+
+    - name: Read back the exact native source host
+      ansible.builtin.set_fact:
+        demo_zabbix_source_readback: >-
+          {{ query('ansible.controller.controller_api', 'hosts',
+               query_params={'inventory': demo_zabbix_cac_binding.inventory_id, 'name': demo_zabbix_config.vm_name},
+               host=demo_zabbix_cac_binding.controller_host, oauth_token=demo_aap_mcp.token, verify_ssl=true, expect_one=true)[0] }}
+
+    - name: Require actual source persistence before invoking CaC
+      ansible.builtin.assert:
+        that: (demo_zabbix_source_readback.variables | from_yaml) == demo_zabbix_source_variables
+        quiet: true
+
+    - name: Add only this host to the existing hypervisor placement group
+      ansible.controller.group:
+        inventory: '{{ demo_zabbix_cac_binding.inventory_id | string }}'
+        name: '{{ demo_zabbix_source_group.name }}'
+        hosts: ['{{ demo_zabbix_config.vm_name }}']
+        preserve_existing_hosts: true
+        state: present
+        controller_host: '{{ demo_zabbix_cac_binding.controller_host }}'
+        controller_oauthtoken: '{{ demo_aap_mcp.token }}'
+        validate_certs: true
+        max_retries: 0
+
+    - name: Run only the existing importer with its saved credentials and wait without a firewall lock
+      ansible.controller.job_launch:
+        job_template: '{{ demo_zabbix_cac_binding.job_template_id | string }}'
+        extra_vars:
+          aap_instance_key: '{{ demo_zabbix_cac_binding.aap_instance_key }}'
+          debug_logging: false
+        wait: true
+        interval: 5
+        timeout: 900
+        controller_host: '{{ demo_zabbix_cac_binding.controller_host }}'
+        controller_oauthtoken: '{{ demo_aap_mcp.token }}'
+        validate_certs: true
+        max_retries: 0
+      register: demo_zabbix_cac_job
+
+    - name: Require actual successful importer completion
+      ansible.builtin.assert:
+        that: demo_zabbix_cac_job.status == 'successful'
+        quiet: true
+        fail_msg: The existing AIOps importer failed; preserve this verified VM and inspect that job before retrying.
+
+    - name: Retrieve the newly rendered AIOps host and existing Zabbix template
+      ansible.builtin.set_fact:
+        demo_zabbix_refreshed_host: >-
+          {{ query('ansible.controller.controller_api', 'hosts',
+               query_params={'inventory': awx_inventory_id | int, 'name': inventory_hostname},
+               host=demo_zabbix_cac_binding.controller_host, oauth_token=demo_aap_mcp.token, verify_ssl=true, expect_one=true)[0] }}
+        demo_zabbix_refreshed_template: >-
+          {{ query('ansible.controller.controller_api', 'job_templates/' ~ (awx_job_template_id | string),
+               host=demo_zabbix_cac_binding.controller_host, oauth_token=demo_aap_mcp.token, verify_ssl=true, expect_one=true)[0] }}
+
+    - name: Require the original Zabbix template and its AIOps inventory
+      ansible.builtin.assert:
+        that:
+          - demo_zabbix_refreshed_template.inventory | int == awx_inventory_id | int
+          - demo_zabbix_refreshed_template.playbook == 'playbooks/deploy_zabbix_demo.yml'
+          - (demo_zabbix_refreshed_template.extra_vars | from_yaml).demo_runtime_settings_vault is defined
+        quiet: true
+
+    - name: Bind only this host's refreshed deployment
+      ansible.builtin.set_fact:
+        demo_zabbix_deployment: '{{ (demo_zabbix_refreshed_host.variables | from_yaml).demo_zabbix_deployment }}'
+
+    - name: Reload the updated ciphertext through the existing native Vault loader
+      ansible.builtin.include_tasks: demo_runtime_settings.yml
+      vars:
+        demo_runtime_expected_instance: '{{ demo_zabbix_config.instance_name }}'
+        demo_runtime_input_vault: '{{ (demo_zabbix_refreshed_template.extra_vars | from_yaml).demo_runtime_settings_vault }}'
+
+    - name: Require the refreshed definition to preserve this exact instance and importer
+      ansible.builtin.assert:
+        that:
+          - demo_zabbix_deployment.instance_name == demo_zabbix_config.instance_name
+          - demo_zabbix_deployment.cac_import == demo_zabbix_cac_binding
+          - demo_zabbix_deployment.firewall.guest.uuid == demo_zabbix_guest_record.uuid
+          - demo_zabbix_deployment.firewall.guest.machine_id == demo_zabbix_guest_machine_id.stdout | trim
+          - demo_zabbix_deployment.firewall.guest.gateway == demo_zabbix_network.gateway
+        quiet: true
+
+    - name: Refresh the cached policy for the existing native grant transaction
+      ansible.builtin.set_fact:
+        demo_zabbix_firewall_expected_policy: '{{ demo_zabbix_deployment.isolation_policy }}'
+        hactar_isolation_policy: '{{ demo_zabbix_deployment.isolation_policy }}'

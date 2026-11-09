@@ -88,6 +88,36 @@ templates, and the status page are still outstanding.
   stack. All three pages now make zero external requests, so they render
   identically on an audience phone with nothing but venue wifi.
 
+## [1.6.0] — 2026-11-09
+
+### Added
+
+- Publish the authenticated Zabbix VM and observed gateway into the existing
+  native source inventory, preserving unrelated variables and placement members.
+  Run the existing CaC importer with its saved credentials, then reload the
+  rendered host, protected runtime ciphertext and cached complete firewall policy
+  before the existing grant transaction. No firewall lock is held during import.
+- Keep the importer and firewall configuration inside the existing per-instance
+  Zabbix VM definition. Native IDs come from the importer; no additional Job
+  Template, publisher, credential type or state store is introduced.
+
+### Verification
+
+- Focused tests cover the data migration and planned VM projection, protected
+  publication, selected native Controller sequence, importer failure and owner
+  conflicts, refreshed runtime values and preserved explicit grant removal.
+  Controller operations are substituted in orchestration fixtures. A normal
+  fresh-clone AAP run remains required for live acceptance.
+- On the combined source, three producer sequence fixtures, nine runtime/Vault
+  tests and four Zabbix configuration/provenance tests pass. Matching importer
+  checks cover 39 settings/publication and five native policy tests. Scoped
+  strict production lint, deployment syntax and whitespace checks pass. Native
+  Controller calls are substituted in producer fixtures; these results do not
+  establish live AAP acceptance.
+- Upgrade the matching AutoDeploy source, protected layout and all common-source
+  pins together while affected jobs are stopped. Older readers cannot consume
+  the nested VM configuration. Existing MCP and CloudCLI corrections are retained.
+
 ## [1.5.2] — 2026-11-09
 
 ### Fixed

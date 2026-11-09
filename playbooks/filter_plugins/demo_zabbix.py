@@ -9,6 +9,8 @@ import xml.etree.ElementTree as ET
 
 from ansible.errors import AnsibleFilterError
 from ansible.parsing.yaml.objects import AnsibleVaultEncryptedUnicode
+from ansible.parsing.yaml.loader import AnsibleLoader
+from ansible.utils.unsafe_proxy import wrap_var
 
 spec = importlib.util.spec_from_file_location('zabbix_website_configuration', Path(__file__).with_name('demo_website.py'))
 website = importlib.util.module_from_spec(spec)
@@ -47,6 +49,14 @@ def configuration(value):
                   vm_network=value['vm_network'], guest_user=user, guest_authorized_public_key=key,
                   memory_mb=4096, vcpus=2)
     result['testserver'] = guests.guest(result, value.get('testserver'), 'testserver1')
+    binding = value.get('cac_import')
+    require(isinstance(binding, dict) and set(binding) == {'controller_host', 'inventory_id', 'job_template_id', 'group_id', 'aap_instance_key'}
+            and binding['controller_host'] == 'https://' + result['aap_hostname']
+            and all(type(binding[key]) is int and binding[key] > 0 for key in ('inventory_id', 'job_template_id', 'group_id'))
+            and isinstance(binding['aap_instance_key'], str)
+            and re.fullmatch(r'[A-Za-z0-9_.-]{1,200}', binding['aap_instance_key']),
+            'Import the selected VM configuration with its existing native AAP importer binding first.')
+    result['cac_import'] = copy.deepcopy(binding)
     return result
 
 
@@ -326,12 +336,60 @@ def provenance(config, record, address=None, network=None, machine_id=None):
         require(isinstance(network, dict) and re.fullmatch(r'[A-Za-z0-9_.:-]{1,15}', network.get('bridge', '')),
                 'Retain the actual verified libvirt bridge.')
         result['bridge'] = network['bridge']
+        if 'gateway' in network:
+            gateway = ipaddress.IPv4Address(network['gateway'])
+            require(str(gateway) == network['gateway'] and gateway.is_private,
+                    'Retain only the observed private bridge gateway.')
+            result['gateway'] = str(gateway)
     if machine_id is not None:
         require(address is not None and network is not None and isinstance(machine_id, str)
                 and re.fullmatch(r'[0-9a-f]{32}', machine_id) and machine_id != config['hypervisor']['machine_id'],
                 'Require the pinned SSH guest machine identity before marking ownership verified.')
         result.update(machine_id=machine_id, verified=True)
     return result
+
+
+def source_inventory_variables(config, resource, rows):
+    """Validate the native inventory update; retain unrelated existing variables."""
+    require(isinstance(rows, list) and len(rows) <= 256 and resource.get('verified') is True
+            and resource.get('instance_name') == config['instance_name']
+            and resource.get('vm_name') == config['vm_name']
+            and resource.get('hypervisor_machine_id') == config['hypervisor']['machine_id']
+            and isinstance(resource.get('gateway'), str),
+            'Publish only the authenticated selected guest and its observed gateway.')
+    selected = []
+    immutable = ('uuid', 'disk', 'network', 'bridge', 'mac', 'address', 'machine_id',
+                 'hypervisor_machine_id', 'host_keys', 'user', 'port', 'source_sha256', 'gateway')
+    for row in rows:
+        require(isinstance(row, dict) and row.get('inventory') == config['cac_import']['inventory_id'],
+                'Use only the existing importer inventory.')
+        value = row.get('variables') or {}
+        value = AnsibleLoader(value).get_single_data() if isinstance(value, str) else copy.deepcopy(value)
+        require(isinstance(value, dict) and isinstance(value.get('vm_resource', {}), dict),
+                'Preserve invalid existing source inventory variables for review.')
+        saved = value.get('vm_resource', {})
+        if row.get('name') == config['vm_name']:
+            require(all(field not in saved or saved[field] == resource[field] for field in immutable),
+                    'Existing source inventory ownership conflicts with this verified guest.')
+            selected.append(value)
+        else:
+            require(not any(saved.get(field) == resource[field] for field in ('uuid', 'mac', 'machine_id'))
+                    and value.get('vm_uuid') != resource['uuid'] and value.get('machine_id') != resource['machine_id']
+                    and not (value.get('ansible_host') == resource['address']
+                             and value.get('hypervisor_host') in (None, config['hypervisor']['name']))
+                    and not (saved.get('address') == resource['address']
+                             and saved.get('hypervisor_machine_id') == resource['hypervisor_machine_id']),
+                    'Another source inventory host owns this guest identity.')
+    require(len(selected) <= 1, 'The selected VM has duplicate source inventory rows.')
+    result = selected[0] if selected else {}
+    desired = {'aap_instance_number': config['instance_number'], 'hypervisor_host': config['hypervisor']['name'],
+               'ansible_host': resource['address'], 'ansible_user': resource['user'], 'ansible_port': resource['port'],
+               'vm_uuid': resource['uuid'], 'machine_id': resource['machine_id'], 'host_keys': resource['host_keys']}
+    require(all(key not in result or result[key] == value for key, value in desired.items()),
+            'Existing source connection fields conflict with this guest.')
+    result.update(desired)
+    result['vm_resource'] = dict(result.get('vm_resource', {}), **copy.deepcopy(resource))
+    return wrap_var(result)
 
 
 class FilterModule:
@@ -341,4 +399,5 @@ class FilterModule:
                 'demo_zabbix_network_details':network_details, 'demo_zabbix_quarantine':quarantine,
                 'demo_zabbix_event_stream':event_stream, 'demo_zabbix_recipient_medias':recipient_medias,
                 'demo_zabbix_provenance':provenance, 'demo_zabbix_reconciliation':reconcile,
+                'demo_zabbix_source_inventory_variables':source_inventory_variables,
                 'demo_zabbix_imported_media':imported_media, 'demo_zabbix_delivery_ready':delivery_ready}

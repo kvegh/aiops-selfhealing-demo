@@ -210,7 +210,7 @@ selected instance's verified hypervisor, testserver and TRA. Importing it
 creates AAP configuration and launches no application or EDA activation.
 Secret-dependent jobs receive a whole-file Vault ciphertext string and stop
 before managed host, DNS or API writes when required settings are missing.
-Deployment release **1.5.2** is documented in [CHANGELOG.md](CHANGELOG.md).
+Deployment release **1.6.0** is documented in [CHANGELOG.md](CHANGELOG.md).
 Failed MCP builds now retain protected stdout/stderr in the runtime user's
 private server `logs/build.log`, then fail and remove the temporary checkout.
 The observed image-build failure is diagnosed: enforcing SELinux denied
@@ -271,12 +271,10 @@ firewalld rule and the early nftables policy. The certified
 Hactar Ansible renders, validates and checks native nftables configuration.
 No firewall helper executable or custom deployed JSON policy is used.
 
-**Fresh-instance boundary:** cloning emits verified provenance as an AAP job
-artifact, but this job does not write it to Git or create a new CaC grant. Before
-granting access, that instance's verified owner and exact permission must already
-be published in its own encrypted AIOps section. Existing instances can use that
-saved record. A fully unattended fresh-instance producer is still unresolved;
-no automatic publisher, additional job chain or inferred ownership is provided.
+Fresh cloning publishes the authenticated native VM record through the existing
+source inventory and AIOps importer, then reloads its own rendered configuration.
+The complete owner and exact grant must be persisted before permissions open.
+See [native monitoring record publication](#native-monitoring-record-publication).
 
 Focused orchestration fixtures cover exact/repeated grants, unrelated-policy
 refusal, wrong or missing owners, rollback and cleanup. Run them with
@@ -289,6 +287,47 @@ and recovery-driven rearm before that result is accepted.
 The [protected runtime settings procedure](docs/11-protected-runtime-settings.md)
 uses the existing private AIOps repository and runtime Vault credential.
 Application launch is a separate readiness step.
+
+### Native monitoring record publication
+
+The existing Zabbix job verifies the clone through pinned SSH, including its
+machine ID and observed bridge gateway. It updates only that VM's native source
+inventory record, preserving other variables and placement-group members, then
+waits for the existing **Deploy AIOps Selfhealing Demo CaC** template with its
+saved credentials. No firewall lock is held while the child job runs.
+
+The importer stores the resulting VM and its configuration together under
+`aiops_instances[instance].zabbix`. Its `configuration.firewall` holds the exact
+permission; `configuration.cac_import` holds the native importer/inventory/group
+IDs and selected AAP alias. These references are resolved during import, not
+hardcoded. The existing importer is the only Git publisher. Failed import stops
+the parent before monitoring or firewall changes, preserving the verified clone.
+
+The running parent then reads its updated native AIOps host variables and saved
+template ciphertext through the same selected AAP API. The existing Vault loader
+accepts that refreshed ciphertext explicitly, avoiding stale original Extra
+Variables, checks the instance/owner again, and refreshes the cached complete
+firewall policy before the existing native grant transaction continues.
+
+Controller collection 4.8.11 supports these operations. The job uses its native
+`controller_api` lookup, `host`, `group` with `preserve_existing_hosts`, and
+`job_launch` with a bounded wait. Every call uses the selected instance's public
+HTTPS origin and its existing API/MCP token, with certificate verification and
+normal EE trust. It does not select a private API endpoint or another account's
+token. The source-record filter only checks immutable VM facts and merges data;
+native Controller modules do not validate this project-specific provenance.
+
+Run `python3.12 -m unittest discover -s tests -p test_zabbix_cac.py -v` for the
+focused Ansible fixtures: successful save/import/reload, failure before writes
+on conflicting ownership, and stopping after an unsuccessful importer. Controller
+calls are substituted in those fixtures. Real source publication and a complete
+fresh-clone monitoring/recovery run still require normal AAP acceptance testing.
+
+Upgrade this consumer with the AutoDeploy importer, protected VM configuration
+layout and common-source pins. The normal import must first render
+`configuration.cac_import` and move each existing grant into that VM's
+`configuration.firewall`; older common-source readers cannot consume that
+layout. Keep affected runtime jobs stopped until the coordinated update is done.
 
 At launch, select the AAP inventory entry by its inventory name. The private
 capture uses that entry's `vm_resource.vm_name` to select saved AIOps guest and

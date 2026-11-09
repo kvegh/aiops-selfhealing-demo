@@ -183,6 +183,14 @@
             - name: Prepare this guest's isolated management connection
               ansible.builtin.include_tasks: tasks/demo_zabbix_guest_connection.yml
 
+            - name: Save this verified VM through the existing source inventory and CaC importer
+              ansible.builtin.include_tasks: tasks/demo_zabbix_cac.yml
+              args:
+                apply:
+                  delegate_to: localhost
+                  become: false
+                  no_log: true
+
             - name: Verify the selected agent before interrupting existing monitoring
               ansible.builtin.include_tasks: tasks/demo_zabbix_testserver_readiness.yml
               args:
