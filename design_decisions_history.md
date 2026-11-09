@@ -1,5 +1,25 @@
 # Design decisions history
 
+## Authenticate the private firewall dependency through existing runtime settings — 2026-11-09
+
+Implementation `d83097a76496a840bee154e7a8b0f05b2d36de64`, release 1.4.1,
+corrects the earlier assumption that the Hactar repository was public. The normal
+monitoring job stopped at its unauthenticated checkout before firewall writes.
+The existing Hactar reader can access the exact required commit; its token now
+travels through the already approved selected-instance encrypted runtime file.
+No credential type, service, stored Git authentication or secret transport is
+added. The repository-scoped Git header exists only in the fetch process
+environment; fixed source pins, TLS verification, redirect refusal, protected
+logging and unconditional checkout cleanup remain.
+
+Ten native firewall/authentication fixtures, eight runtime-loader checks, strict
+production lint across eighteen discovered files and combined-playbook syntax
+passed. A focused independent review found no significant issues. The tests
+exercise actual Git header URL matching without network access and verify
+literal private input handling, wrong/missing input refusal and no secret output.
+They do not establish successful live retrieval, firewall application or the
+complete monitoring/EDA restoration workflow; those remain acceptance work.
+
 ## Apply the selected monitoring grant through native Ansible — 2026-11-09
 
 Implementation `5a3baad70dc01b6fa5d3942c6799579ac08d4508`, deployment release
