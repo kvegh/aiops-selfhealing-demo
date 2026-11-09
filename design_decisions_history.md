@@ -1,5 +1,35 @@
 # Design decisions history
 
+## Label the temporary MCP build context for enforcing SELinux — 2026-11-09
+
+Implementation `e191394537506cbf2c4def9fc85e7d05ca870803`, deployment release
+1.5.1, is integrated onto the reviewed optional CloudCLI 1.5.0 preparation at
+`8e899273ae51ae49dc79942d4c6397a5d0209383` without changing that functionality.
+
+The retained failed-build output showed execution of the mounted RPM-install
+script was denied. A corrected, identity-verified read-only diagnostic found
+the enforcing SELinux AVC: `container_t` could not execute the source script
+labeled `user_home_t`. The pinned source already tracked an executable script,
+and the inspected home/container-store filesystems had no noexec restriction.
+
+The existing runtime path now uses native file attributes to label only the
+job-created public source checkout `container_file_t`, recursively without
+following symlinks. This changes neither file owners/modes nor home/storage
+labels or SELinux policy/enforcement. Only that label operation uses root;
+the unchanged upstream recipe still builds under the existing unprivileged
+runtime account. Failed labeling stops before the build and retains normal
+temporary-checkout cleanup. Private failure logs and runtime-secret separation
+remain in place.
+
+The combined source passed five native MCP build fixtures, nine CloudCLI
+fixtures and nine runtime/Vault checks. The labeling fixture checks the exact
+scope and ordering without relabeling the operator host. Strict production lint
+passed across 16 encountered files, with the existing local collection/core
+compatibility warning retained; combined-playbook syntax and diff checks passed.
+Registration/repository/package preparation had passed on the selected TRA;
+the corrected image build, private MCP protocol checks and actual CloudCLI
+package/service/provider functionality still need live acceptance.
+
 ## Install CloudCLI for the two selected accounts through the existing installer — 2026-11-09
 
 Implementation `3d2309822815523ca746b05b20b9fa6c2fc4b29e`, deployment release
