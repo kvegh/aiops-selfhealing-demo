@@ -73,6 +73,14 @@ recipe used for its container:
 | Zabbix MCP | `https://github.com/initMAX/zabbix-mcp-server.git` | `c3b93d5a1a4678d211d38a2a539a15241da65109` | `Dockerfile` |
 
 The upstream recipes are reused unchanged from their pinned public checkouts.
+The Linux build passes its existing documented `BUILD_FROM_SOURCE=0` argument,
+allowing dependency wheels while still building the application/container from
+the pinned source on TRA. The normal source-only attempt reached application
+installation but failed because the image's Rust 1.92 compiler could not build
+`uv_build` dependencies requiring Rust 1.97. This argument removes the upstream
+installer's forced `--no-binary :all:` selection; source revisions, requirements,
+hashes and TLS checks are unchanged. The Zabbix build command receives no new
+argument. This correction still needs an actual successful build/protocol test.
 The selected Linux recipe uses UBI 10; the Zabbix recipe uses its existing
 Debian-based Python image. This does not change the separate Claude CLI image.
 TRA needs network access to its trusted package repositories and the public

@@ -88,6 +88,31 @@ templates, and the status page are still outstanding.
   stack. All three pages now make zero external requests, so they render
   identically on an audience phone with nothing but venue wifi.
 
+## [1.5.2] — 2026-11-09
+
+### Fixed
+
+- Use the pinned Linux MCP recipe's documented `BUILD_FROM_SOURCE=0` argument
+  so dependencies may use wheels. The source-only build reached application
+  installation but failed because a dependency required Rust 1.97 while the
+  image supplied Rust 1.92. The application and container still build from the
+  same pinned source on TRA; Zabbix's command, trusted downloads, protected
+  failure logs and temporary-source cleanup are unchanged.
+- Accept the two explicitly declared CloudCLI application accounts independently
+  of the existing MCP transport account. Remove the unrelated membership check
+  while retaining instance, account, private-listener and required-input checks.
+
+### Verification
+
+- Six native MCP build fixtures, ten CloudCLI fixtures and nine runtime/Vault
+  checks passed on the combined source. Scoped strict production lint passed
+  across five encountered files, retaining the existing local
+  `community.general`/ansible-core compatibility warning. Combined-playbook
+  syntax and diff checks passed. No real container build or application-service
+  test ran during this local integration.
+
+Live image-build/protocol and CloudCLI service acceptance remain pending.
+
 ## [1.5.1] — 2026-11-09
 
 ### Fixed

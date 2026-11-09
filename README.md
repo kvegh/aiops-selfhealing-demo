@@ -210,14 +210,23 @@ selected instance's verified hypervisor, testserver and TRA. Importing it
 creates AAP configuration and launches no application or EDA activation.
 Secret-dependent jobs receive a whole-file Vault ciphertext string and stop
 before managed host, DNS or API writes when required settings are missing.
-Deployment release **1.5.1** is documented in [CHANGELOG.md](CHANGELOG.md).
+Deployment release **1.5.2** is documented in [CHANGELOG.md](CHANGELOG.md).
 Failed MCP builds now retain protected stdout/stderr in the runtime user's
 private server `logs/build.log`, then fail and remove the temporary checkout.
 The observed image-build failure is diagnosed: enforcing SELinux denied
 execution of the mounted public script labeled `user_home_t`. Native Ansible
 now labels only the temporary public checkout `container_file_t`; enforcement,
-file owners/modes and rootless builds are preserved. Five build fixtures, nine
-CloudCLI fixtures and nine runtime/Vault checks pass on the combined source.
+file owners/modes and rootless builds are preserved. Six native build fixtures
+verify the Linux wheel argument, unchanged Zabbix command, private failure logs
+and cleanup. The CloudCLI preflight now accepts its two independently declared
+application accounts without requiring either to be the MCP transport account;
+the selected instance, account names, listeners and other input checks remain.
+The combined source passed six MCP build fixtures, ten CloudCLI fixtures and
+nine runtime/Vault checks; scoped strict lint and playbook syntax also passed.
+The following normal build reached application installation but failed while
+compiling a dependency that requires newer Rust. The Linux recipe now selects
+its documented dependency-wheel option, retaining the pinned source and on-TRA
+container build. Its corrected live build and protocol check remain pending.
 Selected-instance RHSM registration and repository prerequisites now run before
 MCP package installation; registration, required repositories and runtime
 packages passed on the selected TRA before the build failure. The corrected
@@ -311,9 +320,10 @@ Controller's injected inventory and job IDs are checked against that record.
 It does not require a nonexistent injected project-ID variable.
 Without a workspace override, it uses the installer's existing account-local
 `claude-wd` default.
-The same job can install the exact selected CloudCLI release for two local
-accounts when their settings are explicitly supplied in the selected encrypted
-runtime namespace. Node/npm must already be present; no proxy or DNS is added.
+The same job can install the exact selected CloudCLI release for two independent
+local application accounts when their settings are explicitly supplied in the
+selected encrypted runtime namespace. Node/npm must already be present; no proxy
+or DNS is added.
 See the [optional CloudCLI settings](docs/14-claude-deployment.md#optional-two-account-cloudcli-installation).
 The independent monitoring check allows three minutes for passive-agent
 availability and item polling to catch up after a successful repair.

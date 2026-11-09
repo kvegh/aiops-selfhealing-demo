@@ -15,7 +15,6 @@
       - demo_cloudcli_deployment.accounts | map(attribute='name') | unique | length == 2
       - demo_cloudcli_deployment.accounts | map(attribute='home') | unique | length == 2
       - demo_cloudcli_deployment.accounts | map(attribute='port') | unique | length == 2
-      - demo_mcp_user.name in (demo_cloudcli_deployment.accounts | map(attribute='name'))
       - demo_cloudcli_deployment.codex_mcp_accounts | default({}) is mapping
       - >-
         (demo_cloudcli_deployment.codex_mcp_accounts | default({})).keys() |

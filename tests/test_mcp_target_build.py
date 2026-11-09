@@ -17,7 +17,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class NativeTargetBuildTests(unittest.TestCase):
-    def run_runtime(self, existing=False, build_succeeds=True, checkout_matches=True, label_succeeds=True):
+    def run_runtime(self, existing=False, build_succeeds=True, checkout_matches=True, label_succeeds=True,
+                    server_name="linux-mcp", native_mode=False):
         with tempfile.TemporaryDirectory(prefix="mcp-native-build-test-") as temporary:
             root = Path(temporary)
             home = root / "home"
@@ -25,7 +26,8 @@ class NativeTargetBuildTests(unittest.TestCase):
             (home / "private-canary").write_text("Do not copy runtime configuration into a build.")
             revision = root / "image-revision"
             calls = root / "build-arguments"
-            play = yaml.safe_load((ROOT / "playbooks/deploy_linux_mcp.yml").read_text())[0]
+            entrypoint = "deploy_linux_mcp.yml" if server_name == "linux-mcp" else "deploy_zabbix_mcp.yml"
+            play = yaml.safe_load((ROOT / "playbooks" / entrypoint).read_text())[0]
             image = play["vars"]["demo_mcp_build"]
             if existing:
                 revision.write_text(image["revision"])
@@ -97,7 +99,7 @@ class NativeTargetBuildTests(unittest.TestCase):
                             {"name": "Create only a synthetic public source checkout", "ansible.builtin.file": {
                                 "path": source, "state": "directory", "mode": "0700"}},
                             {"name": "Supply its regular public recipe", "ansible.builtin.copy": {
-                                "dest": source + "/Containerfile", "content": "FROM scratch\n", "mode": "0600"}},
+                                "dest": source + "/" + image["containerfile"], "content": "FROM scratch\n", "mode": "0600"}},
                             {"name": "Supply the immutable checkout result", "ansible.builtin.set_fact": {
                                 "demo_mcp_source_checkout": {"after": image["revision"] if checkout_matches else "0" * 40}}},
                         ]
@@ -109,27 +111,39 @@ class NativeTargetBuildTests(unittest.TestCase):
             playbook.write_text(yaml.safe_dump([{
                 "name": "Exercise target-build task control flow with synthetic dependencies",
                 "hosts": "localhost", "connection": "local", "gather_facts": False,
-                "vars": {"demo_mcp_user": user, "demo_mcp_image": image, "demo_mcp_server_name": "linux-mcp"}, "tasks": tasks,
+                "vars": {"demo_mcp_user": user, "demo_mcp_image": image, "demo_mcp_server_name": server_name}, "tasks": tasks,
             }], sort_keys=False))
             environment = dict(os.environ, ANSIBLE_LOCAL_TEMP=str(root / "local"),
                                ANSIBLE_REMOTE_TEMP=str(root / "remote"),
-                               ANSIBLE_FILTER_PLUGINS=str(ROOT / "playbooks/filter_plugins"), ANSIBLE_NOCOLOR="1")
+                               ANSIBLE_FILTER_PLUGINS=str(ROOT / "playbooks/filter_plugins"), ANSIBLE_NOCOLOR="1",
+                               ANSIBLE_JINJA2_NATIVE="true" if native_mode else "false")
             result = subprocess.run([sys.executable, "-m", "ansible.cli.playbook", "-i", "localhost,", str(playbook)],
                                     env=environment, text=True, capture_output=True, timeout=90)
             arguments = json.loads(calls.read_text()) if calls.exists() else None
             self.assertFalse(list(home.glob(".aiops-mcp-build-*")), result.stdout + result.stderr)
             self.assertTrue((home / "private-canary").exists())
-            log = home / ".local/share/linux-mcp-server/logs/build.log"
+            server_directory = "linux-mcp-server" if server_name == "linux-mcp" else "zabbix-mcp-server"
+            log = home / ".local/share" / server_directory / "logs/build.log"
             evidence = {"content": log.read_text(), "mode": log.stat().st_mode & 0o777,
                         "uid": log.stat().st_uid, "directory_mode": log.parent.stat().st_mode & 0o777} if log.exists() else None
             return result, arguments, revision.read_text() if revision.exists() else None, evidence
 
     def test_missing_image_builds_from_public_context_and_cleans_up(self):
-        result, arguments, revision, log = self.run_runtime()
+        result, arguments, revision, log = self.run_runtime(native_mode=True)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(arguments[0], "build")
+        self.assertEqual(arguments[1:3], ["--build-arg", "BUILD_FROM_SOURCE=0"])
         self.assertIn("org.opencontainers.image.revision=" + revision, arguments)
         self.assertNotIn("load", arguments)
+        self.assertIsNone(log)
+
+    def test_zabbix_keeps_its_original_build_command_without_the_linux_argument(self):
+        result, arguments, revision, log = self.run_runtime(server_name="zabbix")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        image = yaml.safe_load((ROOT / "playbooks/deploy_zabbix_mcp.yml").read_text())[0]["vars"]["demo_mcp_build"]
+        self.assertEqual(arguments, ["build", "--file", str(Path(arguments[-1]) / "Dockerfile"),
+                                     "--tag", image["name"], "--label", "org.opencontainers.image.revision=" + revision,
+                                     arguments[-1]])
         self.assertIsNone(log)
 
     def test_matching_source_revision_skips_the_build(self):
@@ -142,6 +156,7 @@ class NativeTargetBuildTests(unittest.TestCase):
         result, arguments, revision, log = self.run_runtime(build_succeeds=False)
         self.assertNotEqual(result.returncode, 0)
         self.assertIsNotNone(arguments)
+        self.assertIn("BUILD_FROM_SOURCE=0", arguments)
         self.assertIsNone(revision)
         self.assertEqual(log["content"], "Synthetic build standard output\nSynthetic build failure\n")
         self.assertEqual(log["mode"], 0o600)

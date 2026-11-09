@@ -144,16 +144,14 @@
       block:
         - name: Build the MCP image as the existing runtime user from public source only
           ansible.builtin.command:
-            argv:
-              - podman
-              - build
-              - --file
-              - "{{ demo_mcp_build_workspace.path }}/source/{{ demo_mcp_image.containerfile }}"
-              - --tag
-              - "{{ demo_mcp_image.name }}"
-              - --label
-              - "org.opencontainers.image.revision={{ demo_mcp_image.revision }}"
-              - "{{ demo_mcp_build_workspace.path }}/source"
+            # The pinned Linux recipe explicitly supports dependency wheels.
+            argv: >-
+              {{ ['podman', 'build'] +
+                 (['--build-arg', 'BUILD_FROM_SOURCE=0'] if demo_mcp_server_name == 'linux-mcp' else []) +
+                 ['--file', demo_mcp_build_workspace.path ~ '/source/' ~ demo_mcp_image.containerfile,
+                  '--tag', demo_mcp_image.name,
+                  '--label', 'org.opencontainers.image.revision=' ~ demo_mcp_image.revision,
+                  demo_mcp_build_workspace.path ~ '/source'] }}
           register: demo_mcp_build_result
           changed_when: true
           no_log: true

@@ -21,7 +21,7 @@ whole-file encrypted runtime settings. Its required fields are:
 | `version` | One exact supplied CloudCLI version, used for both accounts |
 | `node_bin_dir` | Existing shared directory containing compatible `node` and `npm` commands |
 | `health_path` | Confirmed harmless application health path returning its running `version` |
-| `accounts` | Exactly two distinct local account mappings; one must be the existing Claude runtime account |
+| `accounts` | Exactly two distinct local application account mappings, independent of the existing SSH/MCP runtime account |
 | `codex_mcp_accounts` | Optional account-name mapping copied from the existing protected `aiops_codex_mcp_accounts`; only declared CloudCLI accounts may appear |
 
 Each account explicitly supplies `name`, `home` (a direct child of `/home`),
@@ -37,8 +37,9 @@ The job uses the existing `community.general.npm` module to install the pinned
 package into each user's own `.npm-global`. Native systemd user units and private
 environment files configure the service. Existing CloudCLI application data and
 passwords are preserved. A missing account is created without sudo or SSH access.
-The already selected SSH/Claude runtime account must exist to establish the
-verified connection; this job can create the additional local application account.
+The selected SSH/MCP runtime account must already exist to establish the verified
+connection and remains unchanged. Neither application account needs to match it;
+the job creates either missing unprivileged application account.
 The selected linger setting controls boot/login lifecycle; without lingering,
 the user service is subject to the host's normal last-logout behavior.
 

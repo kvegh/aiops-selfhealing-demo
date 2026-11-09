@@ -29,7 +29,7 @@ class CloudCliDeploymentTests(unittest.TestCase):
         return {"instance_name": "aap27-test-7", "version": "2.3.4", "node_bin_dir": "/usr/bin",
                 "health_path": "/health", "accounts": accounts}
 
-    def run_preflight(self, settings, render=False, check_node=False):
+    def run_preflight(self, settings, render=False, check_node=False, mcp_user="synthetic_primary"):
         with tempfile.TemporaryDirectory(prefix="aiops-cloudcli-test-") as temporary:
             folder = Path(temporary)
             tasks = yaml.safe_load((ROOT / "playbooks/tasks/demo_cloudcli.yml").read_text())[:4 if check_node else 3]
@@ -39,7 +39,7 @@ class CloudCliDeploymentTests(unittest.TestCase):
                         "src": str(ROOT / "playbooks/templates" / source), "dest": str(folder / source), "mode": "0600"}})
             play = [{"name": "Validate CloudCLI without deployment", "hosts": "localhost", "connection": "local", "gather_facts": False,
                      "vars": {"demo_cloudcli_deployment": settings, "demo_cloudcli_account": settings["accounts"][0],
-                              "demo_mcp_deployment": {"instance_name": "aap27-test-7"}, "demo_mcp_user": {"name": "synthetic_primary"},
+                              "demo_mcp_deployment": {"instance_name": "aap27-test-7"}, "demo_mcp_user": {"name": mcp_user},
                               "demo_mcp_config": {"tra": {"address": "127.0.0.1"}}, "ansible_host": "127.0.0.1"}, "tasks": tasks}]
             source = folder / "play.yml"; source.write_text(yaml.safe_dump(play, sort_keys=False))
             environment = dict(os.environ, ANSIBLE_HOME=str(folder / "ansible-home"), ANSIBLE_LOCAL_TEMP=str(folder / "local"),
@@ -64,6 +64,10 @@ class CloudCliDeploymentTests(unittest.TestCase):
             with self.subTest(settings=settings):
                 result, _ = self.run_preflight(settings)
                 self.assertNotEqual(result.returncode, 0)
+
+    def test_two_explicit_cloudcli_accounts_can_differ_from_the_existing_mcp_account(self):
+        result, _ = self.run_preflight(self.settings(), mcp_user="synthetic_transport")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     def test_missing_selected_node_runtime_stops_before_account_creation(self):
         settings = self.settings(); settings["node_bin_dir"] = "/nonexistent-synthetic-runtime/bin"
