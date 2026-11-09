@@ -1,5 +1,31 @@
 # Design decisions history
 
+## Reuse native inventory and the existing importer for fresh Zabbix ownership — 2026-11-09
+
+Implementation `08a93bf8f4e2f3e1198d32315f5e905c40a1466b`, deployment release
+1.6.0, completes the source path for saving an authenticated new Zabbix VM before
+its permissions open. The owner selected configuration inside the existing
+per-instance VM definition. Native Controller lookup, host, group and job-launch
+content preserve source variables and placement members and invoke the existing
+CaC importer with its saved credentials. No additional publisher, credential
+type, service, helper or Job Template was added.
+
+The parent waits without a firewall lock, reloads the imported host and protected
+runtime values, verifies the selected owner and refreshes the policy cached before
+cloning. This prevents a running job's original inventory and Extra Variables
+from hiding the newly saved record. Existing native target, guest identity,
+production exclusion and firewall checks remain in force. The matching importer
+and protected layout/common-source pins must be upgraded together while affected
+jobs are stopped.
+
+Three native Ansible producer fixtures, nine runtime/Vault checks and four Zabbix
+configuration/provenance tests pass on the combined source; matching importer
+checks cover 39 settings/publication and five native policy cases. Scoped strict
+production lint, syntax and whitespace checks pass. Controller operations are
+substituted in producer fixtures, so a normal fresh-clone AAP deployment and
+monitoring/recovery acceptance remain unverified. Published MCP and CloudCLI
+corrections are preserved unchanged.
+
 ## Use the existing Linux dependency-wheel option and independent CloudCLI accounts — 2026-11-09
 
 Implementation `efb8f40b6904a4b0136db733867579d27de8cd68`, deployment release
