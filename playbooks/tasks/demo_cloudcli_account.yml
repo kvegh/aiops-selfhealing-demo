@@ -1,0 +1,133 @@
+---
+- name: Read an existing CloudCLI account without changing its home
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ demo_cloudcli_account.name }}"
+    fail_key: false
+
+- name: Preserve an existing account's home and reject privileged accounts
+  ansible.builtin.assert:
+    that:
+      - ansible_facts.getent_passwd[demo_cloudcli_account.name][1] | int > 0
+      - ansible_facts.getent_passwd[demo_cloudcli_account.name][4] == demo_cloudcli_account.home
+    quiet: true
+    fail_msg: The existing CloudCLI account must be unprivileged and use the home declared in CaC.
+  when: ansible_facts.getent_passwd[demo_cloudcli_account.name] is not none
+
+- name: Create only a missing unprivileged CloudCLI account
+  ansible.builtin.user:
+    name: "{{ demo_cloudcli_account.name }}"
+    home: "{{ demo_cloudcli_account.home }}"
+    create_home: true
+    shell: /bin/bash
+    state: present
+  when: ansible_facts.getent_passwd[demo_cloudcli_account.name] is none
+
+- name: Read the account's actual UID after creation
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ demo_cloudcli_account.name }}"
+
+- name: Configure only the requested account's CloudCLI files and service
+  become: true
+  become_user: "{{ demo_cloudcli_account.name }}"
+  environment:
+    HOME: "{{ demo_cloudcli_account.home }}"
+    PATH: >-
+      {{ [demo_cloudcli_deployment.node_bin_dir,
+          demo_cloudcli_account.home ~ '/.local/bin', demo_cloudcli_account.home ~ '/.npm-global/bin',
+          '/usr/local/bin', '/usr/bin', '/bin'] | join(':') }}
+    NPM_CONFIG_PREFIX: "{{ demo_cloudcli_account.home }}/.npm-global"
+    NPM_CONFIG_ENGINE_STRICT: 'true'
+    NPM_CONFIG_STRICT_SSL: 'true'
+    XDG_RUNTIME_DIR: "/run/user/{{ ansible_facts.getent_passwd[demo_cloudcli_account.name][1] }}"
+  block:
+    - name: Create the workspace and normal per-user installation directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0700'
+      loop:
+        - "{{ demo_cloudcli_account.workdir }}"
+        - "{{ demo_cloudcli_account.home }}/.npm-global"
+        - "{{ demo_cloudcli_account.home }}/.config/systemd/user"
+        - "{{ demo_cloudcli_account.home }}/.config/cloudcli"
+
+    # The existing collection supplies npm package/version management; no
+    # certified RHEL system role manages this per-user npm package.
+    - name: Install the exact selected CloudCLI version for this account
+      community.general.npm:
+        name: '@cloudcli-ai/cloudcli'
+        version: "{{ demo_cloudcli_deployment.version }}"
+        global: true
+        executable: "{{ demo_cloudcli_deployment.node_bin_dir }}/npm"
+        state: present
+      register: demo_cloudcli_package
+
+    - name: Write only the selected account's protected service environment
+      ansible.builtin.template:
+        src: demo-cloudcli.env.j2
+        dest: "{{ demo_cloudcli_account.home }}/.config/cloudcli/environment"
+        mode: '0600'
+      register: demo_cloudcli_environment
+
+    - name: Write the existing native per-user CloudCLI unit pattern
+      ansible.builtin.template:
+        src: demo-cloudcli.service.j2
+        dest: "{{ demo_cloudcli_account.home }}/.config/systemd/user/cloudcli.service"
+        mode: '0600'
+      register: demo_cloudcli_unit
+
+    - name: Configure only this account's explicitly captured Codex MCP connection
+      ansible.builtin.include_tasks: demo_cloudcli_codex.yml
+      vars:
+        demo_cloudcli_codex: "{{ demo_cloudcli_deployment.codex_mcp_accounts[demo_cloudcli_account.name].mcp_servers.aap }}"
+      when: demo_cloudcli_account.name in (demo_cloudcli_deployment.codex_mcp_accounts | default({}))
+
+- name: Inspect this account's configured login lifecycle
+  ansible.builtin.stat:
+    path: "/var/lib/systemd/linger/{{ demo_cloudcli_account.name }}"
+  register: demo_cloudcli_linger
+
+- name: Apply only this account's explicitly selected lingering behavior
+  ansible.builtin.command:
+    argv:
+      - loginctl
+      - "{{ 'enable-linger' if demo_cloudcli_account.linger else 'disable-linger' }}"
+      - "{{ demo_cloudcli_account.name }}"
+  changed_when: true
+  when: demo_cloudcli_account.linger != demo_cloudcli_linger.stat.exists
+
+- name: Start the account's native user manager for service configuration
+  ansible.builtin.systemd_service:
+    name: "user@{{ ansible_facts.getent_passwd[demo_cloudcli_account.name][1] }}.service"
+    state: started
+
+- name: Apply the selected CloudCLI unit and requested running state
+  ansible.builtin.systemd_service:
+    name: cloudcli.service
+    scope: user
+    daemon_reload: true
+    enabled: "{{ demo_cloudcli_account.enabled }}"
+    state: >-
+      {{ ('restarted' if (demo_cloudcli_package.changed or demo_cloudcli_environment.changed or demo_cloudcli_unit.changed) else 'started')
+         if demo_cloudcli_account.start else 'stopped' }}
+  become: true
+  become_user: "{{ demo_cloudcli_account.name }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ ansible_facts.getent_passwd[demo_cloudcli_account.name][1] }}"
+
+- name: Verify the running selected version through its supplied health endpoint
+  ansible.builtin.uri:
+    url: "http://{{ demo_cloudcli_account.listen_address }}:{{ demo_cloudcli_account.port }}{{ demo_cloudcli_deployment.health_path }}"
+    return_content: true
+    use_proxy: false
+    status_code: 200
+    timeout: 10
+  register: demo_cloudcli_health
+  until: >-
+    demo_cloudcli_health.status | default(0) == 200 and
+    demo_cloudcli_health.json.version | default('') == demo_cloudcli_deployment.version
+  retries: 12
+  delay: 5
+  when: demo_cloudcli_account.start

@@ -1,0 +1,61 @@
+---
+- name: Render only this account's explicitly captured Codex connection
+  ansible.builtin.set_fact:
+    demo_cloudcli_codex_content: "{{ lookup('ansible.builtin.template', 'demo-cloudcli-codex.toml.j2') }}"
+
+- name: Inspect this account's Codex directory and configuration without following links
+  ansible.builtin.stat:
+    path: "{{ demo_cloudcli_account.home }}/.codex{{ item }}"
+    follow: false
+    checksum_algorithm: sha256
+  loop: ['', /config.toml]
+  register: demo_cloudcli_codex_paths
+
+- name: Preserve unrelated Codex configuration and linked or foreign storage
+  ansible.builtin.assert:
+    that:
+      - >-
+        not demo_cloudcli_codex_paths.results[0].stat.exists or
+        (demo_cloudcli_codex_paths.results[0].stat.isdir | default(false) and
+         not demo_cloudcli_codex_paths.results[0].stat.islnk | default(false) and
+         demo_cloudcli_codex_paths.results[0].stat.uid == ansible_facts.getent_passwd[demo_cloudcli_account.name][1] | int)
+      - >-
+        not demo_cloudcli_codex_paths.results[1].stat.exists or
+        (demo_cloudcli_codex_paths.results[1].stat.isreg | default(false) and
+         not demo_cloudcli_codex_paths.results[1].stat.islnk | default(false) and
+         demo_cloudcli_codex_paths.results[1].stat.uid == ansible_facts.getent_passwd[demo_cloudcli_account.name][1] | int and
+         demo_cloudcli_codex_paths.results[1].stat.checksum == (demo_cloudcli_codex_content | hash('sha256')))
+    quiet: true
+    fail_msg: Preserve the different existing Codex configuration or storage for explicit review.
+
+- name: Create only a missing private Codex directory
+  ansible.builtin.file:
+    path: "{{ demo_cloudcli_account.home }}/.codex"
+    state: directory
+    mode: '0700'
+  when: not demo_cloudcli_codex_paths.results[0].stat.exists
+
+- name: Install only the missing or exactly matching managed Codex configuration
+  ansible.builtin.copy:
+    content: "{{ demo_cloudcli_codex_content }}"
+    dest: "{{ demo_cloudcli_account.home }}/.codex/config.toml"
+    mode: '0600'
+  diff: false
+
+- name: Read back the managed Codex file's identity, mode and exact content checksum
+  ansible.builtin.stat:
+    path: "{{ demo_cloudcli_account.home }}/.codex/config.toml"
+    follow: false
+    checksum_algorithm: sha256
+  register: demo_cloudcli_codex_installed
+
+- name: Verify the exact captured connection is installed privately for this account
+  ansible.builtin.assert:
+    that:
+      - demo_cloudcli_codex_installed.stat.isreg | default(false)
+      - not demo_cloudcli_codex_installed.stat.islnk | default(false)
+      - demo_cloudcli_codex_installed.stat.uid == ansible_facts.getent_passwd[demo_cloudcli_account.name][1] | int
+      - demo_cloudcli_codex_installed.stat.mode == '0600'
+      - demo_cloudcli_codex_installed.stat.checksum == demo_cloudcli_codex_content | hash('sha256')
+    quiet: true
+    fail_msg: The account must retain exactly its captured private Codex MCP configuration.

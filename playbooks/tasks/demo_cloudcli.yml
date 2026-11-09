@@ -1,0 +1,80 @@
+---
+- name: Require complete CloudCLI settings for this same verified TRA
+  ansible.builtin.assert:
+    that:
+      - demo_cloudcli_deployment is mapping
+      - demo_cloudcli_deployment.instance_name == demo_mcp_deployment.instance_name
+      - ansible_host == demo_mcp_config.tra.address
+      - demo_cloudcli_deployment.version is string
+      - demo_cloudcli_deployment.version is match('^[0-9]+\.[0-9]+\.[0-9]+([+-][A-Za-z0-9.-]+)?$')
+      - demo_cloudcli_deployment.node_bin_dir is match('^/[A-Za-z0-9_./-]+$')
+      - "'..' not in demo_cloudcli_deployment.node_bin_dir.split('/')"
+      - demo_cloudcli_deployment.health_path is match('^/[A-Za-z0-9/_-]*$')
+      - demo_cloudcli_deployment.accounts is sequence
+      - demo_cloudcli_deployment.accounts | length == 2
+      - demo_cloudcli_deployment.accounts | map(attribute='name') | unique | length == 2
+      - demo_cloudcli_deployment.accounts | map(attribute='home') | unique | length == 2
+      - demo_cloudcli_deployment.accounts | map(attribute='port') | unique | length == 2
+      - demo_mcp_user.name in (demo_cloudcli_deployment.accounts | map(attribute='name'))
+      - demo_cloudcli_deployment.codex_mcp_accounts | default({}) is mapping
+      - >-
+        (demo_cloudcli_deployment.codex_mcp_accounts | default({})).keys() |
+        difference(demo_cloudcli_deployment.accounts | map(attribute='name') | list) | length == 0
+    quiet: true
+    fail_msg: Supply the exact CloudCLI release, existing Node directory and two explicit accounts in this instance's protected settings.
+
+- name: Validate both accounts before creating users or installing packages
+  ansible.builtin.assert:
+    that:
+      - item.name is match('^[a-z_][a-z0-9_-]*$')
+      - item.name != 'root'
+      - item.home is match('^/home/[A-Za-z0-9_-]+$')
+      - item.workdir is match('^' ~ (item.home | regex_escape) ~ '/[A-Za-z0-9_-]+$')
+      - item.listen_address in [demo_mcp_config.tra.address, '127.0.0.1']
+      - item.port is integer
+      - item.port > 1023 and item.port < 65536
+      - item.enabled is boolean
+      - item.start is boolean
+      - item.linger is boolean
+      - item.runtime_max_sec is match('^([0-9]+[smhd]?|infinity)$')
+      - item.restart in ['no', 'on-failure', 'always']
+      - item.environment is mapping
+      - item.environment.keys() | difference(['HOST', 'PORT', 'PATH', 'HOME']) | length == item.environment | length
+      - item.environment.keys() | select('match', '^[A-Za-z_][A-Za-z0-9_]*$') | list | length == item.environment | length
+      - item.environment.values() | select('string') | list | length == item.environment | length
+      - item.environment.values() | join('') is not search('[\x00-\x1f\x7f]')
+    quiet: true
+    fail_msg: Each CloudCLI account needs its own home, workspace, private listener, lifecycle and explicit environment mapping.
+  loop: "{{ demo_cloudcli_deployment.accounts }}"
+
+- name: Validate each explicitly captured Codex MCP connection without replacing its destination
+  ansible.builtin.assert:
+    that:
+      - item.value is mapping
+      - item.value.mcp_servers is mapping
+      - item.value.mcp_servers.keys() | list == ['aap']
+      - item.value.mcp_servers.aap.url is string
+      - item.value.mcp_servers.aap.url is match('^https://[^/@\s]+/mcp/?$')
+      - item.value.mcp_servers.aap.http_headers is mapping
+      - item.value.mcp_servers.aap.http_headers.keys() | list == ['Authorization']
+      - item.value.mcp_servers.aap.http_headers.Authorization is string
+      - item.value.mcp_servers.aap.http_headers.Authorization is match('^Bearer [^\s]+$')
+      - item.value.mcp_servers.aap.default_tools_approval_mode is string
+      - item.value.mcp_servers.aap.default_tools_approval_mode is not search('[\x00-\x1f\x7f]')
+    quiet: true
+    fail_msg: Supply the captured HTTPS MCP destination and its own bearer and approval setting for this account.
+  loop: "{{ demo_cloudcli_deployment.codex_mcp_accounts | default({}) | dict2items }}"
+
+- name: Require the configured existing Node and npm commands
+  ansible.builtin.command:
+    argv: ["{{ demo_cloudcli_deployment.node_bin_dir }}/{{ item }}", --version]
+  environment:
+    PATH: "{{ demo_cloudcli_deployment.node_bin_dir }}:/usr/local/bin:/usr/bin:/bin"
+  loop: [node, npm]
+  changed_when: false
+
+- name: Configure each requested account with native npm and systemd
+  ansible.builtin.include_tasks: demo_cloudcli_account.yml
+  loop: "{{ demo_cloudcli_deployment.accounts }}"
+  loop_control:
+    loop_var: demo_cloudcli_account

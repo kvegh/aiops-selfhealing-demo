@@ -223,6 +223,10 @@
         - name: Configure and verify the selected private AAP MCP without a model
           ansible.builtin.include_tasks: tasks/demo_claude_aap_mcp.yml
 
+        - name: Install the explicitly selected CloudCLI accounts on this TRA
+          ansible.builtin.include_tasks: tasks/demo_cloudcli.yml
+          when: demo_cloudcli_deployment is defined
+
       always:
         - name: Remove the private download after success or failure
           ansible.builtin.file:

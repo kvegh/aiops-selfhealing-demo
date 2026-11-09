@@ -45,6 +45,12 @@ class RuntimeSchemaTests(unittest.TestCase):
         self.assertEqual(runtime.selected_settings(document, "aap27-test-7"), settings)
         self.assertEqual(runtime.selected_settings(document, "aap27-test-8"), {})
 
+    def test_cloudcli_settings_remain_in_the_selected_protected_namespace(self):
+        settings = {"demo_cloudcli_deployment": {"version": "2.3.4", "accounts": []}}
+        document = {"schema_version": 1, "instances": {"aap27-test-7": settings, "aap27-test-8": {}}}
+        self.assertEqual(runtime.selected_settings(document, "aap27-test-7"), settings)
+        self.assertEqual(runtime.selected_settings(document, "aap27-test-8"), {})
+
 
 class NativeRuntimeExecutionTests(unittest.TestCase):
     def run_loader(self, *, wrong_instance=False, unknown_key=False, wrong_password=False, controller_unsafe=False):

@@ -210,7 +210,7 @@ selected instance's verified hypervisor, testserver and TRA. Importing it
 creates AAP configuration and launches no application or EDA activation.
 Secret-dependent jobs receive a whole-file Vault ciphertext string and stop
 before managed host, DNS or API writes when required settings are missing.
-Deployment release **1.4.1** is documented in [CHANGELOG.md](CHANGELOG.md).
+Deployment release **1.5.0** is documented in [CHANGELOG.md](CHANGELOG.md).
 Failed MCP builds now retain protected stdout/stderr in the runtime user's
 private server `logs/build.log`, then fail and remove the temporary checkout.
 Four native build fixtures verify logging permissions, failure and cleanup;
@@ -307,6 +307,10 @@ Controller's injected inventory and job IDs are checked against that record.
 It does not require a nonexistent injected project-ID variable.
 Without a workspace override, it uses the installer's existing account-local
 `claude-wd` default.
+The same job can install the exact selected CloudCLI release for two local
+accounts when their settings are explicitly supplied in the selected encrypted
+runtime namespace. Node/npm must already be present; no proxy or DNS is added.
+See the [optional CloudCLI settings](docs/14-claude-deployment.md#optional-two-account-cloudcli-installation).
 The independent monitoring check allows three minutes for passive-agent
 availability and item polling to catch up after a successful repair.
 On failure, the job reports its stage, numeric CLI exit code and only recognized

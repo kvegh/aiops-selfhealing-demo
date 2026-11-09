@@ -1,0 +1,17 @@
+[Unit]
+Description=CloudCLI for the selected demo account
+After=network-online.target
+
+[Service]
+ExecStart={{ demo_cloudcli_account.home }}/.npm-global/bin/cloudcli --port {{ demo_cloudcli_account.port }}
+WorkingDirectory={{ demo_cloudcli_account.workdir }}
+Environment=HOST={{ demo_cloudcli_account.listen_address }}
+Environment=PATH={{ [demo_cloudcli_deployment.node_bin_dir,
+                     demo_cloudcli_account.home ~ '/.local/bin', demo_cloudcli_account.home ~ '/.npm-global/bin',
+                     '/usr/local/bin', '/usr/bin', '/bin'] | join(':') }}
+EnvironmentFile={{ demo_cloudcli_account.home }}/.config/cloudcli/environment
+RuntimeMaxSec={{ demo_cloudcli_account.runtime_max_sec }}
+Restart={{ demo_cloudcli_account.restart }}
+
+[Install]
+WantedBy=default.target

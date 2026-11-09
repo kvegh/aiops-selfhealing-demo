@@ -5,10 +5,79 @@ selected TRA. It installs only Claude Code, provisions the explicitly approved
 Vertex authentication, and imports the existing Linux and Zabbix MCP deployment
 playbooks. It does not install the full Assistant Team environment.
 
+The same job optionally installs CloudCLI for two explicitly configured local
+accounts. Omit `demo_cloudcli_deployment` to retain the existing Claude/MCP-only
+behavior. A supplied but incomplete CloudCLI mapping fails before CloudCLI writes.
+No additional Job Template, proxy, DNS or public listener is created.
+
+## Optional two-account CloudCLI installation
+
+Add `demo_cloudcli_deployment` only inside the selected instance's existing
+whole-file encrypted runtime settings. Its required fields are:
+
+| Field | Required value |
+| --- | --- |
+| `instance_name` | The same instance selected by `demo_mcp_deployment` |
+| `version` | One exact supplied CloudCLI version, used for both accounts |
+| `node_bin_dir` | Existing shared directory containing compatible `node` and `npm` commands |
+| `health_path` | Confirmed harmless application health path returning its running `version` |
+| `accounts` | Exactly two distinct local account mappings; one must be the existing Claude runtime account |
+| `codex_mcp_accounts` | Optional account-name mapping copied from the existing protected `aiops_codex_mcp_accounts`; only declared CloudCLI accounts may appear |
+
+Each account explicitly supplies `name`, `home` (a direct child of `/home`),
+`workdir` (a direct child of that home), `listen_address`, `port`, `enabled`,
+`start`, `linger`, `runtime_max_sec`, `restart` (`"no"`, `"on-failure"` or `"always"`)
+and `environment`. The listener may use only
+the already verified TRA private address or IPv4 loopback. Ports must be distinct
+and unprivileged. `environment` is an explicit string mapping, including an empty
+mapping when appropriate; it cannot override the controlled host, port, PATH or
+home. Provider/session credentials are never copied from another account.
+
+The job uses the existing `community.general.npm` module to install the pinned
+package into each user's own `.npm-global`. Native systemd user units and private
+environment files configure the service. Existing CloudCLI application data and
+passwords are preserved. A missing account is created without sudo or SSH access.
+The already selected SSH/Claude runtime account must exist to establish the
+verified connection; this job can create the additional local application account.
+The selected linger setting controls boot/login lifecycle; without lingering,
+the user service is subject to the host's normal last-logout behavior.
+
+Node/npm must already be installed through the selected base tooling. This job
+does not choose a Node stream or install a new runtime; a missing command stops
+clearly, and npm's engine-strict check rejects an incompatible runtime. Package
+downloads use ordinary trusted npm HTTPS, without disabling certificate checks.
+Running services must report the selected exact version at the supplied health
+path, with bounded retries. This check proves service/version readiness, not an
+authenticated browser or model workflow. Run the normal CloudCLI first-user
+setup and one selected local agent workflow to finish functional acceptance.
+Rerunning the same job applies the same package/configuration; disabling or
+stopping an account is an explicit CaC setting. No application data is removed.
+
+An explicitly supplied Codex connection retains its captured HTTPS destination,
+bearer and approval setting together. It is not replaced with the current demo's
+AAP URL or token. Configure only that named account's `mcp_servers.aap` entry in
+its private `.codex/config.toml`; no provider sign-in or authentication file is
+copied. Native templating and copying support a missing file or an exact
+previously managed copy. A different existing configuration is preserved and
+stops for explicit review; arbitrary TOML merging is outside this controlled
+setup. File links and unrelated ownership also stop the change. Checksum, owner
+and mode readback verify the exact private file. No TOML parser, new collection
+version, custom writer or dependency is needed on AAP or the guest.
+The check verifies exact configuration preservation, not authenticated MCP/model
+functionality; test that separately in a new CloudCLI Codex conversation.
+
 The saved template uses the existing guest Machine credential, AIOps Playbook
 Vault, TRA inventory limit and opaque runtime ciphertext. Arbitrary launch
 variables are disabled. Reapply AIOps CaC to install its definition; configuration
 import alone runs no installation or model request.
+
+Run the focused local checks with
+`python3.12 -m unittest discover -s tests -p test_cloudcli_deployment.py -v`.
+They exercise the native input checks, service/environment rendering and Codex
+file creation, repeat idempotence and preservation failures in temporary local
+directories. Standard-library TOML parsing checks the rendered connection in
+the tests only. They do not create users, install packages, start services or
+prove browser, authenticated MCP or model functionality.
 
 ## Program and target verification
 

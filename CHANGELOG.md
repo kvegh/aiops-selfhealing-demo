@@ -88,6 +88,29 @@ templates, and the status page are still outstanding.
   stack. All three pages now make zero external requests, so they render
   identically on an audience phone with nothing but venue wifi.
 
+## [1.5.0] — 2026-11-09
+
+### Added
+
+- Optional installation of one exact protected CloudCLI release for two local
+  accounts through the existing Claude/MCP installer. Native account, npm and
+  systemd tasks preserve separate workspaces, private listeners and explicitly
+  selected service lifecycle settings; no new Job Template, proxy or DNS route.
+- An account may receive its own captured Codex MCP connection without
+  substituting the selected demo's AAP URL or token. A native private TOML
+  template supports absent or exactly matching managed files; different content,
+  links and foreign ownership are preserved and refused.
+
+### Verification
+
+- Nine native CloudCLI checks and nine runtime-loader checks pass, covering
+  selected-account and input refusal, private service/environment rendering,
+  standard-library TOML parsing, repeat idempotence and preservation failures.
+  Syntax, compilation, whitespace and scoped strict lint checks pass. The local
+  collection/core compatibility warning remains visible; declared-EE execution,
+  package installation and authenticated browser/MCP/model acceptance are not
+  established by these fixtures. Production installations remain unchanged.
+
 ## [1.4.1] — 2026-11-09
 
 ### Fixed

@@ -1,0 +1,6 @@
+[mcp_servers.aap]
+url = {{ demo_cloudcli_codex.url | to_json(ensure_ascii=false) }}
+default_tools_approval_mode = {{ demo_cloudcli_codex.default_tools_approval_mode | to_json(ensure_ascii=false) }}
+
+[mcp_servers.aap.http_headers]
+Authorization = {{ demo_cloudcli_codex.http_headers.Authorization | to_json(ensure_ascii=false) }}
