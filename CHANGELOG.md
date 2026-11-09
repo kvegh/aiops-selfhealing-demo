@@ -88,6 +88,26 @@ templates, and the status page are still outstanding.
   stack. All three pages now make zero external requests, so they render
   identically on an audience phone with nothing but venue wifi.
 
+## [1.6.2] — 2026-11-09
+
+### Fixed
+
+- Pass the existing importer's optional `debug_logging` choice as the exact
+  declared string `false`, rather than a YAML Boolean. Protected logging,
+  target selection, saved credentials and the survey itself are unchanged.
+  This aligns the request with the inspected schema; it is not a newly observed
+  live deployment failure.
+- Match the existing producer fixture to the actual generic multiple-choice
+  schema and require the launch value's type and declared choice. The fixture
+  rejects the prior Boolean value.
+
+### Verification
+
+- The strengthened existing success fixture fails with the prior Boolean and
+  passes after the one-value correction. All four focused producer cases,
+  scoped strict lint, deployment syntax and whitespace checks pass. Controller
+  operations remain substituted; the parent owns the normal live retry.
+
 ## [1.6.1] — 2026-11-09
 
 ### Fixed

@@ -100,7 +100,7 @@
         job_template: '{{ demo_zabbix_cac_binding.job_template_id | string }}'
         extra_vars:
           aap_instance_key: '{{ demo_zabbix_cac_binding.aap_instance_key }}'
-          debug_logging: false
+          debug_logging: 'false'
         wait: true
         interval: 5
         timeout: 900

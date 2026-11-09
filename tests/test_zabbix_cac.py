@@ -75,6 +75,9 @@ class ZabbixCaCTests(unittest.TestCase):
                 current.append({'id': 301, 'name': config['vm_name'], 'inventory': group['inventory'],
                                 'variables': json.dumps({'vm_resource': resource})})
             state = {'origin': config['cac_import']['controller_host'], 'token': token, 'importer': importer,
+                'survey': {'spec': [{'variable': 'aap_instance_key', 'required': True, 'type': 'text'},
+                    {'variable': 'debug_logging', 'required': False, 'type': 'multiplechoice',
+                     'choices': 'false\ntrue', 'default': 'false'}]},
                 'source_hosts': current, 'group': group, 'group_members': ['another-guest'],
                 'calls': [], 'failed_import': failed_import,
                 'refreshed_host': {'id': 401, 'inventory': 201,
@@ -95,7 +98,7 @@ class LookupModule(LookupBase):
   state=json.loads(Path(STATE).read_text())
   assert kwargs['host']==state['origin'] and kwargs['oauth_token']==state['token'] and kwargs['verify_ssl'] is True
   endpoint=terms[0].rstrip('/'); query=kwargs.get('query_params',{})
-  if endpoint.endswith('/survey_spec'): return [{'spec':[{'variable':'aap_instance_key','required':True}]}]
+  if endpoint.endswith('/survey_spec'): return [state['survey']]
   if endpoint=='job_templates/'+str(state['importer']['id']): return [state['importer']]
   if endpoint=='job_templates/202': return [state['refreshed_template']]
   if endpoint.startswith('groups/'): return [state['group']]
@@ -129,6 +132,10 @@ elif operation=='group':
 else:
  assert p['wait'] is True and p['timeout']==900 and p['interval']==5
  assert int(p['job_template'])==s['importer']['id'] and p['extra_vars']['aap_instance_key']=='aap27-v07'
+ choice=next(item for item in s['survey']['spec'] if item['variable']=='debug_logging')
+ assert type(p['extra_vars']['debug_logging']) is str
+ assert p['extra_vars']['debug_logging'] in choice['choices'].splitlines()
+ assert p['extra_vars']['debug_logging']==choice['default']
 path.write_text(json.dumps(s))
 if operation=='job_launch' and s['failed_import']: m.fail_json(msg='synthetic-import-failure')
 m.exit_json(changed=True,id=501,status='successful')

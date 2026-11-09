@@ -210,7 +210,7 @@ selected instance's verified hypervisor, testserver and TRA. Importing it
 creates AAP configuration and launches no application or EDA activation.
 Secret-dependent jobs receive a whole-file Vault ciphertext string and stop
 before managed host, DNS or API writes when required settings are missing.
-Deployment release **1.6.1** is documented in [CHANGELOG.md](CHANGELOG.md).
+Deployment release **1.6.2** is documented in [CHANGELOG.md](CHANGELOG.md).
 Failed MCP builds now retain protected stdout/stderr in the runtime user's
 private server `logs/build.log`, then fail and remove the temporary checkout.
 The observed image-build failure is diagnosed: enforcing SELinux denied
@@ -295,6 +295,8 @@ machine ID and observed bridge gateway. It updates only that VM's native source
 inventory record, preserving other variables and placement-group members, then
 waits for the existing **Deploy AIOps Selfhealing Demo CaC** template with its
 saved credentials. No firewall lock is held while the child job runs.
+Its optional logging choice is passed as the string `false`, matching the
+existing importer's declared survey choices and preserving protected output.
 
 The importer stores the resulting VM and its configuration together under
 `aiops_instances[instance].zabbix`. Its `configuration.firewall` holds the exact
