@@ -1,5 +1,36 @@
 # Design decisions history
 
+## Use the existing Linux dependency-wheel option and independent CloudCLI accounts — 2026-11-09
+
+Implementation `efb8f40b6904a4b0136db733867579d27de8cd68`, deployment release
+1.5.2, combines two focused corrections onto published 1.5.1 without changing
+source revisions, runtime-secret storage or deployment entrypoints.
+
+The normal Linux MCP build passed the earlier SELinux source-label step and
+reached application installation. Its protected build log showed the image's
+Rust 1.92 compiler could not build dependency crates requiring Rust 1.97.
+The same pinned upstream recipe documents `BUILD_FROM_SOURCE=0`; the existing
+Podman command now supplies that option only for Linux. It removes forced
+source-only dependency installation while still building the application and
+container from the pinned public source on TRA. Zabbix's full build command,
+trusted downloads, protected failure output and temporary-source cleanup are
+unchanged. No compiler installation or generic build-argument setting was added.
+
+The CloudCLI preflight incorrectly required one of the two explicitly selected
+application accounts to equal the existing SSH/MCP transport account. These
+accounts serve different purposes. Removing that one membership assertion lets
+the declared application accounts remain independent while preserving instance,
+account, private-listener and required-input checks.
+
+Six native MCP build fixtures, ten CloudCLI fixtures and nine runtime/Vault
+checks passed on the combined source. The fixtures verify Linux's rendered
+argument, Zabbix's unchanged command, protected build failure visibility and
+cleanup, and a distinct transport account. Scoped strict production lint passed
+across five encountered files; the known local community.general/core
+compatibility warning remains recorded. Combined-playbook syntax and diff
+checks passed. These are local tests: the corrected container build, private
+MCP protocol and CloudCLI installation/service still require live acceptance.
+
 ## Label the temporary MCP build context for enforcing SELinux — 2026-11-09
 
 Implementation `e191394537506cbf2c4def9fc85e7d05ca870803`, deployment release
