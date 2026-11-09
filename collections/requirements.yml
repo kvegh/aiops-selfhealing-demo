@@ -4,3 +4,5 @@ collections:
     version: '11.4.0'
   - name: ansible.controller
     version: '4.8.11'
+  - name: redhat.rhel_system_roles
+    version: '1.120.5'

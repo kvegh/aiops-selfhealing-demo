@@ -35,6 +35,29 @@ Do not substitute old production addresses, passwords or tokens.
 
 ## Target-side image builds
 
+Before package installation, the existing MCP path prepares this selected TRA's
+RHSM registration and enables only the required RHEL 9 BaseOS and AppStream
+repositories. The selected namespace in the existing encrypted runtime Vault
+must supply `demo_mcp_subscription` with `instance_name`, `organization`, a
+nonempty `activation_keys` list and `repositories`. The latter contains exactly
+the RHEL 9 x86-64 BaseOS/AppStream IDs as `{name: REPOSITORY_ID, state: enabled}`
+mappings. Never put the organization or activation keys in inventory or plaintext
+launch variables. The standalone Linux job now uses the same native runtime
+loader as the other protected jobs.
+
+The certified `redhat.rhel_system_roles` collection is pinned to `1.120.5`.
+Its `rhc` role's complete entrypoint also manages Insights, and its packaged
+modules explicitly prohibit direct use. This job therefore invokes only the
+role's shipped `set_vars.yml` and `subscription-manager.yml` task entries.
+These filenames are coupled to that exact collection version and must be
+rechecked on an upgrade; they are not advertised as a separate public role API.
+Registration uses `rhc_state: present`, preserving an existing valid identity;
+the role enables the requested repositories with `purge: false`, preserving
+unrelated repositories. Insights registration, existing Insights configuration,
+remediation services and system release pins are untouched. TLS and RPM
+signature checks remain enabled. Missing RHSM tooling/content entitlement stops
+the job rather than forcing re-registration or transferring RPM bundles.
+
 The selected TRA installs `podman`, `git`, `fuse-overlayfs` and `slirp4netns`
 from its configured trusted RHEL repositories through normal Ansible package
 management. Package signature checking stays enabled. Existing subordinate

@@ -1,0 +1,58 @@
+---
+- name: Register only the selected TRA and enable its required RHEL repositories
+  no_log: true
+  block:
+    - name: Require the matching instance's protected subscription inputs
+      ansible.builtin.assert:
+        that:
+          - demo_mcp_subscription is mapping
+          - demo_mcp_subscription.instance_name == demo_mcp_deployment.instance_name
+          - demo_mcp_subscription.organization is string
+          - demo_mcp_subscription.organization | trim | length > 0
+          - demo_mcp_subscription.activation_keys is sequence
+          - demo_mcp_subscription.activation_keys is not string
+          - demo_mcp_subscription.activation_keys is not mapping
+          - demo_mcp_subscription.activation_keys | length > 0
+          - demo_mcp_subscription.activation_keys | select('string') | list | length == demo_mcp_subscription.activation_keys | length
+          - >-
+            demo_mcp_subscription.activation_keys | map('trim') | reject('equalto', '') | list | length ==
+            demo_mcp_subscription.activation_keys | length
+          - >-
+            demo_mcp_subscription.repositories | map(attribute='name') | sort ==
+            ['rhel-9-for-x86_64-appstream-rpms', 'rhel-9-for-x86_64-baseos-rpms']
+          - demo_mcp_subscription.repositories | selectattr('state', 'equalto', 'enabled') | list | length == 2
+        quiet: true
+        fail_msg: Supply this instance's RHSM organization, activation keys and the two required RHEL 9 repositories in its encrypted runtime settings.
+
+    # Full rhc main also manages Insights. These shipped task files are pinned
+    # to 1.120.5 so registration can use the role without altering Insights.
+    - name: Initialize the installed certified role's required platform facts
+      ansible.builtin.include_role:
+        name: redhat.rhel_system_roles.rhc
+        tasks_from: set_vars.yml
+        apply:
+          no_log: true
+      vars:
+        rhc_state: present
+
+    - name: Require the selected RHEL 9 runtime before enabling its repositories
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.distribution == 'RedHat'
+          - ansible_facts.distribution_major_version | int == 9
+        quiet: true
+        fail_msg: This demo subscription setup supports the selected RHEL 9 TRA runtime.
+
+    - name: Apply only the certified role's registration and repository tasks
+      ansible.builtin.include_role:
+        name: redhat.rhel_system_roles.rhc
+        tasks_from: subscription-manager.yml
+        apply:
+          no_log: true
+      vars:
+        rhc_state: present
+        rhc_organization: "{{ demo_mcp_subscription.organization }}"
+        rhc_auth:
+          activation_keys:
+            keys: "{{ demo_mcp_subscription.activation_keys }}"
+        rhc_repositories: "{{ demo_mcp_subscription.repositories }}"

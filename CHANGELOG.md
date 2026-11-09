@@ -88,6 +88,25 @@ templates, and the status page are still outstanding.
   stack. All three pages now make zero external requests, so they render
   identically on an audience phone with nothing but venue wifi.
 
+## [1.3.0] — 2026-11-09
+
+### Added
+
+- Prepare the selected TRA's RHEL 9 registration and required BaseOS/AppStream
+  repositories before MCP package installation, using protected per-instance
+  RHSM inputs and certified RHEL System Roles 1.120.5. Preserve existing
+  registration, unrelated repositories, Insights configuration and release pins.
+- Load the existing whole-file runtime Vault in the standalone Linux MCP job,
+  matching the other secret-dependent application jobs.
+
+### Verification
+
+- Three native subscription tests resolve the actual pinned role task entries,
+  check registration/repository arguments and reject missing or mismatched inputs.
+  Four target-build fixtures, eight runtime/Vault checks, strict production lint
+  and combined-playbook syntax pass. No live registration, container build or
+  complete repair result is claimed by this release.
+
 ## [1.2.0] — 2026-11-09
 
 ### Changed

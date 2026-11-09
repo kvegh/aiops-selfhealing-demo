@@ -12,6 +12,9 @@
     fail_msg: Select the public MCP source recipe with an immutable Git revision.
     quiet: true
 
+- name: Prepare the selected TRA's RHEL subscription before installing packages
+  ansible.builtin.include_tasks: demo_mcp_subscription.yml
+
 - name: Install the rootless runtime and Git from the configured trusted RHEL repositories
   ansible.builtin.dnf:
     name: [podman, git, fuse-overlayfs, slirp4netns]

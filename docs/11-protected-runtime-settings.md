@@ -33,8 +33,8 @@ the application procedures describe their required values. Unknown names,
 unexpected document fields and missing selected-instance namespaces are rejected.
 
 The existing encrypted CaC capture contains an unchanged copy of this file's
-ciphertext in `aiops_runtime_settings_vault`. The existing Enable, Zabbix Demo
-and Zabbix MCP templates receive it as the ordinary string variable
+ciphertext in `aiops_runtime_settings_vault`. The existing Enable, Zabbix Demo,
+Linux/Zabbix MCP and combined Claude templates receive it as the ordinary string variable
 `demo_runtime_settings_vault`. The saved value is ciphertext; individual
 plaintext tokens, passwords and keys are not stored in template extra variables.
 
@@ -81,17 +81,18 @@ dictionaries; those earlier scalar transport proposals were unsupported.
 ## Metadata ownership and runtime proof
 
 `aiops_instances[hostvars[aap_instance_key].vm_resource.vm_name]` in the encrypted private CaC owns the
-verified testserver, TRA, Zabbix and offline MCP artifact data, plus the existing
+verified testserver, TRA and Zabbix metadata, plus the existing
 base guest Machine credential reference. Application inventory derives from
 that private data, without requiring nested AIOps fields on the AAP host.
 Generic source-inventory guest rows retain their `vm_resource` ownership facts
 for existing decommissioning; no additional cleanup job or lookup store exists.
 
-Before loading offline MCP packages, the runtime checks that the installed
-release package owns the exact reviewed Red Hat key file, verifies its SHA-256
-and fingerprint, and imports that native vendor key. All staged RPM signature
-checks and package GPG verification remain enabled; there is no key download or
-signature bypass.
+MCP runtime setup reads `demo_mcp_subscription` only from the selected encrypted
+runtime namespace. It uses the pinned certified RHEL registration role's
+subscription task entries to prepare the required repositories without forcing
+registration or managing Insights. Normal RHEL package signature verification
+and trusted HTTPS remain enabled; no offline RPM/image bundles are transferred.
+See the [MCP prerequisites](10-mcp-deployment.md#target-side-image-builds).
 
 An approved reference Zabbix token is an initial clone-authentication candidate,
 not proof that it exists in the saved appliance. Authentication must succeed on

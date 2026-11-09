@@ -13,6 +13,11 @@
   tasks:
     - name: Prepare and verify the instance-local Linux MCP configuration
       block:
+        - name: Load only this instance's protected runtime prerequisites
+          ansible.builtin.include_tasks: tasks/demo_runtime_settings.yml
+          vars:
+            demo_runtime_expected_instance: "{{ demo_mcp_deployment.instance_name }}"
+
         - name: Select the verified TRA and testserver before connecting
           ansible.builtin.include_tasks: tasks/demo_mcp_target.yml
 

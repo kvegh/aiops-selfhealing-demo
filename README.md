@@ -210,7 +210,11 @@ selected instance's verified hypervisor, testserver and TRA. Importing it
 creates AAP configuration and launches no application or EDA activation.
 Secret-dependent jobs receive a whole-file Vault ciphertext string and stop
 before managed host, DNS or API writes when required settings are missing.
-Deployment release **1.2.0** is documented in [CHANGELOG.md](CHANGELOG.md).
+Deployment release **1.3.0** is documented in [CHANGELOG.md](CHANGELOG.md).
+Selected-instance RHSM registration and repository prerequisites now run before
+MCP package installation. Fifteen focused native subscription, build and Vault
+checks passed, alongside strict lint and syntax validation; actual registration
+and completed target-side builds remain unverified.
 The MCP jobs now build their pinned upstream sources directly on the selected
 TRA using trusted RHEL packages; hypervisor image/RPM staging is no longer
 required. Target-side builds and authenticated queries still need live acceptance.
@@ -234,6 +238,10 @@ VM name, public FQDN, tokens and runtime ciphertext remain unchanged. Inventory
 facts still come from the entry selected through `aap_instance_key`.
 
 ### Claude and MCP deployment for a new TRA
+
+MCP deployment first uses the selected instance's encrypted RHSM inputs to
+prepare its RHEL 9 package repositories, preserving existing registration and
+Insights configuration. See the [MCP prerequisites](docs/10-mcp-deployment.md#target-side-image-builds).
 
 **Deploy Claude and MCP Servers** runs `playbooks/deploy_claude.yml`. It installs
 the reviewed native Claude release through the execution environment, provisions

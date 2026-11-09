@@ -39,6 +39,12 @@ class RuntimeSchemaTests(unittest.TestCase):
             with self.subTest(value=value), self.assertRaises(Exception): runtime.selected_settings(value, "aap27-test-7")
         with self.assertRaises(Exception): runtime.selected_settings(valid, "aap27-test-8")
 
+    def test_subscription_credentials_are_selected_from_only_the_matching_instance(self):
+        settings = {"demo_mcp_subscription": {"instance_name": "aap27-test-7", "organization": "synthetic", "activation_keys": ["synthetic"]}}
+        document = {"schema_version": 1, "instances": {"aap27-test-7": settings, "aap27-test-8": {}}}
+        self.assertEqual(runtime.selected_settings(document, "aap27-test-7"), settings)
+        self.assertEqual(runtime.selected_settings(document, "aap27-test-8"), {})
+
 
 class NativeRuntimeExecutionTests(unittest.TestCase):
     def run_loader(self, *, wrong_instance=False, unknown_key=False, wrong_password=False, controller_unsafe=False):

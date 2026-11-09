@@ -59,6 +59,10 @@ class NativeTargetBuildTests(unittest.TestCase):
                     task["become"] = False
                     task.pop("become_user", None)
                     task.setdefault("environment", {})["PATH"] = str(binary) + ":" + os.environ["PATH"]
+                    if task.get("ansible.builtin.include_tasks") == "demo_mcp_subscription.yml":
+                        # RHSM routing is covered separately without registration.
+                        task.pop("ansible.builtin.include_tasks")
+                        task["ansible.builtin.set_fact"] = {"subscription_fixture_only": True}
                     if "ansible.builtin.dnf" in task:
                         task.pop("ansible.builtin.dnf")
                         task["ansible.builtin.set_fact"] = {"packages_fixture_only": True}
