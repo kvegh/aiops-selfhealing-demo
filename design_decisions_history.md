@@ -2,8 +2,8 @@
 
 ## Build MCP images on the selected target — 2026-11-09
 
-Deployment release 1.2.0 implements this change; its implementation commit is
-recorded in the publication follow-up. No live target-side build is claimed.
+Implementation `7a973353e2c7e0215473b1d9393b5b984d54be57`, deployment release
+1.2.0, implements this change. No live target-side build is claimed.
 The owner selected building containers during
 deployment rather than transferring image archives and RPM bundles through
 the hypervisor. Both existing MCP playbooks now reuse exact public upstream
@@ -23,6 +23,11 @@ list command module. The obsolete custom offline-artifact validator is removed.
 The private selected-instance configuration no longer needs image/RPM staging
 metadata; other instances and runtime secrets are unchanged. A registry or
 separate development/build host remains future work.
+
+Four real-Ansible build-decision tests and ten existing guest/client/stdio
+checks passed. Both entrypoints passed syntax checks; strict production lint
+passed across seven discovered Ansible files. These checks use controlled local
+fixtures, not real container builds or a completed end-to-end repair demo.
 
 ## Require actual website monitoring before enabling delivery — 2026-11-08
 
