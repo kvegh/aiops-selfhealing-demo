@@ -210,7 +210,7 @@ selected instance's verified hypervisor, testserver and TRA. Importing it
 creates AAP configuration and launches no application or EDA activation.
 Secret-dependent jobs receive a whole-file Vault ciphertext string and stop
 before managed host, DNS or API writes when required settings are missing.
-Deployment release **1.3.1** is documented in [CHANGELOG.md](CHANGELOG.md).
+Deployment release **1.4.0** is documented in [CHANGELOG.md](CHANGELOG.md).
 Failed MCP builds now retain protected stdout/stderr in the runtime user's
 private server `logs/build.log`, then fail and remove the temporary checkout.
 Four native build fixtures verify logging permissions, failure and cleanup;
@@ -222,14 +222,50 @@ and completed target-side builds remain unverified.
 The MCP jobs now build their pinned upstream sources directly on the selected
 TRA using trusted RHEL packages; hypervisor image/RPM staging is no longer
 required. Target-side builds and authenticated queries still need live acceptance.
-Monitoring setup now requires a fresh HTTP 200 sample from the selected Zabbix
-server before forwarding can be enabled. Prepare its exact approved bridge
-HTTPS permission in the existing recovery policy first; this job does not
-publish shared firewall records automatically.
+Monitoring setup requires a fresh HTTP 200 sample from the selected Zabbix
+server before forwarding can be enabled. Its deployment uses the reviewed native
+Hactar Ansible tasks and the certified firewall role to apply the exact
+CaC-declared guest-to-hypervisor HTTPS permission. See
+[native monitoring firewall access](#native-monitoring-firewall-access) for the
+saved ownership prerequisite and verification limits.
 Monitoring frontend deployment retains its bounded DNS readiness probe while
 allowing the controlled zone's ten-minute negative cache to expire. It continues
 as soon as the selected names resolve and preserves the owned clone on failure;
 see [Zabbix deployment](docs/zabbix-deployment.md).
+
+### Native monitoring firewall access
+
+Each instance's encrypted runtime must contain
+`demo_zabbix_deployment.firewall.hactar_source_revision` (the reviewed immutable
+Hactar revision), `protected_production_ipv4` (the independent exclusion), and
+`guest` (the existing verified Zabbix provenance). Its `isolation_policy` is the
+complete CaC policy for that hypervisor, including the matching AIOps grants.
+The existing Machine and runtime Vault credentials remain sufficient.
+
+The normal Zabbix job verifies the pinned hypervisor, native guest identity and
+saved owner; compares the complete native policy against CaC; then allows only
+the selected guest's TCP 443 access to its own bridge gateway. It accepts the
+exact not-yet-applied grant as a previous state, never unrelated host drift.
+The existing temporary transaction lock covers the ordinary runtime/permanent
+firewalld rule and the early nftables policy. The certified
+`redhat.rhel_system_roles.firewall` role manages the ordinary rule; reviewed
+Hactar Ansible renders, validates and checks native nftables configuration.
+No firewall helper executable or custom deployed JSON policy is used.
+
+**Fresh-instance boundary:** cloning emits verified provenance as an AAP job
+artifact, but this job does not write it to Git or create a new CaC grant. Before
+granting access, that instance's verified owner and exact permission must already
+be published in its own encrypted AIOps section. Existing instances can use that
+saved record. A fully unattended fresh-instance producer is still unresolved;
+no automatic publisher, additional job chain or inferred ownership is provided.
+
+Focused orchestration fixtures cover exact/repeated grants, unrelated-policy
+refusal, wrong or missing owners, rollback and cleanup. Run them with
+`python3.12 -m unittest discover -s tests -p test_zabbix_native_firewall.py -v`.
+They substitute host/vendor operations and do not establish live firewall or
+website-recovery acceptance. The real normal Zabbix job must still complete on
+the selected test instance and prove a fresh website sample, outage, EDA restore
+and recovery-driven rearm before that result is accepted.
 
 The [protected runtime settings procedure](docs/11-protected-runtime-settings.md)
 uses the existing private AIOps repository and runtime Vault credential.

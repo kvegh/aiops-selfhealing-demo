@@ -1,0 +1,78 @@
+---
+- name: Require the reviewed firewall source and independent production exclusion from CaC
+  ansible.builtin.assert:
+    that:
+      - demo_zabbix_deployment.firewall is mapping
+      - demo_zabbix_deployment.firewall.hactar_source_revision is string
+      - demo_zabbix_deployment.firewall.hactar_source_revision is match('^[0-9a-f]{40}$')
+      - demo_zabbix_deployment.firewall.protected_production_ipv4 is string
+      - demo_zabbix_deployment.firewall.protected_production_ipv4 not in [demo_zabbix_config.hypervisor.address, demo_zabbix_config.hypervisor.public_ipv4]
+    quiet: true
+    fail_msg: Supply the reviewed Hactar commit and independent protected production address in this instance's AIOps CaC.
+  no_log: true
+
+- name: Allocate this job's public firewall source checkout
+  ansible.builtin.tempfile:
+    state: directory
+    prefix: aiops-firewall-source-
+  delegate_to: localhost
+  become: false
+  vars:
+    ansible_connection: local
+  register: demo_zabbix_firewall_workspace
+  check_mode: false
+  no_log: true
+
+- name: Retrieve only the exact reviewed public Hactar source revision
+  ansible.builtin.git:
+    repo: https://github.com/kvegh/hactarconfig.git
+    dest: '{{ demo_zabbix_firewall_workspace.path }}/source'
+    version: '{{ demo_zabbix_deployment.firewall.hactar_source_revision }}'
+    depth: 1
+    recursive: false
+  environment:
+    GIT_TERMINAL_PROMPT: '0'
+    GIT_CONFIG_COUNT: '3'
+    GIT_CONFIG_KEY_0: credential.helper
+    GIT_CONFIG_VALUE_0: ''
+    GIT_CONFIG_KEY_1: http.followRedirects
+    GIT_CONFIG_VALUE_1: 'false'
+    GIT_CONFIG_KEY_2: http.sslVerify
+    GIT_CONFIG_VALUE_2: 'true'
+  delegate_to: localhost
+  become: false
+  vars:
+    ansible_connection: local
+  register: demo_zabbix_firewall_checkout
+  check_mode: false
+  no_log: true
+
+- name: Verify the checkout revision before loading any firewall tasks
+  ansible.builtin.assert:
+    that: demo_zabbix_firewall_checkout.after == demo_zabbix_deployment.firewall.hactar_source_revision
+    quiet: true
+  no_log: true
+
+- name: Bind the exact job-local source and complete authoritative CaC policy
+  ansible.builtin.set_fact:
+    hactar_firewall_source_root: '{{ demo_zabbix_firewall_workspace.path }}/source'
+    hactar_source_public_ip: '{{ demo_zabbix_deployment.firewall.protected_production_ipv4 }}'
+    demo_zabbix_firewall_expected_policy: '{{ demo_zabbix_deployment.isolation_policy }}'
+    hactar_isolation_policy: '{{ demo_zabbix_deployment.isolation_policy }}'
+  no_log: true
+
+- name: Read actual target network addresses for local-destination validation
+  ansible.builtin.setup:
+    gather_subset: ['!all', '!min', network]
+    filter: ansible_all_ipv4_addresses
+  check_mode: false
+  no_log: true
+
+- name: Refuse the protected production host as the actual firewall target
+  ansible.builtin.assert:
+    that:
+      - demo_zabbix_config.hypervisor.public_ipv4 in ansible_facts.all_ipv4_addresses
+      - hactar_source_public_ip not in ansible_facts.all_ipv4_addresses
+    quiet: true
+    fail_msg: The actual target addresses must match the selected test hypervisor and exclude production.
+  no_log: true

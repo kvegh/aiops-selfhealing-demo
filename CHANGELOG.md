@@ -88,6 +88,24 @@ templates, and the status page are still outstanding.
   stack. All three pages now make zero external requests, so they render
   identically on an audience phone with nothing but venue wifi.
 
+## [1.4.0] — 2026-11-09
+
+### Changed
+
+- Zabbix deployment consumes the reviewed native Hactar Ansible firewall tasks
+  instead of the retired helper checks. It verifies complete CaC policy and
+  saved guest ownership before adding only the declared bridge HTTPS permission
+  through the certified firewall role and native nftables tasks.
+- The existing temporary transaction lock, production exclusions, active and
+  persistent isolation checks, exact-rule restoration and temporary-file cleanup
+  are retained. No custom host JSON policy or new credential/job chain is added.
+- Eight firewall orchestration fixtures and fifteen existing Zabbix regressions
+  pass, together with scoped strict lint and syntax checks resolving the actual
+  certified role. These are source/fixture results; live application and the
+  outage/restore loop remain unverified. Fresh instances still need their
+  verified owner and grant published in per-instance CaC before access is opened;
+  an unattended fresh-instance producer remains unresolved.
+
 ## [1.3.1] — 2026-11-09
 
 ### Fixed

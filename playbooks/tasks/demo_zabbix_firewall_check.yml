@@ -1,0 +1,83 @@
+---
+# The complete expected policy comes from CaC. A not-yet-applied selected grant
+# permits only its exact before/after transition, never arbitrary observed rules.
+- name: Bind the complete current CaC expectation for native validation
+  ansible.builtin.set_fact:
+    hactar_isolation_policy: '{{ demo_zabbix_firewall_expected_policy }}'
+  no_log: true
+
+- name: Validate the complete CaC input with the reviewed Hactar tasks
+  ansible.builtin.include_tasks: '{{ hactar_firewall_source_root }}/playbooks/tasks/replacement-isolation-validate.yml'
+
+- name: Compare the complete native firewall with its authoritative CaC
+  ansible.builtin.include_tasks: '{{ hactar_firewall_source_root }}/playbooks/tasks/replacement-isolation-readback.yml'
+
+- name: Retain a full-policy match without inventing previous host ownership
+  ansible.builtin.set_fact:
+    demo_zabbix_firewall_full_match: '{{ __hactar_isolation_matches | bool }}'
+    demo_zabbix_firewall_previous_policy: '{{ demo_zabbix_firewall_expected_policy }}'
+  no_log: true
+
+- name: Check only the selected CaC grant's not-yet-applied state
+  when: not demo_zabbix_firewall_full_match | bool
+  no_log: true
+  block:
+    - name: Require this instance's existing verified CaC owner before deriving a prior state
+      ansible.builtin.assert:
+        that:
+          - demo_zabbix_deployment.firewall.guest | default({}) is mapping
+          - demo_zabbix_deployment.firewall.guest.verified | default(false) | bool
+          - demo_zabbix_deployment.firewall.guest.vm_name == demo_zabbix_config.vm_name
+          - demo_zabbix_deployment.firewall.guest.hypervisor_machine_id == demo_zabbix_config.hypervisor.machine_id
+        quiet: true
+        fail_msg: Firewall differs from CaC and this instance has no verified saved Zabbix owner; no grant was planned.
+
+    - name: Derive only the existing owner's exact own-bridge HTTPS rule
+      ansible.builtin.set_fact:
+        demo_zabbix_firewall_grant:
+          bridge: '{{ demo_zabbix_deployment.firewall.guest.bridge }}'
+          ipv4: '{{ demo_zabbix_deployment.firewall.guest.address }}'
+          mac: '{{ demo_zabbix_deployment.firewall.guest.mac }}'
+          destinations: ['{{ demo_zabbix_network.gateway }}']
+          ports: [443]
+
+    - name: Require the selected exact rule in the complete desired CaC policy
+      ansible.builtin.assert:
+        that:
+          - demo_zabbix_firewall_grant in demo_zabbix_firewall_expected_policy.guest_host_clients | default([])
+        quiet: true
+
+    - name: Derive the exact pre-grant expectation from CaC only
+      ansible.builtin.set_fact:
+        hactar_isolation_policy: >-
+          {{ demo_zabbix_firewall_expected_policy | combine({'guest_host_clients':
+             demo_zabbix_firewall_expected_policy.guest_host_clients |
+             reject('equalto', demo_zabbix_firewall_grant) | list}) }}
+
+    - name: Validate the exact pre-grant CaC expectation
+      ansible.builtin.include_tasks: '{{ hactar_firewall_source_root }}/playbooks/tasks/replacement-isolation-validate.yml'
+
+    - name: Compare the complete native table with that one pre-grant expectation
+      ansible.builtin.include_tasks: '{{ hactar_firewall_source_root }}/playbooks/tasks/replacement-isolation-readback.yml'
+
+    - name: Refuse any difference beyond the selected not-yet-applied rule
+      ansible.builtin.assert:
+        that: __hactar_isolation_matches | bool
+        quiet: true
+        fail_msg: Native isolation differs from CaC beyond this instance's exact pending HTTPS grant.
+
+    - name: Retain the verified pre-grant CaC state for bounded restoration
+      ansible.builtin.set_fact:
+        demo_zabbix_firewall_previous_policy: '{{ hactar_isolation_policy }}'
+
+- name: Require the complete readback to match the selected CaC state
+  ansible.builtin.assert:
+    that: __hactar_isolation_matches | bool
+    quiet: true
+    fail_msg: Native isolation does not match the selected complete CaC expectation.
+  no_log: true
+
+- name: Restore the desired CaC variable after the read-only comparison
+  ansible.builtin.set_fact:
+    hactar_isolation_policy: '{{ demo_zabbix_firewall_expected_policy }}'
+  no_log: true

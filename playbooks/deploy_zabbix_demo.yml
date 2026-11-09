@@ -99,134 +99,157 @@
       failed_when: demo_zabbix_live_hypervisor.stdout | trim != demo_zabbix_config.hypervisor.machine_id
       no_log: true
 
-    - name: Validate the complete existing isolation policy without changing it
-      ansible.builtin.command:
-        argv: [/usr/local/sbin/hactar-recovery-isolation, check]
-        stdin: "{{ demo_zabbix_deployment.isolation_policy | to_json }}"
-      changed_when: false
-      check_mode: false
-      no_log: true
-
-    - name: Require active and persistent isolation
-      ansible.builtin.command:
-        argv: [systemctl, "{{ item }}", hactar-recovery-isolation.service]
-      loop: [is-active, is-enabled]
-      changed_when: false
-      check_mode: false
-      no_log: true
-
-    - name: Inspect only the declared isolated guest network
-      ansible.builtin.command:
-        argv: [virsh, -c, 'qemu:///system', net-dumpxml, "{{ demo_zabbix_config.vm_network }}"]
-      register: demo_zabbix_network_xml
-      changed_when: false
-      check_mode: false
-      no_log: true
-
-    - name: Bind the monitoring guest to the existing isolation bridge
-      ansible.builtin.set_fact:
-        demo_zabbix_network: >-
-          {{ demo_zabbix_network_xml.stdout | demo_zabbix_network_details(demo_zabbix_config.vm_network) }}
-      no_log: true
-
-    - name: Refuse a network outside the existing isolation policy
-      ansible.builtin.assert:
-        that: demo_zabbix_network.bridge in demo_zabbix_deployment.isolation_policy.bridges
-        quiet: true
-      no_log: true
-
-    - name: Inspect existing domain names without changing them
-      ansible.builtin.command:
-        argv: [virsh, -c, 'qemu:///system', list, --all, --name]
-      register: demo_zabbix_domain_names
-      changed_when: false
-      check_mode: false
-      no_log: true
-
-    - name: Verify the selected testserver identity before allowing its monitoring
-      when: demo_zabbix_enable_testserver_monitoring | default(false) | bool
-      no_log: true
-      block:
-        - name: Read the selected testserver persistent domain
-          ansible.builtin.command:
-            argv: [virsh, -c, 'qemu:///system', dumpxml, --inactive, "{{ demo_zabbix_config.testserver.vm_name }}"]
-          register: demo_zabbix_testserver_domain_xml
-          changed_when: false
-          check_mode: false
-
-        - name: Require the verified testserver UUID, disk, MAC and network
-          ansible.builtin.assert:
-            that: demo_zabbix_config | demo_zabbix_testserver_domain(demo_zabbix_testserver_domain_xml.stdout)
-            quiet: true
-
-        - name: Read only the selected testserver assigned lease
-          ansible.builtin.command:
-            argv: [virsh, -c, 'qemu:///system', domifaddr, "{{ demo_zabbix_config.testserver.vm_name }}", --source, lease]
-          register: demo_zabbix_testserver_lease
-          changed_when: false
-          check_mode: false
-
-        - name: Require its actual assigned address to match the verified artifact
-          ansible.builtin.assert:
-            that: >-
-              demo_zabbix_testserver_lease.stdout | demo_zabbix_guest_address(demo_zabbix_config.testserver.mac)
-              == demo_zabbix_config.testserver.address
-            quiet: true
-
-    - name: Stop check mode before cloning or configuring the monitoring guest
-      ansible.builtin.meta: end_play
-      when: ansible_check_mode
-
   tasks:
-    - name: Create or verify only this allocation's monitoring guest
-      ansible.builtin.include_tasks: tasks/demo_zabbix_vm.yml
+    - name: Deploy from the reviewed job-local Hactar source and always remove its checkout
+      block:
+        - name: Prepare the reviewed native firewall task source and current target facts
+          ansible.builtin.include_tasks: tasks/demo_zabbix_firewall_prepare.yml
 
-    - name: Prepare this guest's isolated management connection
-      ansible.builtin.include_tasks: tasks/demo_zabbix_guest_connection.yml
-
-    - name: Verify the selected agent before interrupting existing monitoring
-      ansible.builtin.include_tasks: tasks/demo_zabbix_testserver_readiness.yml
-      args:
-        apply:
-          delegate_to: "{{ demo_zabbix_config.hostname }}"
-          become: true
-          no_log: true
-      when: demo_zabbix_enable_testserver_monitoring | default(false) | bool
-
-    - name: Quarantine the copied integrations and configure target-local monitoring
-      ansible.builtin.include_tasks: tasks/demo_zabbix_monitoring.yml
-      args:
-        apply:
-          delegate_to: "{{ demo_zabbix_config.hostname }}"
-          become: true
+        - name: Require active and persistent isolation
+          ansible.builtin.command:
+            argv: [systemctl, "{{ item }}", hactar-recovery-isolation.service]
+          loop: [is-active, is-enabled]
+          changed_when: false
+          check_mode: false
           no_log: true
 
-    - name: Publish this version's DNS, trusted certificate and protected reverse proxy
-      ansible.builtin.include_tasks: tasks/demo_zabbix_frontend.yml
-
-    - name: Validate all target settings and finish only the selected forwarding action
-      ansible.builtin.include_tasks: tasks/demo_zabbix_finalize.yml
-      args:
-        apply:
-          delegate_to: "{{ demo_zabbix_config.hostname }}"
-          become: true
+        - name: Inspect only the declared isolated guest network
+          ansible.builtin.command:
+            argv: [virsh, -c, 'qemu:///system', net-dumpxml, "{{ demo_zabbix_config.vm_network }}"]
+          register: demo_zabbix_network_xml
+          changed_when: false
+          check_mode: false
           no_log: true
 
-    - name: Publish verified monitoring provenance for the owning use case and existing source inventory
-      ansible.builtin.set_stats:
-        data:
-          demo_zabbix_instance: >-
-            {{ demo_zabbix_config | demo_zabbix_provenance(
-                 demo_zabbix_guest_record, demo_zabbix_guest_ip, demo_zabbix_network,
-                 demo_zabbix_guest_machine_id.stdout | trim) |
-               combine({'item_id': demo_zabbix_monitoring_item_id, 'trigger_id': demo_zabbix_monitoring_trigger_id,
-                        'mediatype_id': demo_zabbix_media_id, 'action_id': demo_zabbix_action_id,
-                        'delivery_enabled': demo_zabbix_enable_delivery | default(false) | bool,
-                        'testserver_monitoring_enabled': demo_zabbix_enable_testserver_monitoring | default(false) | bool}) }}
-        aggregate: false
-        per_host: false
-      no_log: true
+        - name: Bind the monitoring guest to the existing isolation bridge
+          ansible.builtin.set_fact:
+            demo_zabbix_network: >-
+              {{ demo_zabbix_network_xml.stdout | demo_zabbix_network_details(demo_zabbix_config.vm_network) }}
+          no_log: true
 
-    - name: Report the configured monitoring deployment
-      ansible.builtin.debug:
-        msg: The selected monitoring clone is configured with target-local website monitoring and a protected HTTPS frontend.
+        - name: Refuse a network outside the existing isolation policy
+          ansible.builtin.assert:
+            that: demo_zabbix_network.bridge in demo_zabbix_deployment.isolation_policy.bridges
+            quiet: true
+          no_log: true
+
+        - name: Verify complete CaC-derived native isolation before any clone write
+          ansible.builtin.include_tasks: tasks/demo_zabbix_firewall_check.yml
+
+        - name: Inspect existing domain names without changing them
+          ansible.builtin.command:
+            argv: [virsh, -c, 'qemu:///system', list, --all, --name]
+          register: demo_zabbix_domain_names
+          changed_when: false
+          check_mode: false
+          no_log: true
+
+        - name: Verify the selected testserver identity before allowing its monitoring
+          when: demo_zabbix_enable_testserver_monitoring | default(false) | bool
+          no_log: true
+          block:
+            - name: Read the selected testserver persistent domain
+              ansible.builtin.command:
+                argv: [virsh, -c, 'qemu:///system', dumpxml, --inactive, "{{ demo_zabbix_config.testserver.vm_name }}"]
+              register: demo_zabbix_testserver_domain_xml
+              changed_when: false
+              check_mode: false
+
+            - name: Require the verified testserver UUID, disk, MAC and network
+              ansible.builtin.assert:
+                that: demo_zabbix_config | demo_zabbix_testserver_domain(demo_zabbix_testserver_domain_xml.stdout)
+                quiet: true
+
+            - name: Read only the selected testserver assigned lease
+              ansible.builtin.command:
+                argv: [virsh, -c, 'qemu:///system', domifaddr, "{{ demo_zabbix_config.testserver.vm_name }}", --source, lease]
+              register: demo_zabbix_testserver_lease
+              changed_when: false
+              check_mode: false
+
+            - name: Require its actual assigned address to match the verified artifact
+              ansible.builtin.assert:
+                that: >-
+                  demo_zabbix_testserver_lease.stdout | demo_zabbix_guest_address(demo_zabbix_config.testserver.mac)
+                  == demo_zabbix_config.testserver.address
+                quiet: true
+
+        - name: Configure only this instance's monitoring infrastructure
+          when: not ansible_check_mode
+          block:
+            - name: Create or verify only this allocation's monitoring guest
+              ansible.builtin.include_tasks: tasks/demo_zabbix_vm.yml
+
+            - name: Prepare this guest's isolated management connection
+              ansible.builtin.include_tasks: tasks/demo_zabbix_guest_connection.yml
+
+            - name: Verify the selected agent before interrupting existing monitoring
+              ansible.builtin.include_tasks: tasks/demo_zabbix_testserver_readiness.yml
+              args:
+                apply:
+                  delegate_to: "{{ demo_zabbix_config.hostname }}"
+                  become: true
+                  no_log: true
+              when: demo_zabbix_enable_testserver_monitoring | default(false) | bool
+
+            - name: Quarantine the copied integrations and configure target-local monitoring
+              ansible.builtin.include_tasks: tasks/demo_zabbix_monitoring.yml
+              args:
+                apply:
+                  delegate_to: "{{ demo_zabbix_config.hostname }}"
+                  become: true
+                  no_log: true
+
+            - name: Apply only the authenticated owner's CaC-declared host HTTPS permission
+              # Existing quarantine has disabled forwarding before connectivity is opened.
+              ansible.builtin.include_tasks: tasks/demo_zabbix_firewall_grant.yml
+
+            - name: Publish this version's DNS, trusted certificate and protected reverse proxy
+              ansible.builtin.include_tasks: tasks/demo_zabbix_frontend.yml
+
+            - name: Validate all target settings and finish only the selected forwarding action
+              ansible.builtin.include_tasks: tasks/demo_zabbix_finalize.yml
+              args:
+                apply:
+                  delegate_to: "{{ demo_zabbix_config.hostname }}"
+                  become: true
+                  no_log: true
+
+            - name: Publish verified monitoring provenance for the owning use case and existing source inventory
+              ansible.builtin.set_stats:
+                data:
+                  demo_zabbix_instance: >-
+                    {{ demo_zabbix_config | demo_zabbix_provenance(
+                         demo_zabbix_guest_record, demo_zabbix_guest_ip, demo_zabbix_network,
+                         demo_zabbix_guest_machine_id.stdout | trim) |
+                       combine({'item_id': demo_zabbix_monitoring_item_id, 'trigger_id': demo_zabbix_monitoring_trigger_id,
+                                'mediatype_id': demo_zabbix_media_id, 'action_id': demo_zabbix_action_id,
+                                'delivery_enabled': demo_zabbix_enable_delivery | default(false) | bool,
+                                'testserver_monitoring_enabled': demo_zabbix_enable_testserver_monitoring | default(false) | bool}) }}
+                aggregate: false
+                per_host: false
+              no_log: true
+
+            - name: Report the configured monitoring deployment
+              ansible.builtin.debug:
+                msg: The selected monitoring clone is configured with target-local website monitoring and a protected HTTPS frontend.
+      always:
+        - name: Remove only this job's temporary public firewall checkout
+          ansible.builtin.file:
+            path: '{{ demo_zabbix_firewall_workspace.path }}'
+            state: absent
+          when: demo_zabbix_firewall_workspace.path is defined
+          delegate_to: localhost
+          become: false
+          check_mode: false
+          no_log: true
+
+        - name: Remove only this job's public SSH trust file
+          ansible.builtin.file:
+            path: '{{ demo_zabbix_known_hosts.path }}'
+            state: absent
+          when: demo_zabbix_known_hosts.path is defined
+          delegate_to: localhost
+          become: false
+          check_mode: false
+          no_log: true

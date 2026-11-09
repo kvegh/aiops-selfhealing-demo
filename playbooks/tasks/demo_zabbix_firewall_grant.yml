@@ -1,0 +1,168 @@
+---
+# Atomic mkdir serializes different controllers; native CLI queries verify exact
+# runtime/permanent state. See ../../README.md#native-monitoring-firewall-access.
+- name: Acquire the approved native firewall guard before grant observations or changes
+  block:
+    - name: Acquire only the absent temporary native firewall guard
+      ansible.builtin.command:
+        argv: [mkdir, --mode=0700, --, /run/hactar-recovery-policy.lock]
+      register: demo_zabbix_firewall_lock
+      until: demo_zabbix_firewall_lock.rc == 0
+      retries: 5
+      delay: 1
+      changed_when: demo_zabbix_firewall_lock.rc == 0
+      no_log: true
+  rescue:
+    - name: Stop before granting access when the native guard is unavailable
+      ansible.builtin.fail:
+        msg: Another firewall transaction holds the guard or it could not be acquired; no monitoring access was changed.
+
+- name: Grant only the authenticated CaC-owned monitoring guest its declared HTTPS access
+  block:
+    - name: Recheck actual hypervisor identity inside the transaction
+      ansible.builtin.command:
+        argv: [cat, /etc/machine-id]
+      register: demo_zabbix_firewall_machine_id
+      changed_when: false
+      failed_when: demo_zabbix_firewall_machine_id.stdout | trim != demo_zabbix_config.hypervisor.machine_id
+      no_log: true
+
+    - name: Read both current and persistent native guest definitions
+      ansible.builtin.command:
+        argv: '{{ ["virsh", "-c", "qemu:///system", "dumpxml", demo_zabbix_config.vm_name] + item }}'
+      loop: [[], [--inactive]]
+      register: demo_zabbix_firewall_domains
+      changed_when: false
+      no_log: true
+
+    - name: Require the existing selected-instance CaC record to match native and authenticated guest identity
+      ansible.builtin.assert:
+        that:
+          - demo_zabbix_deployment.firewall.guest | default({}) is mapping
+          - demo_zabbix_deployment.firewall.guest.verified | default(false) | bool
+          - demo_zabbix_deployment.firewall.guest.instance_name == demo_zabbix_config.instance_name
+          - demo_zabbix_deployment.firewall.guest.instance_number | int == demo_zabbix_config.instance_number
+          - demo_zabbix_deployment.firewall.guest.vm_name == demo_zabbix_config.vm_name
+          - demo_zabbix_deployment.firewall.guest.hypervisor_machine_id == demo_zabbix_config.hypervisor.machine_id
+          - demo_zabbix_deployment.firewall.guest.machine_id == demo_zabbix_guest_machine_id.stdout | trim
+          - demo_zabbix_deployment.firewall.guest.uuid == demo_zabbix_guest_record.uuid
+          - demo_zabbix_deployment.firewall.guest.disk == demo_zabbix_config.disk
+          - demo_zabbix_deployment.firewall.guest.network == demo_zabbix_config.vm_network
+          - demo_zabbix_deployment.firewall.guest.bridge == demo_zabbix_network.bridge
+          - demo_zabbix_deployment.firewall.guest.mac == demo_zabbix_guest_record.mac
+          - demo_zabbix_deployment.firewall.guest.address == demo_zabbix_guest_ip
+          - demo_zabbix_deployment.firewall.guest.host_keys == demo_zabbix_guest_record.guest_host_keys
+          - demo_zabbix_deployment.firewall.guest.source_sha256 == demo_zabbix_config.source_image.sha256
+          - >-
+            (item.stdout | demo_zabbix_domain_record(demo_zabbix_config)).uuid ==
+              demo_zabbix_deployment.firewall.guest.uuid
+          - >-
+            (item.stdout | demo_zabbix_domain_record(demo_zabbix_config)).mac ==
+              demo_zabbix_deployment.firewall.guest.mac
+        quiet: true
+        fail_msg: Publish and verify this instance's real Zabbix ownership in AIOps CaC before granting access; preserve the guest for review.
+      loop: '{{ demo_zabbix_firewall_domains.results }}'
+      no_log: true
+
+    - name: Derive this owner's exact bridge destination and port
+      ansible.builtin.set_fact:
+        demo_zabbix_firewall_grant:
+          bridge: '{{ demo_zabbix_deployment.firewall.guest.bridge }}'
+          ipv4: '{{ demo_zabbix_deployment.firewall.guest.address }}'
+          mac: '{{ demo_zabbix_deployment.firewall.guest.mac }}'
+          destinations: ['{{ demo_zabbix_network.gateway }}']
+          ports: [443]
+        demo_zabbix_firewall_rich_rule: >-
+          rule family="ipv4" priority="0" source address="{{ demo_zabbix_deployment.firewall.guest.address }}/32"
+          destination address="{{ demo_zabbix_network.gateway }}/32" port port="443" protocol="tcp" accept
+      no_log: true
+
+    - name: Require exactly the declared own-bridge TCP 443 permission
+      ansible.builtin.assert:
+        that: demo_zabbix_firewall_grant in demo_zabbix_firewall_expected_policy.guest_host_clients | default([])
+        quiet: true
+      no_log: true
+
+    - name: Recheck the complete CaC policy before changing either firewall layer
+      ansible.builtin.include_tasks: demo_zabbix_firewall_check.yml
+
+    - name: Verify the actual selected bridge remains in the native libvirt firewall zone
+      ansible.builtin.command:
+        argv: [firewall-cmd, '--get-zone-of-interface={{ demo_zabbix_network.bridge }}']
+      register: demo_zabbix_firewall_zone
+      changed_when: false
+      failed_when: demo_zabbix_firewall_zone.stdout | trim != 'libvirt'
+      no_log: true
+
+    - name: Capture only the exact rule's runtime and permanent presence for bounded restoration
+      ansible.builtin.command:
+        argv: '{{ ["firewall-cmd"] + item + ["--zone=libvirt", "--query-rich-rule=" ~ demo_zabbix_firewall_rich_rule] }}'
+      loop: [[], [--permanent]]
+      register: demo_zabbix_firewall_previous_rules
+      changed_when: false
+      failed_when: demo_zabbix_firewall_previous_rules.rc not in [0, 1]
+      no_log: true
+
+    - name: Apply the exact two-layer permission with bounded restoration
+      block:
+        - name: Enable the ordinary exact native rule through the certified firewall role
+          ansible.builtin.include_role:
+            name: redhat.rhel_system_roles.firewall
+            apply:
+              no_log: true
+          vars:
+            firewall:
+              - zone: libvirt
+                rich_rule: '{{ demo_zabbix_firewall_rich_rule }}'
+                state: enabled
+                runtime: true
+                permanent: true
+            firewall_disable_conflicting_services: false
+
+        - name: Apply and verify the complete CaC-derived early isolation policy
+          ansible.builtin.include_tasks: '{{ hactar_firewall_source_root }}/playbooks/tasks/replacement-isolation-apply.yml'
+
+        - name: Verify exact ordinary rule presence in both native configurations
+          ansible.builtin.command:
+            argv: '{{ ["firewall-cmd"] + item + ["--zone=libvirt", "--query-rich-rule=" ~ demo_zabbix_firewall_rich_rule] }}'
+          loop: [[], [--permanent]]
+          changed_when: false
+          no_log: true
+      rescue:
+        - name: Restore only the exact rule's previous runtime and permanent states
+          ansible.builtin.include_role:
+            name: redhat.rhel_system_roles.firewall
+            apply:
+              no_log: true
+          vars:
+            firewall:
+              - zone: libvirt
+                rich_rule: '{{ demo_zabbix_firewall_rich_rule }}'
+                state: '{{ "enabled" if demo_zabbix_firewall_previous_rules.results[0].rc == 0 else "disabled" }}'
+                runtime: true
+                permanent: false
+              - zone: libvirt
+                rich_rule: '{{ demo_zabbix_firewall_rich_rule }}'
+                state: '{{ "enabled" if demo_zabbix_firewall_previous_rules.results[1].rc == 0 else "disabled" }}'
+                runtime: false
+                permanent: true
+            firewall_disable_conflicting_services: false
+
+        - name: Bind the one verified pre-grant CaC policy for restoration
+          ansible.builtin.set_fact:
+            hactar_isolation_policy: '{{ demo_zabbix_firewall_previous_policy }}'
+          no_log: true
+
+        - name: Restore and verify that pre-grant native policy
+          ansible.builtin.include_tasks: '{{ hactar_firewall_source_root }}/playbooks/tasks/replacement-isolation-apply.yml'
+
+        - name: Stop before monitoring after incomplete firewall application
+          ansible.builtin.fail:
+            msg: Monitoring access did not finish; the verified previous permission was restored. Inspect the protected failure before retrying.
+  always:
+    - name: Release only this transaction's acquired native firewall guard
+      ansible.builtin.command:
+        argv: [rmdir, --, /run/hactar-recovery-policy.lock]
+      when: demo_zabbix_firewall_lock.rc | default(1) == 0
+      changed_when: true
+      no_log: true

@@ -225,10 +225,16 @@
   no_log: true
 
 - name: Recheck enforced isolation immediately before guest startup
-  ansible.builtin.command:
-    argv: [/usr/local/sbin/hactar-recovery-isolation, check]
-    stdin: "{{ demo_zabbix_deployment.isolation_policy | to_json }}"
-  changed_when: false
+  ansible.builtin.include_tasks: demo_zabbix_firewall_check.yml
+
+- name: Require an existing saved owner to match this exact native guest before startup
+  ansible.builtin.assert:
+    that:
+      - demo_zabbix_deployment.firewall.guest.uuid == demo_zabbix_guest_record.uuid
+      - demo_zabbix_deployment.firewall.guest.mac == demo_zabbix_guest_record.mac
+      - demo_zabbix_deployment.firewall.guest.disk == demo_zabbix_guest_record.disk
+    quiet: true
+  when: demo_zabbix_deployment.firewall.guest | default({}) | length > 0
   no_log: true
 
 - name: Read the selected guest state
