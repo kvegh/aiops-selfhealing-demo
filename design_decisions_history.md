@@ -1,5 +1,31 @@
 # Design decisions history
 
+## Parse Controller lookup text at the native YAML boundary — 2026-11-09
+
+Implementation `df2f278b3dfc9edd6985bbe907812a74245b6e71` is deployment
+release 1.6.1. The normal Zabbix run passed native guest authentication and stopped
+while preparing its source record, before any source-host write or child import.
+Replaying the saved configuration, provenance and source inventory as plain JSON
+passed; applying Ansible's native lookup wrappers to those same values reproduced
+LibYAML's TypeError. Inventory-variable text was `AnsibleUnsafeText`, while the
+native parser requires a base string. Ordinary string conversion retains this
+wrapper and is insufficient.
+
+The filter now strips only that outer lookup-text marker immediately before the
+existing native YAML loader. The returned mapping remains protected, including
+literal values. Target, inventory and VM ownership/collision checks are unchanged;
+no API operation, credential, lookup result shape or schema changed.
+
+Actual saved inputs pass after the fix with plain, lookup-marked and fully marked
+values. Four producer regressions and four configuration/provenance checks pass;
+scoped strict production lint covers twenty encountered files, and syntax and
+whitespace checks pass. Producer fixtures now include an unrelated existing host,
+marked lookup text, literal preservation and explicit conflicting-UUID rejection.
+The previous empty-inventory success fixture never exercised the parser boundary.
+Controller operations are still substituted in fixtures, and a normal AAP retry
+remains required for live acceptance. No private data or deployed host changed
+during this local repair.
+
 ## Reuse native inventory and the existing importer for fresh Zabbix ownership — 2026-11-09
 
 Implementation `08a93bf8f4e2f3e1198d32315f5e905c40a1466b`, deployment release
