@@ -1,5 +1,23 @@
 # Design decisions history
 
+## Match the importer's optional logging survey choice — 2026-11-09
+
+Implementation `3340275a99cb4e801f658210d541becff7e1eac2` is deployment
+release 1.6.2. Inspection of the existing importer survey found an optional
+multiple-choice input with string choices and the string default `false`. The
+producer now supplies that exact string instead of a YAML Boolean. This is
+preventive request/schema alignment, not a newly observed live job failure.
+The survey, saved defaults, selected targets, credentials and protected logging
+remain unchanged.
+
+The existing producer fixture now uses that same generic survey schema and
+requires the launch value's type, declared choice and default. Its success case
+rejects the prior Boolean, then passes with the one-value correction. All four
+focused producer cases pass; scoped strict production lint, deployment syntax
+and whitespace checks pass. Controller calls remain substituted in fixtures.
+No API, private configuration or runtime change occurred during preparation;
+the normal AAP retry remains the live verification step.
+
 ## Parse Controller lookup text at the native YAML boundary — 2026-11-09
 
 Implementation `df2f278b3dfc9edd6985bbe907812a74245b6e71` is deployment
