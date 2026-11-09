@@ -110,6 +110,16 @@
         fail_msg: The MCP source checkout did not return the pinned commit.
         quiet: true
 
+    - name: Label only this temporary public source tree for enforcing SELinux container access
+      ansible.builtin.file:
+        path: "{{ demo_mcp_build_workspace.path }}/source"
+        state: directory
+        recurse: true
+        follow: false
+        setype: container_file_t
+      become: true
+      become_user: root
+
     - name: Inspect the upstream build recipe without following a link
       ansible.builtin.stat:
         path: "{{ demo_mcp_build_workspace.path }}/source/{{ demo_mcp_image.containerfile }}"

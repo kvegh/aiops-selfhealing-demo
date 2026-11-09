@@ -86,6 +86,16 @@ context. Tokens, SSH private keys, Vertex authentication and instance settings
 stay outside it and are supplied later through the existing protected runtime
 configuration. The temporary checkout is removed after success or failure.
 
+The temporary public checkout receives only the SELinux type `container_file_t`
+through native Ansible file attributes, recursively without following symlinks.
+The confirmed target failure was an enforcing SELinux denial: `container_t`
+could not execute the upstream RPM-install script still labeled `user_home_t`.
+The script already had its upstream executable mode. Correcting only this
+temporary build context preserves its owner/modes, home and storage labels,
+SELinux enforcement and the unchanged upstream recipe. The build itself still
+runs as the existing unprivileged user. Labeling must succeed before building;
+no security-disable or privileged-container option is added.
+
 If the container build fails, its standard output and standard error are saved
 only as the runtime user's `build.log` in the server's private log directory:
 `~/.local/share/linux-mcp-server/logs` or

@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class NativeTargetBuildTests(unittest.TestCase):
-    def run_runtime(self, existing=False, build_succeeds=True, checkout_matches=True):
+    def run_runtime(self, existing=False, build_succeeds=True, checkout_matches=True, label_succeeds=True):
         with tempfile.TemporaryDirectory(prefix="mcp-native-build-test-") as temporary:
             root = Path(temporary)
             home = root / "home"
@@ -42,6 +42,7 @@ class NativeTargetBuildTests(unittest.TestCase):
                 "context=Path(sys.argv[-1])\n"
                 "assert context.name=='source' and context.parent.name.startswith('.aiops-mcp-build-')\n"
                 "assert not list(context.rglob('private-canary'))\n"
+                "assert (context/'.label-fixture').read_text()=='container_file_t'\n"
                 "calls.write_text(json.dumps(sys.argv[1:]))\n"
                 + ("state.write_text(" + repr(image["revision"]) + ")\n" if build_succeeds
                    else "print('Synthetic build standard output'); raise SystemExit('Synthetic build failure')\n")
@@ -55,6 +56,21 @@ class NativeTargetBuildTests(unittest.TestCase):
 
             def prepare(items):
                 for task in items:
+                    attributes = task.get("ansible.builtin.file", {})
+                    if attributes.get("setype") == "container_file_t":
+                        # Verify the actual privileged operation is scoped to the
+                        # public checkout; never relabel the operator's host in tests.
+                        self.assertEqual(task.get("become_user"), "root")
+                        self.assertEqual(attributes, {"path": "{{ demo_mcp_build_workspace.path }}/source",
+                                                     "state": "directory", "recurse": True,
+                                                     "follow": False, "setype": "container_file_t"})
+                        task.pop("ansible.builtin.file")
+                        if label_succeeds:
+                            task["ansible.builtin.copy"] = {
+                                "dest": "{{ demo_mcp_build_workspace.path }}/source/.label-fixture",
+                                "content": "container_file_t", "mode": "0600"}
+                        else:
+                            task["ansible.builtin.fail"] = {"msg": "Synthetic source-label failure"}
                     # Test fixtures stay in the current account and temporary directory.
                     task["become"] = False
                     task.pop("become_user", None)
@@ -138,6 +154,14 @@ class NativeTargetBuildTests(unittest.TestCase):
         result, arguments, revision, log = self.run_runtime(checkout_matches=False)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("did not return the pinned commit", result.stdout)
+        self.assertIsNone(arguments)
+        self.assertIsNone(revision)
+        self.assertIsNone(log)
+
+    def test_source_label_failure_stops_before_build_and_still_cleans_the_checkout(self):
+        result, arguments, revision, log = self.run_runtime(label_succeeds=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Synthetic source-label failure", result.stdout)
         self.assertIsNone(arguments)
         self.assertIsNone(revision)
         self.assertIsNone(log)

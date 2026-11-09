@@ -210,18 +210,22 @@ selected instance's verified hypervisor, testserver and TRA. Importing it
 creates AAP configuration and launches no application or EDA activation.
 Secret-dependent jobs receive a whole-file Vault ciphertext string and stop
 before managed host, DNS or API writes when required settings are missing.
-Deployment release **1.5.0** is documented in [CHANGELOG.md](CHANGELOG.md).
+Deployment release **1.5.1** is documented in [CHANGELOG.md](CHANGELOG.md).
 Failed MCP builds now retain protected stdout/stderr in the runtime user's
 private server `logs/build.log`, then fail and remove the temporary checkout.
-Four native build fixtures verify logging permissions, failure and cleanup;
-the underlying live build failure still needs diagnosis.
+The observed image-build failure is diagnosed: enforcing SELinux denied
+execution of the mounted public script labeled `user_home_t`. Native Ansible
+now labels only the temporary public checkout `container_file_t`; enforcement,
+file owners/modes and rootless builds are preserved. Five build fixtures, nine
+CloudCLI fixtures and nine runtime/Vault checks pass on the combined source.
 Selected-instance RHSM registration and repository prerequisites now run before
-MCP package installation. Fifteen focused native subscription, build and Vault
-checks passed, alongside strict lint and syntax validation; actual registration
-and completed target-side builds remain unverified.
+MCP package installation; registration, required repositories and runtime
+packages passed on the selected TRA before the build failure. The corrected
+image build, private MCP queries and optional CloudCLI installation still need
+live acceptance. Scoped strict lint and syntax checks cover the combined source.
 The MCP jobs now build their pinned upstream sources directly on the selected
 TRA using trusted RHEL packages; hypervisor image/RPM staging is no longer
-required. Target-side builds and authenticated queries still need live acceptance.
+required.
 Monitoring setup requires a fresh HTTP 200 sample from the selected Zabbix
 server before forwarding can be enabled. Its deployment uses the reviewed native
 Hactar Ansible tasks and the certified firewall role to apply the exact

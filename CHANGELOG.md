@@ -88,6 +88,25 @@ templates, and the status page are still outstanding.
   stack. All three pages now make zero external requests, so they render
   identically on an audience phone with nothing but venue wifi.
 
+## [1.5.1] — 2026-11-09
+
+### Fixed
+
+- Label only the job-created public MCP source checkout `container_file_t`
+  before building. The actual enforcing SELinux AVC denied execution of the
+  upstream script labeled `user_home_t`; its executable mode was already correct.
+  Native file attributes preserve owners/modes and do not follow symlinks.
+  Home/storage labels, enforcement, rootless builds and upstream recipes remain
+  unchanged. A labeling failure stops before building and still cleans up.
+
+### Verification
+
+- Five native build fixtures, nine CloudCLI checks and nine runtime/Vault
+  checks pass on the combined source. Scoped strict lint, combined-playbook
+  syntax and diff checks pass. Fixtures verify exact labeling scope/order and
+  failure cleanup without relabeling the operator host. Actual corrected
+  image builds, private MCP use and CloudCLI runtime acceptance remain open.
+
 ## [1.5.0] — 2026-11-09
 
 ### Added
