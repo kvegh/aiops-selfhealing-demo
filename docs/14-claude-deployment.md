@@ -44,8 +44,9 @@ The existing `AI_Instructions_Guardrails/CLAUDE.md` seeds only a missing workspa
 instruction file. It updates only the known unchanged previously managed copy; user edits or unrelated ownership stop for review. The Linux and Zabbix
 deployment playbooks keep their current private Podman/stdio transports, pinned
 images, instance-local targets and read-only checks. No public MCP listener is
-created. Their existing offline image/RPM manifests must already be prepared;
-see [MCP deployment](10-mcp-deployment.md).
+created. Their containers are built on the selected TRA from pinned public
+source recipes, using normal trusted RHEL packages and separate protected
+runtime settings; see [MCP deployment](10-mcp-deployment.md).
 
 ## Approved Vertex authentication
 

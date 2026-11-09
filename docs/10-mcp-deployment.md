@@ -7,7 +7,7 @@ The two Job Templates use the existing AIOps Project and separate playbooks:
 | Deploy Linux MCP Server | `playbooks/deploy_linux_mcp.yml` | The matching new TRA |
 | Deploy Zabbix MCP Server | `playbooks/deploy_zabbix_mcp.yml` | The matching new TRA |
 
-Both preserve the working Podman containers and on-demand stdio transport.
+Both preserve the existing on-demand Podman/stdio transport.
 They create no network listener, public port or persistent MCP service. The
 existing guest account runs the containers and owns its client configuration.
 The separate combined [Claude deployment job](14-claude-deployment.md) installs
@@ -19,7 +19,7 @@ The two standalone MCP jobs do not invoke a model or run the remediation agent.
 The imported TRA inventory entry receives `demo_mcp_deployment` from the
 encrypted private AIOps capture. Its `aiops_instances` map uses the selected
 AAP inventory entry's existing `vm_resource.vm_name` key and owns the verified
-`tra`, `testserver1`, `zabbix` and `mcp_artifacts` metadata. An inventory alias
+`tra`, `testserver1` and `zabbix` metadata. An inventory alias
 rename leaves that physical/runtime key and the encrypted settings unchanged.
 The selected AAP entry supplies its existing allocation and AAP identity.
 All guests must belong to the same allocation and verified hypervisor. Their
@@ -33,47 +33,53 @@ The existing runtime Vault credential decrypts the selected instance's
 [whole-file runtime settings](11-protected-runtime-settings.md).
 Do not substitute old production addresses, passwords or tokens.
 
-## Prepare offline runtime artifacts
+## Target-side image builds
 
-The new TRA needs Podman and its rootless runtime dependencies. Keep the
-existing network isolation: download the signed RHEL RPM dependency closure
-through the already prepared hypervisor, without installing staging tools or
-packages there, and copy it through the approved management connection.
-Inspect repository entitlement and existing download capability first.
+The selected TRA installs `podman`, `git`, `fuse-overlayfs` and `slirp4netns`
+from its configured trusted RHEL repositories through normal Ansible package
+management. Package signature checking stays enabled. Existing subordinate
+user/group allocations must support rootless Podman. No RPM bundle, image
+archive, hypervisor staging directory or hypervisor private key is needed.
 
-Resolve the requested Podman, fuse-overlayfs and slirp4netns packages against
-the selected guest's actual installed RPM database before recording the install
-set. A download-only dependency list can omit conditional SELinux providers.
-Stage those signed providers as needed, expose the verified local RPMs to a
-read-only dependency solve with repositories disabled, and require a solution
-without installed package removals. The manifest's `rpms` list contains that
-minimal install set. This avoids forcing unrelated base-library upgrades just
-because newer dependency files were downloaded. Keep signature verification,
-SELinux policy and protected-package checks enabled throughout.
+Each public playbook fixes the upstream source, immutable revision and native
+recipe used for its container:
 
-Save the two already installed image artifacts, preserving their image IDs:
+| Server | Public source | Revision | Recipe |
+| --- | --- | --- | --- |
+| Linux MCP | `https://github.com/rhel-lightspeed/linux-mcp-server.git` | `1d15590f0ebad724e2e331ecd2bd9186f7eef478` | `Containerfile` |
+| Zabbix MCP | `https://github.com/initMAX/zabbix-mcp-server.git` | `c3b93d5a1a4678d211d38a2a539a15241da65109` | `Dockerfile` |
 
-- `quay.io/redhat-services-prod/rhel-lightspeed-tenant/linux-mcp-server:latest`
-- `localhost/zabbix-mcp-server:latest`
+The upstream recipes are reused unchanged from their pinned public checkouts.
+The selected Linux recipe uses UBI 10; the Zabbix recipe uses its existing
+Debian-based Python image. This does not change the separate Claude CLI image.
+TRA needs network access to its trusted package repositories and the public
+source/base-image/dependency endpoints used by these recipes. TLS verification
+remains enabled. Four GiB free space is the initial build headroom check;
+actual build disk and memory usage still need live verification.
 
-Stream archives to the hypervisor when the source VM lacks space. Stage them
-and the RPMs under `/opt/aiops-mcp-artifacts/vNN` on the selected TRA after
-checking its free space. No registry pull is needed. Never put archives, RPMs,
-populated manifests or credentials in the public repository.
+Builds run as the existing runtime user, in a job-created temporary source
+checkout beneath that user's home. Only the public checkout is the build
+context. Tokens, SSH private keys, Vertex authentication and instance settings
+stay outside it and are supplied later through the existing protected runtime
+configuration. The temporary checkout is removed after success or failure.
 
-The reviewed manifest has `schema_version: 1`, the existing `counter`, image
-entries containing `name`, `archive`, `image_id`, `sha256`, `bytes`, and RPM
-entries containing `path`, `nevra`, `sha256`, `bytes`, `signature_verified`.
-Archives are `linux-mcp.tar` and `zabbix-mcp.tar`; RPMs are under `rpms/` in
-that same version's directory. Actual paths, hashes and metadata belong in
-the selected instance's protected configuration/inventory handoff.
+The image keeps its existing local name and records the pinned commit in the
+standard OCI `org.opencontainers.image.revision` label. A repeat deployment
+skips building when that label already matches. After a build, the job checks
+it again. No custom build-state or ownership file is deployed. Client runs
+retain `--pull=never` and the existing private stdio invocation.
 
-The jobs check manifest identity, paths, file sizes and SHA-256 values. They
-verify RPM signatures against existing signing trust and install only local
-RPMs with all repositories disabled. Existing subordinate user/group ID ranges
-must support rootless Podman; no rootful fallback is used. Each image is loaded
-into the existing user's image store and checked against the approved source
-image ID. Client invocations use `--pull=never`.
+The installed certified Podman role handles runtime configuration but exposes
+no public image-build interface. The shared Ansible tasks therefore invoke
+native `podman build` with an argument list; no shell wrapper or custom module
+is introduced. Source checkout and package management use standard modules.
+The existing source/guest filter remains for the selected-instance identity
+checks; its obsolete offline-artifact validator is removed.
+
+The per-instance private CaC no longer needs `mcp_artifacts` or an `artifacts`
+manifest. Remove those obsolete runtime inputs when publishing the refreshed
+settings, preserving the instance's guest, hypervisor and secret entries.
+Registry images and a separate build host are deferred future work.
 
 ## Linux MCP access
 
@@ -112,16 +118,16 @@ setting is retained for the private HTTP endpoint; no public HTTPS certificate
 check is disabled. The public Zabbix UI retains its independent trusted HTTPS
 and Basic-auth protection, with no public API exception.
 
-The approved saved Zabbix MCP image runs as numeric UID/GID `999:999`. Its
+The existing Zabbix MCP invocation uses numeric UID/GID `999:999`. Its
 rootless invocation maps the existing TRA user to those image IDs with
 `--userns keep-id:uid=999,gid=999`, allowing that intended non-root process to
 read its owner's `0600` configuration. The read-only mount, file permissions,
-SELinux label and server read-only policy remain in place. Revalidate the
-image user when deliberately replacing the pinned image artifact.
+SELinux label and server read-only policy remain in place. The final authenticated stdio check must pass with the newly built image;
+revalidate its image user if that existing mapping fails.
 
-The native permission regression uses the exact saved image and unchanged
+The earlier native permission regression used the saved image and unchanged
 private configuration: its original default mapping fails the configuration
-read; the explicit mapping must initialize stdio and complete an authenticated
+read; the explicit mapping initialized stdio and completed an authenticated
 read-only query. The normal Job Template retains that real query as its final
 required verification.
 
@@ -143,7 +149,7 @@ numeric; errors, empty values and object/list responses fail verification.
 Run the focused local checks using the existing toolchain:
 
 ```bash
-ANSIBLE_LOCAL_TEMP=/tmp/aiops-mcp-tests python3.12 -m unittest discover -s tests -p test_mcp_deployment.py -v
+ANSIBLE_LOCAL_TEMP=/tmp/aiops-mcp-tests python3.12 -m unittest discover -s tests -p 'test_mcp*.py' -v
 ansible-playbook --syntax-check -i localhost, playbooks/deploy_linux_mcp.yml playbooks/deploy_zabbix_mcp.yml
 ```
 
@@ -153,12 +159,13 @@ configuration or raw error responses. Successful MCP deployment does not install
 Claude Code, supply model-provider credentials, execute the agent or enable an
 EDA activation. Those application stages require their own reviewed readiness.
 
-Both normal MCP deployment jobs have now succeeded on the fresh TRA. Linux MCP
-returned the matching new testserver's system identity; Zabbix MCP initialized
-stdio, discovered its tools and completed an authenticated read-only host-count
-query against the verified new clone. The private configuration and rootless
-image identity are checked separately from the completed job status. Website
-health and the full event/remediation loop are not established by these queries.
+Earlier archive-based deployments passed their normal Linux and Zabbix MCP
+jobs and read-only protocol checks. The new target-side build path has focused
+local Ansible tests for building, repeat-run skipping, source-revision refusal
+and cleanup after failure. Its actual package solve, container builds and final
+MCP queries still need normal AAP verification on the selected TRA. Those live
+results must be distinguished from the earlier archived-image acceptance.
+Website health and the full event/remediation loop remain separate checks.
 
 ## Native AAP MCP baseline
 

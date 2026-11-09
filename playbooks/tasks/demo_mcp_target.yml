@@ -1,5 +1,5 @@
 ---
-- name: Validate the selected guests and previously staged offline artifacts locally
+- name: Validate the selected instance and its verified guests locally
   ansible.builtin.set_fact:
     demo_mcp_config: "{{ demo_mcp_deployment | demo_mcp_configuration }}"
   no_log: true

@@ -1,76 +1,21 @@
 ---
-- name: Check free space before offline package installation and image loading
-  ansible.builtin.command:
-    argv: [df, -Pk, /]
-  register: demo_mcp_disk_space
-  changed_when: false
-
-- name: Require headroom for the staged archives and loaded images
-  ansible.builtin.assert:
-    that: >-
-      (demo_mcp_disk_space.stdout_lines[-1].split()[3] | int) * 1024 >=
-      demo_mcp_config.artifacts.minimum_free_bytes
-    fail_msg: Free space is insufficient for the offline runtime and loaded MCP images.
-    quiet: true
-
-- name: Verify each staged runtime RPM checksum and size
-  ansible.builtin.stat:
-    path: "{{ item.path }}"
-    checksum_algorithm: sha256
-  loop: "{{ demo_mcp_config.artifacts.rpms }}"
-  loop_control:
-    label: "{{ item.nevra }}"
-  register: demo_mcp_rpm_checks
-  failed_when: >-
-    not demo_mcp_rpm_checks.stat.exists or
-    demo_mcp_rpm_checks.stat.checksum != item.sha256 or
-    demo_mcp_rpm_checks.stat.size != item.bytes
-
-- name: Inspect the existing release-owned Red Hat signing key file
-  ansible.builtin.stat:
-    path: /etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
-    checksum_algorithm: sha256
-  register: demo_mcp_vendor_key
-
-- name: Verify that the installed release package owns the signing key file
-  ansible.builtin.command:
-    argv: [rpm, -qf, --qf, '%{NAME}', /etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release]
-  register: demo_mcp_vendor_key_owner
-  changed_when: false
-
-- name: Require only the reviewed existing vendor key before importing trust
+- name: Require one pinned public MCP build recipe
   ansible.builtin.assert:
     that:
-      - demo_mcp_vendor_key.stat.exists
-      - demo_mcp_vendor_key.stat.isreg
-      - demo_mcp_vendor_key.stat.checksum == '0db3dc1b6228f29d60f37c5ad91d9f4cd3547895e8ebedb242469b1c0a0cdf08'
-      - demo_mcp_vendor_key_owner.stdout == 'redhat-release'
-    fail_msg: Preserve signing trust and review this release's vendor key before installing the offline runtime.
+      - demo_mcp_image is mapping
+      - demo_mcp_image.name is string
+      - >-
+        demo_mcp_image.repository in
+        ['https://github.com/rhel-lightspeed/linux-mcp-server.git', 'https://github.com/initMAX/zabbix-mcp-server.git']
+      - demo_mcp_image.revision is match('^[0-9a-f]{40}$')
+      - demo_mcp_image.containerfile in ['Containerfile', 'Dockerfile']
+    fail_msg: Select the public MCP source recipe with an immutable Git revision.
     quiet: true
 
-- name: Import only the installed release key with its reviewed fingerprint
-  ansible.builtin.rpm_key:
-    key: /etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
-    fingerprint: 567E347AD0044ADE55BA8A5F199E2F91FD431D51
-    state: present
-
-- name: Verify installed Red Hat signing trust for every staged RPM
-  ansible.builtin.command:
-    argv: [rpmkeys, --checksig, "{{ item.path }}"]
-  loop: "{{ demo_mcp_config.artifacts.rpms }}"
-  loop_control:
-    label: "{{ item.nevra }}"
-  register: demo_mcp_rpm_signatures
-  changed_when: false
-  failed_when: >-
-    demo_mcp_rpm_signatures.rc != 0 or
-    'signatures OK' not in demo_mcp_rpm_signatures.stdout
-
-- name: Install only the verified local RPM closure without contacting repositories
+- name: Install the rootless runtime and Git from the configured trusted RHEL repositories
   ansible.builtin.dnf:
-    name: "{{ demo_mcp_config.artifacts.rpms | map(attribute='path') | list }}"
+    name: [podman, git, fuse-overlayfs, slirp4netns]
     state: present
-    disablerepo: '*'
     disable_gpg_check: false
     install_weak_deps: false
 
@@ -99,19 +44,15 @@
     mode: '0700'
   loop: [.local, .local/share]
 
-- name: Verify the approved image archive before loading it
-  ansible.builtin.stat:
-    path: "{{ demo_mcp_image.archive }}"
-    checksum_algorithm: sha256
-  register: demo_mcp_image_check
-  failed_when: >-
-    not demo_mcp_image_check.stat.exists or
-    demo_mcp_image_check.stat.checksum != demo_mcp_image.sha256 or
-    demo_mcp_image_check.stat.size != demo_mcp_image.bytes
-
-- name: Inspect the existing rootless image identity without pulling
+- name: Inspect the existing rootless image's source revision without pulling
   ansible.builtin.command:
-    argv: [podman, image, inspect, "{{ demo_mcp_image.name }}", --format, '{% raw %}{{.Id}}{% endraw %}']
+    argv:
+      - podman
+      - image
+      - inspect
+      - "{{ demo_mcp_image.name }}"
+      - --format
+      - '{% raw %}{{ index .Labels "org.opencontainers.image.revision" }}{% endraw %}'
   become: true
   become_user: "{{ demo_mcp_user.name }}"
   environment:
@@ -120,28 +61,104 @@
   changed_when: false
   failed_when: false
 
-- name: Load the verified existing image archive into the runtime user's store
-  ansible.builtin.command:
-    argv: [podman, load, --input, "{{ demo_mcp_image.archive }}"]
-  become: true
-  become_user: "{{ demo_mcp_user.name }}"
-  environment:
-    XDG_RUNTIME_DIR: "/run/user/{{ demo_mcp_user.uid }}"
+- name: Build only when this source revision is absent from the selected user's image store
   when: >-
     demo_mcp_existing_image.rc != 0 or
-    (demo_mcp_existing_image.stdout | trim | regex_replace('^sha256:', '')) !=
-    (demo_mcp_image.image_id | regex_replace('^sha256:', ''))
-  changed_when: true
-
-- name: Verify the loaded image matches the approved source identity
-  ansible.builtin.command:
-    argv: [podman, image, inspect, "{{ demo_mcp_image.name }}", --format, '{% raw %}{{.Id}}{% endraw %}']
+    demo_mcp_existing_image.stdout | trim != demo_mcp_image.revision
   become: true
   become_user: "{{ demo_mcp_user.name }}"
   environment:
     XDG_RUNTIME_DIR: "/run/user/{{ demo_mcp_user.uid }}"
-  register: demo_mcp_loaded_image
+  block:
+    - name: Start this build without reusing another MCP play's temporary workspace
+      ansible.builtin.set_fact:
+        demo_mcp_build_workspace: {}
+
+    - name: Check free space before fetching source and building container layers
+      ansible.builtin.command:
+        argv: [df, -Pk, "{{ demo_mcp_user.home }}"]
+      register: demo_mcp_disk_space
+      changed_when: false
+
+    - name: Require basic free-space headroom for the source build
+      ansible.builtin.assert:
+        that: (demo_mcp_disk_space.stdout_lines[-1].split()[3] | int) * 1024 >= 4 * 1024 ** 3
+        fail_msg: At least four GiB free space is required before building the MCP image.
+        quiet: true
+
+    - name: Allocate a private temporary build workspace for public source only
+      ansible.builtin.tempfile:
+        state: directory
+        path: "{{ demo_mcp_user.home }}"
+        prefix: .aiops-mcp-build-
+      register: demo_mcp_build_workspace
+
+    - name: Check out the exact public source revision without credentials
+      ansible.builtin.git:
+        repo: "{{ demo_mcp_image.repository }}"
+        version: "{{ demo_mcp_image.revision }}"
+        dest: "{{ demo_mcp_build_workspace.path }}/source"
+        recursive: false
+      register: demo_mcp_source_checkout
+
+    - name: Require the checked-out commit to equal the selected source revision
+      ansible.builtin.assert:
+        that: demo_mcp_source_checkout.after == demo_mcp_image.revision
+        fail_msg: The MCP source checkout did not return the pinned commit.
+        quiet: true
+
+    - name: Inspect the upstream build recipe without following a link
+      ansible.builtin.stat:
+        path: "{{ demo_mcp_build_workspace.path }}/source/{{ demo_mcp_image.containerfile }}"
+        follow: false
+      register: demo_mcp_build_recipe
+
+    - name: Require the pinned source's regular container recipe
+      ansible.builtin.assert:
+        that:
+          - demo_mcp_build_recipe.stat.isreg | default(false)
+          - not demo_mcp_build_recipe.stat.islnk | default(false)
+        fail_msg: The pinned source has no regular MCP container recipe.
+        quiet: true
+
+    # The installed certified Podman role has no public image-build interface.
+    # Native gap and verification: ../../docs/10-mcp-deployment.md#target-side-image-builds
+    - name: Build the MCP image as the existing runtime user from public source only
+      ansible.builtin.command:
+        argv:
+          - podman
+          - build
+          - --file
+          - "{{ demo_mcp_build_workspace.path }}/source/{{ demo_mcp_image.containerfile }}"
+          - --tag
+          - "{{ demo_mcp_image.name }}"
+          - --label
+          - "org.opencontainers.image.revision={{ demo_mcp_image.revision }}"
+          - "{{ demo_mcp_build_workspace.path }}/source"
+      changed_when: true
+
+  always:
+    - name: Remove only this job's temporary public build workspace
+      ansible.builtin.file:
+        path: "{{ demo_mcp_build_workspace.path }}"
+        state: absent
+      when: demo_mcp_build_workspace.path is defined
+
+- name: Verify the image was built from the selected source revision
+  ansible.builtin.command:
+    argv:
+      - podman
+      - image
+      - inspect
+      - "{{ demo_mcp_image.name }}"
+      - --format
+      - '{% raw %}{{ index .Labels "org.opencontainers.image.revision" }}{% endraw %}'
+  become: true
+  become_user: "{{ demo_mcp_user.name }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ demo_mcp_user.uid }}"
+  register: demo_mcp_built_image
   changed_when: false
   failed_when: >-
-    (demo_mcp_loaded_image.stdout | trim | regex_replace('^sha256:', '')) !=
-    (demo_mcp_image.image_id | regex_replace('^sha256:', ''))
+    demo_mcp_built_image.rc != 0 or
+    demo_mcp_built_image.stdout | trim != demo_mcp_image.revision

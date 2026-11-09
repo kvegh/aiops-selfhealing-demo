@@ -5,6 +5,11 @@
   gather_facts: false
   vars:
     demo_mcp_server_name: zabbix
+    demo_mcp_build:
+      name: localhost/zabbix-mcp-server:latest
+      repository: https://github.com/initMAX/zabbix-mcp-server.git
+      revision: c3b93d5a1a4678d211d38a2a539a15241da65109
+      containerfile: Dockerfile
   tasks:
     - name: Prepare and verify the selected target's Zabbix MCP configuration
       block:
@@ -22,12 +27,15 @@
               {{ demo_mcp_deployment | demo_mcp_zabbix_configuration(demo_zabbix_mcp_api_token | default('')) }}
           no_log: true
 
-        - name: Select the approved existing Zabbix MCP image archive
+        - name: Select the public Zabbix MCP source and build recipe
           ansible.builtin.set_fact:
-            demo_mcp_image: "{{ demo_mcp_config.artifacts.images['zabbix-mcp'] }}"
+            demo_mcp_image: "{{ demo_mcp_build }}"
 
-        - name: Install the verified offline rootless runtime and image
+        - name: Install the trusted runtime and build the image on the selected TRA
           ansible.builtin.include_tasks: tasks/demo_mcp_runtime.yml
+          args:
+            apply:
+              no_log: true
 
         - name: Prepare the existing server configuration location
           ansible.builtin.file:

@@ -1,4 +1,4 @@
-"""Exercise target/artifact boundaries and real stdio verification without services."""
+"""Exercise target boundaries, native build tasks and stdio verification without services."""
 
 import copy
 import importlib.util
@@ -46,14 +46,6 @@ def deployment():
             "machine_id": "b" * 32, "hypervisor_machine_id": "a" * 32, "verified": True,
             "host_keys": ["ssh-ed25519 c3ludGhldGljLXRlc3Qta2V5 synthetic-comment"],
         }
-    result["artifacts"] = {
-        "schema_version": 1, "counter": number,
-        "images": [{"name": name, "archive": f"/opt/aiops-mcp-artifacts/v07/{kind}.tar",
-                    "image_id": "sha256:" + "c" * 64, "sha256": "d" * 64, "bytes": 1024}
-                   for kind, name in FILTERS.IMAGES.items()],
-        "rpms": [{"path": "/opt/aiops-mcp-artifacts/v07/rpms/podman.rpm", "nevra": "synthetic-podman",
-                  "sha256": "e" * 64, "bytes": 1024, "signature_verified": True}],
-    }
     result["zabbix"] = {"instance_name": "aap27-test-7", "instance_number": number,
                         "vm_name": "zabbix-v07", "hypervisor_machine_id": "a" * 32,
                         "address": "10.23.45.12", "api_url": "http://10.23.45.12/api_jsonrpc.php"}
@@ -61,11 +53,11 @@ def deployment():
 
 
 class MCPDeploymentTests(unittest.TestCase):
-    def test_verified_guests_and_local_artifacts_are_selected(self):
+    def test_verified_guests_need_no_staged_archives_or_rpms(self):
         config = FILTERS.configuration(deployment())
         self.assertEqual(config["tra"]["vm_name"], "tra-v07")
         self.assertEqual(config["testserver"]["host_keys"], ["ssh-ed25519 c3ludGhldGljLXRlc3Qta2V5"])
-        self.assertGreaterEqual(config["artifacts"]["minimum_free_bytes"], 2 * 1024 ** 3)
+        self.assertNotIn("artifacts", config)
 
     def test_foreign_unverified_or_public_guest_is_rejected(self):
         for field, value in (("vm_name", "tra-v08"), ("verified", False),
@@ -76,23 +68,12 @@ class MCPDeploymentTests(unittest.TestCase):
             with self.subTest(field=field), self.assertRaises(AnsibleFilterError):
                 FILTERS.configuration(data)
 
-    def test_foreign_paths_unsigned_rpms_and_missing_images_are_rejected(self):
-        variants = []
-        for field, value in (("counter", 8), ("images", [])):
-            data = deployment()
-            data["artifacts"][field] = value
-            variants.append(data)
-        for field, value in (("signature_verified", False), ("path", "/tmp/unreviewed.rpm"),
-                             ("path", "/opt/aiops-mcp-artifacts/v07/rpms/../unreviewed.rpm")):
-            data = deployment()
-            data["artifacts"]["rpms"][0][field] = value
-            variants.append(data)
+    def test_obsolete_artifact_metadata_is_not_used_as_a_runtime_dependency(self):
         data = deployment()
-        data["artifacts"]["images"][0]["archive"] = "/opt/aiops-mcp-artifacts/v08/linux-mcp.tar"
-        variants.append(data)
-        for data in variants:
-            with self.subTest(data=data), self.assertRaises(AnsibleFilterError):
-                FILTERS.configuration(data)
+        data["artifacts"] = {"images": [], "rpms": []}
+        config = FILTERS.configuration(data)
+        self.assertNotIn("artifacts", config)
+        self.assertEqual(config["tra"]["vm_name"], "tra-v07")
 
     def test_existing_client_entries_are_preserved(self):
         existing = {"unrelated": {"setting": True}, "projects": {"/home/automation/claude-wd": {

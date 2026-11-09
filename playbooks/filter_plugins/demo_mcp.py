@@ -1,6 +1,5 @@
-"""Bind stdio MCP deployment to verified guests and local offline artifacts."""
+"""Bind stdio MCP deployment to verified guests from the selected instance."""
 
-import copy
 import importlib.util
 import ipaddress
 import json
@@ -14,11 +13,6 @@ from ansible.errors import AnsibleFilterError
 SPEC = importlib.util.spec_from_file_location("mcp_website_schema", Path(__file__).with_name("demo_website.py"))
 website = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(website)
-
-IMAGES = {
-    "linux-mcp": "quay.io/redhat-services-prod/rhel-lightspeed-tenant/linux-mcp-server:latest",
-    "zabbix-mcp": "localhost/zabbix-mcp-server:latest",
-}
 
 
 def require(condition, message):
@@ -53,46 +47,11 @@ def guest(config, value, role):
         raise AnsibleFilterError("Invalid selected guest identity; no previous target may be substituted.") from None
 
 
-def artifact_manifest(value, number):
-    require(isinstance(value, dict) and value.get("schema_version") == 1
-            and value.get("counter") == number and not isinstance(value.get("counter"), bool),
-            "Supply the verified offline artifact manifest for this same allocation.")
-    root = f"/opt/aiops-mcp-artifacts/v{number:02d}"
-    images = {}
-    for kind, name in IMAGES.items():
-        rows = [row for row in value.get("images", []) if row.get("name") == name]
-        require(len(rows) == 1, "Each approved MCP image needs one verified local archive.")
-        row = rows[0]
-        identity = str(row.get("image_id", "")).removeprefix("sha256:")
-        require(row.get("archive") == f"{root}/{kind}.tar"
-                and re.fullmatch(r"[0-9a-f]{64}", identity)
-                and re.fullmatch(r"[0-9a-f]{64}", str(row.get("sha256", "")))
-                and isinstance(row.get("bytes"), int) and row["bytes"] > 0,
-                "Image identity, exact local archive path, SHA-256 and size are required.")
-        images[kind] = dict(row, image_id="sha256:" + identity)
-    rpms = value.get("rpms", [])
-    require(isinstance(rpms, list) and rpms, "Stage the signed rootless Podman RPM closure first.")
-    for row in rpms:
-        path = str(row.get("path", ""))
-        require(path.startswith(root + "/rpms/") and Path(path).name.endswith(".rpm")
-                and str(Path(path)) == path and ".." not in Path(path).parts
-                and re.fullmatch(r"[0-9a-f]{64}", str(row.get("sha256", "")))
-                and row.get("signature_verified") is True
-                and isinstance(row.get("nevra"), str) and row["nevra"]
-                and isinstance(row.get("bytes"), int) and row["bytes"] > 0,
-                "Every runtime RPM must have a verified signature, local path, SHA-256 and size.")
-    require(len({row["path"] for row in rpms}) == len(rpms), "Runtime RPM paths must be unique.")
-    return {"images": images, "rpms": copy.deepcopy(rpms),
-            "minimum_free_bytes": max(2 * 1024 ** 3, 3 * sum(row["bytes"] for row in images.values())
-                                      + sum(row["bytes"] for row in rpms))}
-
-
 def configuration(value):
     config = website.website_configuration(value)
     require(isinstance(value, dict), "Select the existing instance's MCP deployment metadata.")
     config["tra"] = guest(config, value.get("tra"), "tra")
     config["testserver"] = guest(config, value.get("testserver"), "testserver1")
-    config["artifacts"] = artifact_manifest(value.get("artifacts"), config["instance_number"])
     return config
 
 

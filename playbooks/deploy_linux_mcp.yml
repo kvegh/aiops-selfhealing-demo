@@ -5,18 +5,26 @@
   gather_facts: false
   vars:
     demo_mcp_server_name: linux-mcp
+    demo_mcp_build:
+      name: quay.io/redhat-services-prod/rhel-lightspeed-tenant/linux-mcp-server:latest
+      repository: https://github.com/rhel-lightspeed/linux-mcp-server.git
+      revision: 1d15590f0ebad724e2e331ecd2bd9186f7eef478
+      containerfile: Containerfile
   tasks:
     - name: Prepare and verify the instance-local Linux MCP configuration
       block:
         - name: Select the verified TRA and testserver before connecting
           ansible.builtin.include_tasks: tasks/demo_mcp_target.yml
 
-        - name: Select the approved Linux MCP image archive
+        - name: Select the public Linux MCP source and build recipe
           ansible.builtin.set_fact:
-            demo_mcp_image: "{{ demo_mcp_config.artifacts.images['linux-mcp'] }}"
+            demo_mcp_image: "{{ demo_mcp_build }}"
 
-        - name: Install the verified offline rootless runtime and image
+        - name: Install the trusted runtime and build the image on the selected TRA
           ansible.builtin.include_tasks: tasks/demo_mcp_runtime.yml
+          args:
+            apply:
+              no_log: true
 
         - name: Prepare private MCP client SSH and log directories
           ansible.builtin.file:

@@ -1,5 +1,9 @@
 # 03 – Zabbix MCP Server
 
+For new versioned deployments, use the existing Job Template and
+[pinned target-side build procedure](10-mcp-deployment.md). The manual commands
+below remain a reference for the server's configuration and stdio behavior.
+
 The Zabbix MCP server gives Claude **read-only** access to the
 monitoring layer — hosts, problems, triggers, history, and events. It
 uses the [initMAX/zabbix-mcp-server](https://github.com/initMAX/zabbix-mcp-server),

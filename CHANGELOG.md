@@ -35,8 +35,8 @@ templates, and the status page are still outstanding.
   trusted HTTPS frontend retaining Basic authentication. Event delivery stays
   disabled until explicitly released.
 - Two requested MCP deployment playbooks retain the existing on-demand
-  Podman/stdio servers on the matching new TRA. They verify signed offline
-  runtime artifacts and image identities, pin fresh guest SSH keys and perform
+  Podman/stdio servers on the matching new TRA. They build pinned public
+  upstream sources on that TRA, pin fresh guest SSH keys and perform
   read-only protocol checks. Linux MCP generates its private key only on TRA;
   Zabbix MCP requires the new target's explicit API token. Neither opens a
   public MCP port or installs or launches the agent.
@@ -68,9 +68,8 @@ templates, and the status page are still outstanding.
   missing settings stop dependent jobs before managed writes. Unsupported inline
   Vault launch scalars and JSON Vault-marker mappings are not advertised as a
   Controller transport.
-- Offline MCP runtime preparation imports only the reviewed existing
-  release-owned Red Hat signing key after checksum/fingerprint checks, before
-  mandatory RPM signature verification. Package GPG checks remain enabled.
+- MCP runtime preparation uses the target's configured trusted RHEL package
+  repositories with package GPG checks enabled, without an offline RPM closure.
 
 - `playbooks/demo_website.yml` — Enable removes rate limiting for the whole
   audience site; Disable restores its previous button limit through a
@@ -88,6 +87,20 @@ templates, and the status page are still outstanding.
 - `demo-web/` — dropped the Google Fonts dependency for a system font
   stack. All three pages now make zero external requests, so they render
   identically on an audience phone with nothing but venue wifi.
+
+## [1.2.0] — 2026-11-09
+
+### Changed
+
+- Build both MCP containers on the selected TRA from immutable public upstream
+  revisions and their existing recipes. Native Ansible installs trusted RHEL
+  runtime packages and prepares a temporary public-only build context.
+- Reuse matching images through their standard OCI source-revision label.
+  Preserve instance identity checks, private stdio transport, runtime accounts,
+  protected configuration and authenticated read-only MCP checks.
+- Remove the obsolete custom artifact validator and image/RPM staging requirement.
+  Focused native build-decision, failure-cleanup and existing MCP tests pass;
+  actual target builds and the complete repair demo remain unverified.
 
 ## [1.1.8] — 2026-11-08
 

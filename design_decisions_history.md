@@ -1,5 +1,29 @@
 # Design decisions history
 
+## Build MCP images on the selected target — 2026-11-09
+
+Deployment release 1.2.0 implements this change; its implementation commit is
+recorded in the publication follow-up. No live target-side build is claimed.
+The owner selected building containers during
+deployment rather than transferring image archives and RPM bundles through
+the hypervisor. Both existing MCP playbooks now reuse exact public upstream
+revisions and their unmodified native build recipes. Normal RHEL package
+management installs the runtime, with signature checking retained.
+
+Only a temporary public source checkout becomes the build context. Protected
+instance settings and credentials remain separate and are configured after
+building. The existing runtime account, rootless user mappings, local image
+names, private stdio transport and read-only MCP checks are preserved. Standard
+OCI source-revision labels allow a repeat run to reuse its image; no custom
+build-state file, registry, helper or job template is added.
+
+The existing certified Podman role has no public build interface, so the
+bounded build operation uses native `podman build` through Ansible's argument
+list command module. The obsolete custom offline-artifact validator is removed.
+The private selected-instance configuration no longer needs image/RPM staging
+metadata; other instances and runtime secrets are unchanged. A registry or
+separate development/build host remains future work.
+
 ## Require actual website monitoring before enabling delivery — 2026-11-08
 
 Implementation `f1b5d6421de10c3bb86358605f64e5eb72c592d2` adds two standard tasks to the existing monitoring

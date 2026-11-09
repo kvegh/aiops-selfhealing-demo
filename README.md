@@ -197,7 +197,7 @@ flowchart TD
 | [`assets/nginx/`](assets/nginx/) | Generic vhost example and panic-delivery cache snippets; private headers stay on the host |
 | [`assets/zabbix/`](assets/zabbix/) | Green/red/grey status icons and portable map/dashboard request templates |
 | [`src/`](src/) | Status-icon generator, stdio MCP verifier and unfinished AAP dashboard configuration helper/preprocessing |
-| [`tests/`](tests/) | Deployment identity/artifact checks, MCP protocol checks, browser lifecycle and AAP dashboard preprocessing |
+| [`tests/`](tests/) | Deployment identity/build checks, MCP protocol checks, browser lifecycle and AAP dashboard preprocessing |
 | [`extensions/eda/rulebooks/`](extensions/eda/rulebooks/) | EDA rulebooks (level routing) |
 | [`AI_Instructions_Guardrails/`](AI_Instructions_Guardrails/) | Agent guardrails (CLAUDE.md) |
 
@@ -210,7 +210,10 @@ selected instance's verified hypervisor, testserver and TRA. Importing it
 creates AAP configuration and launches no application or EDA activation.
 Secret-dependent jobs receive a whole-file Vault ciphertext string and stop
 before managed host, DNS or API writes when required settings are missing.
-Deployment correction **1.1.8** is documented in [CHANGELOG.md](CHANGELOG.md).
+Deployment release **1.2.0** is documented in [CHANGELOG.md](CHANGELOG.md).
+The MCP jobs now build their pinned upstream sources directly on the selected
+TRA using trusted RHEL packages; hypervisor image/RPM staging is no longer
+required. Target-side builds and authenticated queries still need live acceptance.
 Monitoring setup now requires a fresh HTTP 200 sample from the selected Zabbix
 server before forwarding can be enabled. Prepare its exact approved bridge
 HTTPS permission in the existing recovery policy first; this job does not
@@ -272,10 +275,10 @@ The two requested MCP deployment jobs use
 preserve the existing on-demand Podman/stdio configuration, connect only to the
 matching new testserver and Zabbix instance, and configure the existing TRA user.
 See the [MCP deployment procedure](docs/10-mcp-deployment.md) for the verified
-guest metadata, signed offline runtime/image staging and read-only checks.
-The RPM manifest must contain the install set validated against the selected
-guest, including its conditional SELinux dependencies; the procedure explains
-the required dependency solve before installation.
+guest metadata, target-side builds from pinned public recipes and read-only
+checks. Normal Ansible package management installs the trusted RHEL runtime;
+no copied RPMs, image archives or hypervisor private key are required. Instance
+configuration and secrets remain in their separate encrypted CaC sections.
 They create no public MCP listener and do not install or invoke Claude Code.
 Those two standalone MCP jobs remain available; Claude installation is added by
 the combined entry point above.
@@ -311,7 +314,7 @@ configured only when that testserver monitoring is requested. Setup enables no
 Claude rulebook activation and runs no model or fault. See
 [selected testserver monitoring](docs/13-testserver-monitoring.md).
 
-Both new MCP installations have completed their normal jobs and passed real
+Earlier archive-based MCP installations completed their normal jobs and passed real
 read-only queries against their matching testserver and monitoring instance.
 The normal Zabbix deployment has also succeeded, with independently
 verified clone authentication, quarantine and trusted public HTTPS protection.

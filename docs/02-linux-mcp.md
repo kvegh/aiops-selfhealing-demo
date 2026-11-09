@@ -1,5 +1,9 @@
 # 02 – Linux MCP Server
 
+For new versioned deployments, use the existing Job Template and
+[target-side build procedure](10-mcp-deployment.md). The manual commands below
+describe the earlier reference setup.
+
 The linux-mcp server gives Claude **read-only** diagnostic access to the
 managed RHEL target host. It connects over SSH and exposes system
 inspection tools (services, logs, processes, network, storage).
