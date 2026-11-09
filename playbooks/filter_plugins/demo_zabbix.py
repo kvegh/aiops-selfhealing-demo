@@ -10,7 +10,7 @@ import xml.etree.ElementTree as ET
 from ansible.errors import AnsibleFilterError
 from ansible.parsing.yaml.objects import AnsibleVaultEncryptedUnicode
 from ansible.parsing.yaml.loader import AnsibleLoader
-from ansible.utils.unsafe_proxy import wrap_var
+from ansible.utils.unsafe_proxy import AnsibleUnsafeText, wrap_var
 
 spec = importlib.util.spec_from_file_location('zabbix_website_configuration', Path(__file__).with_name('demo_website.py'))
 website = importlib.util.module_from_spec(spec)
@@ -364,7 +364,13 @@ def source_inventory_variables(config, resource, rows):
         require(isinstance(row, dict) and row.get('inventory') == config['cac_import']['inventory_id'],
                 'Use only the existing importer inventory.')
         value = row.get('variables') or {}
-        value = AnsibleLoader(value).get_single_data() if isinstance(value, str) else copy.deepcopy(value)
+        if isinstance(value, str):
+            # Controller lookup text is unsafe; LibYAML needs the base string.
+            # Strip only that outer marker here; the returned mapping is wrapped below.
+            stream = value._strip_unsafe() if isinstance(value, AnsibleUnsafeText) else value
+            value = AnsibleLoader(stream).get_single_data()
+        else:
+            value = copy.deepcopy(value)
         require(isinstance(value, dict) and isinstance(value.get('vm_resource', {}), dict),
                 'Preserve invalid existing source inventory variables for review.')
         saved = value.get('vm_resource', {})

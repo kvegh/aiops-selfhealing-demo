@@ -14,13 +14,31 @@ import unittest
 
 import yaml
 from ansible.parsing.vault import VaultLib, VaultSecret
+from ansible.errors import AnsibleFilterError
+from ansible.utils.unsafe_proxy import AnsibleUnsafeText, wrap_var
 
-from test_zabbix_native_firewall import inputs
+from test_zabbix_native_firewall import inputs, policy
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 class ZabbixCaCTests(unittest.TestCase):
+    def test_native_lookup_variables_preserve_literals_and_reject_conflicting_ownership(self):
+        values = inputs()
+        config = values['demo_zabbix_config']
+        resource = values['demo_zabbix_deployment']['firewall']['guest']
+        source = {'vm_resource': resource, 'operator_note': '{{ retain_literal }}'}
+        rows = wrap_var([{'inventory': config['cac_import']['inventory_id'],
+                          'name': config['vm_name'], 'variables': json.dumps(source)}])
+        self.assertIsInstance(rows[0]['variables'], AnsibleUnsafeText)
+        result = policy.source_inventory_variables(config, resource, rows)
+        self.assertEqual(result['operator_note'], '{{ retain_literal }}')
+        self.assertIsInstance(result['operator_note'], AnsibleUnsafeText)
+        source['vm_resource'] = dict(resource, uuid='33333333-3333-3333-3333-333333333333')
+        rows[0]['variables'] = wrap_var(json.dumps(source))
+        with self.assertRaisesRegex(AnsibleFilterError, 'ownership conflicts'):
+            policy.source_inventory_variables(config, resource, rows)
+
     def run_case(self, *, failed_import=False, wrong_owner=False):
         with tempfile.TemporaryDirectory(prefix='zabbix-cac-fixture-') as temporary:
             folder = Path(temporary)
@@ -49,12 +67,13 @@ class ZabbixCaCTests(unittest.TestCase):
             importer = {'id': config['cac_import']['job_template_id'], 'inventory': config['cac_import']['inventory_id'],
                 'playbook': 'deploy-cac-project.yml', 'survey_enabled': True,
                 'extra_vars': json.dumps({'aap_cac_project_id': 'aiops-selfhealing-demo'})}
-            current = []
+            current = [{'id': 300, 'name': 'existing-source-anchor', 'inventory': group['inventory'],
+                        'variables': json.dumps({'operator_note': '{{ retain_literal }}'})}]
             if wrong_owner:
                 resource = copy.deepcopy(values['demo_zabbix_deployment']['firewall']['guest'])
                 resource['uuid'] = '22222222-2222-2222-2222-222222222222'
-                current = [{'id': 301, 'name': config['vm_name'], 'inventory': group['inventory'],
-                            'variables': json.dumps({'vm_resource': resource})}]
+                current.append({'id': 301, 'name': config['vm_name'], 'inventory': group['inventory'],
+                                'variables': json.dumps({'vm_resource': resource})})
             state = {'origin': config['cac_import']['controller_host'], 'token': token, 'importer': importer,
                 'source_hosts': current, 'group': group, 'group_members': ['another-guest'],
                 'calls': [], 'failed_import': failed_import,
@@ -68,6 +87,7 @@ class ZabbixCaCTests(unittest.TestCase):
             (collection / 'lookup').mkdir(parents=True)
             (collection / 'modules').mkdir()
             lookup = '''from ansible.plugins.lookup import LookupBase
+from ansible.utils.unsafe_proxy import wrap_var
 from pathlib import Path
 import json
 class LookupModule(LookupBase):
@@ -80,7 +100,10 @@ class LookupModule(LookupBase):
   if endpoint=='job_templates/202': return [state['refreshed_template']]
   if endpoint.startswith('groups/'): return [state['group']]
   if endpoint=='hosts' and query['inventory']==201: return [state['refreshed_host']]
-  if endpoint=='hosts': return state['source_hosts']
+  if endpoint=='hosts':
+   rows=state['source_hosts']
+   if 'name' in query: rows=[row for row in rows if row['name']==query['name']]
+   return wrap_var(rows)
   raise AssertionError(endpoint)
 '''.replace('STATE', repr(str(state_file)))
             (collection / 'lookup/controller_api.py').write_text(lookup)
@@ -97,7 +120,9 @@ assert p['controller_host']==s['origin'] and p['controller_oauthtoken']==s['toke
 assert p['max_retries']==0
 operation=OPERATION; s['calls'].append(operation)
 if operation=='host':
- s['source_hosts']=[{'id':301,'inventory':int(p['inventory']),'name':p['name'],'variables':json.dumps(p['variables'])}]
+ existing=[row for row in s['source_hosts'] if row['name']!=p['name']]
+ updated={'id':301,'inventory':int(p['inventory']),'name':p['name'],'variables':json.dumps(p['variables'])}
+ s['source_hosts']=existing+[updated]
 elif operation=='group':
  assert p['preserve_existing_hosts'] is True
  s['group_members']+=p['hosts']
@@ -136,7 +161,8 @@ m.exit_json(changed=True,id=501,status='successful')
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(state['calls'], ['host', 'group', 'job_launch'])
         self.assertIn('another-guest', state['group_members'])
-        self.assertEqual(json.loads(state['source_hosts'][0]['variables'])['vm_resource']['gateway'], '192.168.70.1')
+        self.assertEqual(json.loads(state['source_hosts'][0]['variables']), {'operator_note': '{{ retain_literal }}'})
+        self.assertEqual(json.loads(state['source_hosts'][1]['variables'])['vm_resource']['gateway'], '192.168.70.1')
 
     def test_failed_import_stops_before_refreshed_configuration(self):
         result, state = self.run_case(failed_import=True)

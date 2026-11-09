@@ -88,6 +88,27 @@ templates, and the status page are still outstanding.
   stack. All three pages now make zero external requests, so they render
   identically on an audience phone with nothing but venue wifi.
 
+## [1.6.1] — 2026-11-09
+
+### Fixed
+
+- Parse native Controller lookup inventory variables when Ansible marks the
+  outer text as unsafe. LibYAML requires a base string, so the filter strips
+  only that transport marker immediately before native YAML loading and keeps
+  its result protected. Existing ownership, target and conflict checks remain.
+  The observed job stopped at this parsing step, before source-host writes or
+  the child importer; no query-shape or credential change is needed.
+- Exercise marked lookup text with an existing source inventory, retained
+  literal values, unrelated-host preservation and conflicting owner rejection.
+
+### Verification
+
+- The saved authenticated input from the failed deployment now passes the pure
+  filter with native lookup wrappers. Focused Ansible producer and configuration
+  tests, scoped strict lint, syntax and whitespace checks cover this correction.
+  Controller operations remain substituted in fixtures. A normal AAP retry is
+  still required to verify the live handoff.
+
 ## [1.6.0] — 2026-11-09
 
 ### Added

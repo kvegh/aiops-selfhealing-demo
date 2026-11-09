@@ -210,7 +210,7 @@ selected instance's verified hypervisor, testserver and TRA. Importing it
 creates AAP configuration and launches no application or EDA activation.
 Secret-dependent jobs receive a whole-file Vault ciphertext string and stop
 before managed host, DNS or API writes when required settings are missing.
-Deployment release **1.6.0** is documented in [CHANGELOG.md](CHANGELOG.md).
+Deployment release **1.6.1** is documented in [CHANGELOG.md](CHANGELOG.md).
 Failed MCP builds now retain protected stdout/stderr in the runtime user's
 private server `logs/build.log`, then fail and remove the temporary checkout.
 The observed image-build failure is diagnosed: enforcing SELinux denied
@@ -316,6 +316,13 @@ HTTPS origin and its existing API/MCP token, with certificate verification and
 normal EE trust. It does not select a private API endpoint or another account's
 token. The source-record filter only checks immutable VM facts and merges data;
 native Controller modules do not validate this project-specific provenance.
+
+Controller lookups mark inventory-variable text as unsafe. The source-record
+filter removes only that outer text marker before the native YAML parser reads
+it, then returns the merged mapping protected as before. This preserves literal
+values and ownership checks while accepting real lookup results. The fixtures
+include marked text and unrelated existing source hosts; an empty source
+inventory alone does not exercise this parsing boundary.
 
 Run `python3.12 -m unittest discover -s tests -p test_zabbix_cac.py -v` for the
 focused Ansible fixtures: successful save/import/reload, failure before writes
