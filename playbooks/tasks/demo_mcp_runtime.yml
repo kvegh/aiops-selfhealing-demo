@@ -126,19 +126,46 @@
 
     # The installed certified Podman role has no public image-build interface.
     # Native gap and verification: ../../docs/10-mcp-deployment.md#target-side-image-builds
-    - name: Build the MCP image as the existing runtime user from public source only
-      ansible.builtin.command:
-        argv:
-          - podman
-          - build
-          - --file
-          - "{{ demo_mcp_build_workspace.path }}/source/{{ demo_mcp_image.containerfile }}"
-          - --tag
-          - "{{ demo_mcp_image.name }}"
-          - --label
-          - "org.opencontainers.image.revision={{ demo_mcp_image.revision }}"
-          - "{{ demo_mcp_build_workspace.path }}/source"
-      changed_when: true
+    - name: Retain failed container build output privately without weakening protected logging
+      vars:
+        demo_mcp_build_log_dir: >-
+          {{ demo_mcp_user.home }}/.local/share/{{
+             {'linux-mcp': 'linux-mcp-server', 'zabbix': 'zabbix-mcp-server'}[demo_mcp_server_name] }}/logs
+      block:
+        - name: Build the MCP image as the existing runtime user from public source only
+          ansible.builtin.command:
+            argv:
+              - podman
+              - build
+              - --file
+              - "{{ demo_mcp_build_workspace.path }}/source/{{ demo_mcp_image.containerfile }}"
+              - --tag
+              - "{{ demo_mcp_image.name }}"
+              - --label
+              - "org.opencontainers.image.revision={{ demo_mcp_image.revision }}"
+              - "{{ demo_mcp_build_workspace.path }}/source"
+          register: demo_mcp_build_result
+          changed_when: true
+          no_log: true
+
+      rescue:
+        - name: Prepare only this runtime user's private server log directory
+          ansible.builtin.file:
+            path: "{{ demo_mcp_build_log_dir }}"
+            state: directory
+            mode: '0700'
+
+        - name: Save only the failed build's standard output and standard error
+          ansible.builtin.copy:
+            dest: "{{ demo_mcp_build_log_dir }}/build.log"
+            content: "{{ demo_mcp_build_result.stdout | default('') }}\n{{ demo_mcp_build_result.stderr | default('') }}\n"
+            mode: '0600'
+          diff: false
+          no_log: true
+
+        - name: Stop after preserving the failed container build's protected output
+          ansible.builtin.fail:
+            msg: MCP container build failed; inspect build.log in the runtime user's private server log directory before retrying.
 
   always:
     - name: Remove only this job's temporary public build workspace

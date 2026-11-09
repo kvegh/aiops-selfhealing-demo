@@ -88,6 +88,19 @@ templates, and the status page are still outstanding.
   stack. All three pages now make zero external requests, so they render
   identically on an audience phone with nothing but venue wifi.
 
+## [1.3.1] — 2026-11-09
+
+### Fixed
+
+- Preserve failed container-build stdout and stderr in the selected runtime
+  user's server `logs/build.log`, with directory mode `0700` and file mode
+  `0600`, while retaining protected job logging and temporary-source cleanup.
+  The job still fails; successful builds create no diagnostic file.
+- Four native build fixtures pass, including failure output/mode/ownership,
+  cleanup, successful builds and cache reuse. Strict scoped lint and combined
+  playbook syntax pass. This diagnostic change does not fix or establish the
+  cause of the observed live build failure.
+
 ## [1.3.0] — 2026-11-09
 
 ### Added

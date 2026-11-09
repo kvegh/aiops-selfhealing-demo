@@ -44,7 +44,7 @@ class NativeTargetBuildTests(unittest.TestCase):
                 "assert not list(context.rglob('private-canary'))\n"
                 "calls.write_text(json.dumps(sys.argv[1:]))\n"
                 + ("state.write_text(" + repr(image["revision"]) + ")\n" if build_succeeds
-                   else "raise SystemExit('Synthetic build failure')\n")
+                   else "print('Synthetic build standard output'); raise SystemExit('Synthetic build failure')\n")
             )
             podman.chmod(0o700)
             uid, gid = os.getuid(), os.getgid()
@@ -93,7 +93,7 @@ class NativeTargetBuildTests(unittest.TestCase):
             playbook.write_text(yaml.safe_dump([{
                 "name": "Exercise target-build task control flow with synthetic dependencies",
                 "hosts": "localhost", "connection": "local", "gather_facts": False,
-                "vars": {"demo_mcp_user": user, "demo_mcp_image": image}, "tasks": tasks,
+                "vars": {"demo_mcp_user": user, "demo_mcp_image": image, "demo_mcp_server_name": "linux-mcp"}, "tasks": tasks,
             }], sort_keys=False))
             environment = dict(os.environ, ANSIBLE_LOCAL_TEMP=str(root / "local"),
                                ANSIBLE_REMOTE_TEMP=str(root / "remote"),
@@ -103,32 +103,44 @@ class NativeTargetBuildTests(unittest.TestCase):
             arguments = json.loads(calls.read_text()) if calls.exists() else None
             self.assertFalse(list(home.glob(".aiops-mcp-build-*")), result.stdout + result.stderr)
             self.assertTrue((home / "private-canary").exists())
-            return result, arguments, revision.read_text() if revision.exists() else None
+            log = home / ".local/share/linux-mcp-server/logs/build.log"
+            evidence = {"content": log.read_text(), "mode": log.stat().st_mode & 0o777,
+                        "uid": log.stat().st_uid, "directory_mode": log.parent.stat().st_mode & 0o777} if log.exists() else None
+            return result, arguments, revision.read_text() if revision.exists() else None, evidence
 
     def test_missing_image_builds_from_public_context_and_cleans_up(self):
-        result, arguments, revision = self.run_runtime()
+        result, arguments, revision, log = self.run_runtime()
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(arguments[0], "build")
         self.assertIn("org.opencontainers.image.revision=" + revision, arguments)
         self.assertNotIn("load", arguments)
+        self.assertIsNone(log)
 
     def test_matching_source_revision_skips_the_build(self):
-        result, arguments, unused = self.run_runtime(existing=True)
+        result, arguments, unused, log = self.run_runtime(existing=True)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIsNone(arguments)
+        self.assertIsNone(log)
 
     def test_build_failure_is_visible_and_still_removes_the_checkout(self):
-        result, arguments, revision = self.run_runtime(build_succeeds=False)
+        result, arguments, revision, log = self.run_runtime(build_succeeds=False)
         self.assertNotEqual(result.returncode, 0)
         self.assertIsNotNone(arguments)
         self.assertIsNone(revision)
+        self.assertEqual(log["content"], "Synthetic build standard output\nSynthetic build failure\n")
+        self.assertEqual(log["mode"], 0o600)
+        self.assertEqual(log["directory_mode"], 0o700)
+        self.assertEqual(log["uid"], os.getuid())
+        self.assertNotIn("Synthetic build standard output", result.stdout + result.stderr)
+        self.assertNotIn("Synthetic build failure", result.stdout + result.stderr)
 
     def test_wrong_checkout_commit_stops_before_building(self):
-        result, arguments, revision = self.run_runtime(checkout_matches=False)
+        result, arguments, revision, log = self.run_runtime(checkout_matches=False)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("did not return the pinned commit", result.stdout)
         self.assertIsNone(arguments)
         self.assertIsNone(revision)
+        self.assertIsNone(log)
 
 
 if __name__ == "__main__":

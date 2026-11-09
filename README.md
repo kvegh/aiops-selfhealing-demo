@@ -210,7 +210,11 @@ selected instance's verified hypervisor, testserver and TRA. Importing it
 creates AAP configuration and launches no application or EDA activation.
 Secret-dependent jobs receive a whole-file Vault ciphertext string and stop
 before managed host, DNS or API writes when required settings are missing.
-Deployment release **1.3.0** is documented in [CHANGELOG.md](CHANGELOG.md).
+Deployment release **1.3.1** is documented in [CHANGELOG.md](CHANGELOG.md).
+Failed MCP builds now retain protected stdout/stderr in the runtime user's
+private server `logs/build.log`, then fail and remove the temporary checkout.
+Four native build fixtures verify logging permissions, failure and cleanup;
+the underlying live build failure still needs diagnosis.
 Selected-instance RHSM registration and repository prerequisites now run before
 MCP package installation. Fifteen focused native subscription, build and Vault
 checks passed, alongside strict lint and syntax validation; actual registration

@@ -86,6 +86,15 @@ context. Tokens, SSH private keys, Vertex authentication and instance settings
 stay outside it and are supplied later through the existing protected runtime
 configuration. The temporary checkout is removed after success or failure.
 
+If the container build fails, its standard output and standard error are saved
+only as the runtime user's `build.log` in the server's private log directory:
+`~/.local/share/linux-mcp-server/logs` or
+`~/.local/share/zabbix-mcp-server/logs`. Directory mode is `0700` and file mode is
+`0600`; the public job output retains protected logging. The job still fails,
+and its temporary source checkout is still removed. Successful builds create
+no diagnostic file; an earlier failure log may remain after a later success.
+This preserves evidence for diagnosis and does not fix or conceal a failed build.
+
 The image keeps its existing local name and records the pinned commit in the
 standard OCI `org.opencontainers.image.revision` label. A repeat deployment
 skips building when that label already matches. After a build, the job checks
