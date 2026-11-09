@@ -1,5 +1,26 @@
 # Design decisions history
 
+## Retain failed MCP build output privately — 2026-11-09
+
+Implementation `6f3a297c9d7c106f9481765e2d74ffc0e5d39a4f`, deployment release
+1.3.1, preserves evidence for an observed target-side container-build failure.
+Protected task output and automatic checkout cleanup had left no retained
+stdout/stderr from which to diagnose it. The actual build cause remains unknown.
+
+Only the native Podman build task gains a standard Ansible rescue block. On
+failure it writes the command's stdout and stderr to the selected runtime user's
+server `logs/build.log`, with directory mode 0700 and file mode 0600, then fails.
+Protected job logging and copy diff suppression remain enabled, and the existing
+outer cleanup still removes temporary source files. Successful builds write no
+diagnostic file. Existing server names select the Linux or Zabbix log location;
+no JSON state, ownership marker, new helper, credential or job is introduced.
+
+All four native build fixtures pass, including retained output and ownership,
+private permissions, nonzero failure, cleanup, successful build and cache reuse.
+Strict scoped lint, combined-playbook syntax and diff checks pass. These local
+checks prove diagnostic retention; they do not prove a repaired live image build
+or completed private MCP integration.
+
 ## Prepare RHEL subscription prerequisites before MCP builds — 2026-11-09
 
 Implementation `d8bb6c25883cf1604849298afba0e2edcd065278`, deployment release
