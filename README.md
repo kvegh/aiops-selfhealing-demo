@@ -382,14 +382,22 @@ includes call counts and whether a result returned or reported a tool error;
 it does not establish that the requested operation succeeded. Omitted calls and
 malformed records are counted. Arguments, results, model prose and credentials
 remain protected; no raw transcript is stored or displayed.
-The invocation allows 48 turns within the unchanged 600-second hard timeout;
-the lower turn limit was exhausted after a verified successful repair.
+The invocation allows 48 turns within the unchanged 600-second hard timeout.
+An earlier invocation exhausted that turn limit after its repair succeeded;
+its cause remains unproved. The diagnostics patch does not establish a fix for
+that failure.
 
-The controlled alert-to-repair rehearsal passed on an isolated demo instance:
-one stopped agent service produced a monitoring event, EDA launched one bounded
-agent invocation, and one saved AAP repair succeeded. Native checks confirmed
-the selected service and fresh monitoring recovery. This rehearsed a service
-outage; package removal and production migration were outside that test.
+The later normal event-driven rehearsal passed on the v17 demo instance using
+tested source `41166495d72264e882bafe9ec2721649b0d70d9e` (diagnostics implementation
+`02627ba8ff0044d89b8abad92a62177f5f0973c6`, release 1.6.3). The EDA event was
+correlated with one bounded agent invocation, which succeeded in 342.760 seconds;
+its selected saved repair succeeded in 12.318 seconds. Native permissions,
+target identity, saved inputs without overrides and independent recovery checks
+passed: the agent service was active, a fresh agent ping succeeded and the
+original trigger cleared. Both test activations were disabled and stopped
+afterward, and the final audit found no active test jobs. This establishes the
+service-outage workflow; package removal, production migration, teardown and a
+successor reinstall were outside this test.
 
 The existing production SCM Project retains an owner-approved tested-commit
 pin until its runtime is deliberately migrated. Shared desired CaC stays on

@@ -1,5 +1,25 @@
 # Design decisions history
 
+## Validate the normal bounded agent workflow without changing its budget — 2026-11-10
+
+The later v17 event-driven acceptance test passed on source
+`41166495d72264e882bafe9ec2721649b0d70d9e`, containing diagnostics implementation
+`02627ba8ff0044d89b8abad92a62177f5f0973c6` (release 1.6.3). One correlated EDA
+event launched the normal bounded invocation, which succeeded in 342.760 seconds;
+its selected saved repair succeeded in 12.318 seconds. Native target and
+permission checks passed, with saved inputs and no launch overrides. Independent
+checks confirmed the active agent service, a fresh agent ping and recovery of
+the original trigger. Final readback found both test activations disabled and
+stopped, and no active test jobs.
+
+The 48-turn limit, 600-second timeout, native permissions and recovery checks
+were unchanged. This validates the service-outage workflow on that tested source;
+it does not explain the earlier turn-limit failure or prove that diagnostics
+fixed its cause. Package-removal recovery, production migration, teardown and
+successor reinstallation are outside this result. Only documentation changes
+follow this acceptance checkpoint; executable content and selected data remain
+unchanged.
+
 ## Keep safe evidence when a bounded agent invocation fails — 2026-11-10
 
 Implementation `02627ba8ff0044d89b8abad92a62177f5f0973c6` is deployment
@@ -22,10 +42,11 @@ added.
 All 15 focused runner regressions pass, including actual Ansible failure-output
 rendering with secret canaries, malformed correlation and bounded summaries.
 Strict offline production lint passes for four encountered files; whitespace
-checks and independent review pass. This patch improves the next failure's
-diagnostics; it does not fix the unproved reason for exhausting the budget or
-claim another successful live test. The observed service and alert recovered,
-both test activations were disabled and stopped, and no test jobs remained.
+checks and independent review pass. At implementation time, this patch improved
+the next failure's diagnostics without claiming another successful live test.
+The observed service and alert recovered, both test activations were disabled
+and stopped, and no test jobs remained. The later acceptance result is recorded
+above; the earlier exhaustion cause remains unproved.
 
 ## Match the importer's optional logging survey choice — 2026-11-09
 

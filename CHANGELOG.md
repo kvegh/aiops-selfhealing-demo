@@ -97,10 +97,22 @@ templates, and the status page are still outstanding.
   results and model prose remain protected. This makes a future turn-limit
   failure diagnosable without storing a transcript or starting another run.
   The 48-turn budget, timeout, permissions and recovery checks are unchanged.
-- The latest controlled test repaired the selected agent and recovered its
+- An earlier controlled test repaired the selected agent and recovered its
   monitoring, but its parent invocation exhausted the turn limit. Its retained
-  logs lack a tool trace, so full acceptance and the reason for the exhausted
-  budget remain unverified. No new live test is claimed by this patch.
+  logs lack a tool trace; the cause remains unproved, and this diagnostics patch
+  does not establish a fix for that failure.
+
+### Validated
+
+- The later normal event-driven v17 rehearsal passed on tested source
+  `41166495d72264e882bafe9ec2721649b0d70d9e` (implementation
+  `02627ba8ff0044d89b8abad92a62177f5f0973c6`). The bounded agent invocation
+  succeeded in 342.760 seconds and its saved repair in 12.318 seconds, with
+  unchanged 48-turn/600-second limits and native permissions. Target and saved
+  input checks passed, followed by an active service, a fresh agent ping and
+  recovery of the original trigger. The EDA event and invocation were correlated;
+  both test activations were disabled and stopped afterward, with no active test
+  jobs in the final audit. Teardown and successor reinstallation are not claimed.
 
 ## [1.6.2] — 2026-11-09
 
