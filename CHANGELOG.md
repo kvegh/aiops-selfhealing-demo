@@ -88,6 +88,20 @@ templates, and the status page are still outstanding.
   stack. All three pages now make zero external requests, so they render
   identically on an audience phone with nothing but venue wifi.
 
+## [1.6.3] — 2026-11-10
+
+### Fixed
+
+- A failed bounded agent invocation now reports an ordered, limited summary of
+  allowed tool names, call counts and returned/error outcomes. Raw arguments,
+  results and model prose remain protected. This makes a future turn-limit
+  failure diagnosable without storing a transcript or starting another run.
+  The 48-turn budget, timeout, permissions and recovery checks are unchanged.
+- The latest controlled test repaired the selected agent and recovered its
+  monitoring, but its parent invocation exhausted the turn limit. Its retained
+  logs lack a tool trace, so full acceptance and the reason for the exhausted
+  budget remain unverified. No new live test is claimed by this patch.
+
 ## [1.6.2] — 2026-11-09
 
 ### Fixed

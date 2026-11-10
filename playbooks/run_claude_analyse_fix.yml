@@ -403,6 +403,8 @@
               CLI completion markers: {{ claude_output.stdout | default('') |
                 regex_findall('"subtype"\s*:\s*"(success|error_max_turns|error_during_execution|error_during_api_access|error_max_budget_usd)"') |
                 unique | list }}.
+              CLI tool summary: {{ claude_output.stdout | default('') |
+                demo_claude_agent_diagnostics(demo_agent_allowed_tools) | to_json }}.
               No additional model run was started; credential-bearing diagnostics remain protected.
           no_log: false
       always:

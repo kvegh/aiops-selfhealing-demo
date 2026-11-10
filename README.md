@@ -210,7 +210,7 @@ selected instance's verified hypervisor, testserver and TRA. Importing it
 creates AAP configuration and launches no application or EDA activation.
 Secret-dependent jobs receive a whole-file Vault ciphertext string and stop
 before managed host, DNS or API writes when required settings are missing.
-Deployment release **1.6.2** is documented in [CHANGELOG.md](CHANGELOG.md).
+Deployment release **1.6.3** is documented in [CHANGELOG.md](CHANGELOG.md).
 Failed MCP builds now retain protected stdout/stderr in the runtime user's
 private server `logs/build.log`, then fail and remove the temporary checkout.
 The observed image-build failure is diagnosed: enforcing SELinux denied
@@ -375,8 +375,13 @@ or DNS is added.
 See the [optional CloudCLI settings](docs/14-claude-deployment.md#optional-two-account-cloudcli-installation).
 The independent monitoring check allows three minutes for passive-agent
 availability and item polling to catch up after a successful repair.
-On failure, the job reports its stage, numeric CLI exit code and only recognized
-completion markers; raw model/tool output and credentials remain protected.
+On failure, the job reports its stage, numeric CLI exit code, recognized
+completion markers and up to 64 ordered tool calls. Tool names come only from
+the runner's allowed list; other names become `unrecognized_tool`. The summary
+includes call counts and whether a result returned or reported a tool error;
+it does not establish that the requested operation succeeded. Omitted calls and
+malformed records are counted. Arguments, results, model prose and credentials
+remain protected; no raw transcript is stored or displayed.
 The invocation allows 48 turns within the unchanged 600-second hard timeout;
 the lower turn limit was exhausted after a verified successful repair.
 

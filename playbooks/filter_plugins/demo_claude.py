@@ -229,6 +229,59 @@ def agent_report(text):
         raise AnsibleFilterError("The bounded agent output is not a complete ordered JSON stream.") from None
 
 
+def agent_diagnostics(text, allowed_tools):
+    """Summarize failed invocations without returning model or tool payloads."""
+    allowed = {name for name in allowed_tools if isinstance(name, str)}
+    summary = {"calls": [], "tool_counts": {}, "tool_errors": 0,
+               "unreturned_calls": 0, "invalid_records": 0, "omitted_calls": 0}
+    pending = {}
+    assistant_message = 0
+    for line in text.splitlines():
+        if not line.strip():
+            continue
+        try:
+            event = json.loads(line)
+        except (ValueError, RecursionError):
+            summary["invalid_records"] += 1
+            continue
+        if not isinstance(event, dict):
+            summary["invalid_records"] += 1
+            continue
+        if event.get("type") == "assistant":
+            assistant_message += 1
+        message = event.get("message")
+        content = message.get("content", []) if isinstance(message, dict) else []
+        if not isinstance(content, list):
+            continue
+        for part in content:
+            if not isinstance(part, dict):
+                continue
+            if part.get("type") == "tool_use":
+                supplied_name = part.get("name")
+                name = supplied_name if isinstance(supplied_name, str) and supplied_name in allowed else "unrecognized_tool"
+                call = {"assistant_message": assistant_message, "tool": name, "result": "not_returned"}
+                summary["tool_counts"][name] = summary["tool_counts"].get(name, 0) + 1
+                summary["unreturned_calls"] += 1
+                if len(summary["calls"]) < 64:
+                    summary["calls"].append(call)
+                else:
+                    summary["omitted_calls"] += 1
+                identity = part.get("id")
+                if isinstance(identity, str) and identity not in pending:
+                    pending[identity] = call
+                else:
+                    summary["invalid_records"] += 1
+            elif part.get("type") == "tool_result":
+                identity = part.get("tool_use_id")
+                call = pending.pop(identity, None) if isinstance(identity, str) else None
+                if call is not None:
+                    failed = part.get("is_error") is True
+                    call["result"] = "tool_error" if failed else "returned"
+                    summary["tool_errors"] += int(failed)
+                    summary["unreturned_calls"] -= 1
+    return summary
+
+
 def launched_repairs(text, repair):
     """Read actual native launch responses, never IDs asserted in model prose."""
     try:
@@ -311,6 +364,6 @@ class FilterModule:
                 "demo_claude_existing_adc": existing_adc, "demo_claude_aap_mcp": aap_mcp,
                 "demo_claude_aap_client": aap_client, "demo_claude_agent_servers": agent_servers,
                 "demo_claude_repair_template": repair_template, "demo_claude_linux_alias": linux_alias,
-                "demo_claude_agent_report": agent_report,
+                "demo_claude_agent_report": agent_report, "demo_claude_agent_diagnostics": agent_diagnostics,
                 "demo_claude_repair_host": repair_host, "demo_claude_launched_repairs": launched_repairs,
                 "demo_claude_agent_incident": agent_incident, "demo_claude_monitoring_recovered": monitoring_recovered}

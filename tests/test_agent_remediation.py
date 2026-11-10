@@ -86,6 +86,66 @@ class AgentTests(unittest.TestCase):
         hook=next(t for t in tasks if t['name']=='Add the deny-only hook without editing saved settings')
         self.assertNotIn('permissionDecision',str(hook));self.assertIn('PreToolUse',str(hook))
 
+    def test_failure_diagnostics_keep_order_and_errors_without_payloads(self):
+        tool='mcp__zabbix__host_get';secret='SYNTHETIC-PRIVATE-PAYLOAD-CANARY'
+        events=[{'type':'assistant','message':{'content':[
+            {'type':'text','text':secret},
+            {'type':'tool_use','id':'call-'+secret,'name':tool,'input':{'token':secret}}]}},
+            {'type':'user','message':{'content':[
+                {'type':'tool_result','tool_use_id':'call-'+secret,'is_error':True,'content':secret}]}},
+            {'type':'assistant','message':{'content':[
+                {'type':'tool_use','id':'pending','name':secret,'input':{'token':secret}}]}}]
+        text='\n'.join(json.dumps(row) for row in events)+'\n'+secret+'\n[]'
+        result=F.agent_diagnostics(text,[tool])
+        self.assertEqual(result['calls'],[{'assistant_message':1,'tool':tool,'result':'tool_error'},
+            {'assistant_message':2,'tool':'unrecognized_tool','result':'not_returned'}])
+        self.assertEqual(result['tool_errors'],1);self.assertEqual(result['unreturned_calls'],1)
+        self.assertEqual(result['invalid_records'],2);self.assertNotIn(secret,json.dumps(result))
+
+    def test_failure_diagnostics_bound_detail_without_losing_call_counts(self):
+        tool='mcp__aap-mcp__jobs_retrieve'
+        events=[{'type':'assistant','message':{'content':[
+            {'type':'tool_use','id':str(i),'name':tool,'input':{'id':999}} for i in range(70)]}}]
+        result=F.agent_diagnostics(json.dumps(events[0]),[tool])
+        self.assertEqual(len(result['calls']),64);self.assertEqual(result['omitted_calls'],6)
+        self.assertEqual(result['tool_counts'],{tool:70});self.assertEqual(result['unreturned_calls'],70)
+
+    def test_failure_diagnostics_count_calls_with_missing_or_duplicate_ids(self):
+        tool='mcp__zabbix__host_get'
+        events=[{'type':'assistant','message':{'content':[
+            {'type':'tool_use','name':tool},
+            {'type':'tool_use','id':'duplicate','name':tool},
+            {'type':'tool_use','id':'duplicate','name':tool}]}},
+            {'type':'user','message':{'content':[
+                {'type':'tool_result','tool_use_id':'duplicate','content':'synthetic result'}]}}]
+        result=F.agent_diagnostics('\n'.join(json.dumps(row) for row in events),[tool])
+        self.assertEqual(result['unreturned_calls'],2);self.assertEqual(result['invalid_records'],2)
+
+    def test_actual_failure_report_renders_only_sanitized_diagnostics(self):
+        play=yaml.safe_load((ROOT/'playbooks/run_claude_analyse_fix.yml').read_text())[0]
+        report=play['tasks'][0]['rescue'][0]
+        secret='SYNTHETIC-PRIVATE-STDOUT-CANARY';tool='mcp__zabbix__host_get'
+        stream='\n'.join(json.dumps(row) for row in [
+            {'type':'assistant','message':{'content':[
+                {'type':'tool_use','id':'test-call','name':tool,'input':{'token':secret}}]}},
+            {'type':'user','message':{'content':[
+                {'type':'tool_result','tool_use_id':'test-call','is_error':True,'content':secret}]}},
+            {'type':'result','subtype':'error_max_turns','result':secret}])
+        with tempfile.TemporaryDirectory(prefix='agent-safe-failure-') as temporary:
+            folder=Path(temporary);path=folder/'test.yml'
+            path.write_text(yaml.safe_dump([{'hosts':'localhost','gather_facts':False,'vars':{
+                'ansible_failed_task':{'name':'synthetic bounded invocation'},
+                'claude_output':{'rc':1,'stdout':stream},'demo_agent_allowed_tools':[tool]},'tasks':[report]}]))
+            env=dict(os.environ,ANSIBLE_FILTER_PLUGINS=str(ROOT/'playbooks/filter_plugins'),
+                ANSIBLE_LOCAL_TEMP=str(folder/'local'),ANSIBLE_REMOTE_TEMP=str(folder/'remote'),
+                ANSIBLE_NOCOLOR='1')
+            result=subprocess.run([sys.executable,'-m','ansible.cli.playbook','-i','localhost,','-c','local',str(path)],
+                env=env,capture_output=True,text=True,timeout=20)
+        output=result.stdout+result.stderr
+        self.assertEqual(result.returncode,2,output)
+        self.assertIn('error_max_turns',output);self.assertIn(tool,output);self.assertIn('tool_error',output)
+        self.assertNotIn(secret,output)
+
 class NativeRecoveryTests(unittest.TestCase):
     def test_actual_postchecks_reject_failed_child_and_stale_monitoring_despite_success_text(self):
         from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
@@ -233,11 +293,13 @@ class NativeArgvTests(unittest.TestCase):
         for subtype in ['error_max_turns','synthetic-secret-canary']:
             with tempfile.TemporaryDirectory(prefix='agent-safe-failure-') as temporary:
                 folder=Path(temporary);variables={'ansible_failed_task':{'name':'synthetic bounded stage'},
+                    'demo_agent_allowed_tools':play['vars']['demo_agent_allowed_tools'],
                     'claude_output':{'rc':1,'stdout':json.dumps({'type':'result','subtype':subtype,
                         'result':'synthetic-secret-canary'}),'stderr':'synthetic-secret-canary'}}
                 fixture=folder/'play.yml';fixture.write_text(yaml.safe_dump([{'hosts':'localhost','connection':'local',
                     'gather_facts':False,'vars':variables,'tasks':[task]}],sort_keys=False))
-                env=dict(os.environ,ANSIBLE_LOCAL_TEMP=str(folder/'local'),ANSIBLE_NOCOLOR='1')
+                env=dict(os.environ,ANSIBLE_LOCAL_TEMP=str(folder/'local'),ANSIBLE_NOCOLOR='1',
+                    ANSIBLE_FILTER_PLUGINS=str(ROOT/'playbooks/filter_plugins'))
                 result=subprocess.run([sys.executable,'-m','ansible.cli.playbook','-i','localhost,',str(fixture)],
                     env=env,capture_output=True,text=True,timeout=20)
                 self.assertNotEqual(result.returncode,0)
