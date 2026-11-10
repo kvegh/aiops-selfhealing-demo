@@ -1,5 +1,32 @@
 # Design decisions history
 
+## Keep safe evidence when a bounded agent invocation fails — 2026-11-10
+
+Implementation `02627ba8ff0044d89b8abad92a62177f5f0973c6` is deployment
+release 1.6.3. A controlled test successfully repaired its selected agent and
+cleared the original monitoring alert, but the parent invocation reached its
+48-turn limit. Protected Controller output retained only the failure marker,
+so it could not establish how the agent spent those turns. Repeated polling
+is a source-based hypothesis, not a verified cause.
+
+The existing failure report now derives a limited summary before the protected
+invocation output is discarded. It includes allowed tool names, assistant-message
+ordinals, counts and returned/error outcomes. Unknown names are replaced and
+arguments, results, model prose and correlation IDs are omitted. Detail stops at
+64 calls, with omissions and malformed records counted. A returned tool response
+does not establish that its requested operation succeeded. The invocation still
+fails, and its 48-turn budget, timeout, native permissions and independent
+recovery checks are unchanged. No transcript store or additional model run was
+added.
+
+All 15 focused runner regressions pass, including actual Ansible failure-output
+rendering with secret canaries, malformed correlation and bounded summaries.
+Strict offline production lint passes for four encountered files; whitespace
+checks and independent review pass. This patch improves the next failure's
+diagnostics; it does not fix the unproved reason for exhausting the budget or
+claim another successful live test. The observed service and alert recovered,
+both test activations were disabled and stopped, and no test jobs remained.
+
 ## Match the importer's optional logging survey choice — 2026-11-09
 
 Implementation `3340275a99cb4e801f658210d541becff7e1eac2` is deployment
