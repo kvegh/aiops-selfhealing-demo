@@ -1442,3 +1442,26 @@ component border 4.64:1. Browser rendering, animation and exact glyph fit remain
 unverified; no browser installation or additional CI job was performed.
 
 Implementation commit: `b96abc8`.
+
+
+## Quiet the central AI agent with slate grey
+
+The user found the central green AI card too visually dominant and approved
+a cool slate-grey background, border/constellation and dark slate text, with
+muted steel-blue emphasis during reasoning. Release 1.6.7 applies that palette
+to the AI card, softer halo, constellation, status band, finite animations and
+reasoning strip. The old green gradient is removed. EDA rule matching and AAP
+execution retain their existing teal styling; layout, navigation and story
+remain unchanged.
+
+Independent source review checked idle/active/reasoning overrides and shared
+highlight/animation coupling, confirming no visible AI green leak. The soft
+approved decorative border is intentionally less prominent; primary text
+contrast is 9.20:1, secondary text 5.54:1, and highlighted status text 8.13:1.
+Active status/reasoning borders reach 3.74:1 and 3.99:1. Both runtime syntax
+checks, all 14 existing story/handler tests, HTML/ARIA and diff checks passed.
+Motion off still suppresses finite animations. No browser was installed or
+run, so rendered colour balance remains unverified. No dependency, CI or
+infrastructure change was made.
+
+Implementation commit: `d8758f1`.
