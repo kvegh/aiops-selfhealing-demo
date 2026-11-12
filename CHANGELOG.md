@@ -88,6 +88,14 @@ templates, and the status page are still outstanding.
   stack. All three pages now make zero external requests, so they render
   identically on an audience phone with nothing but venue wifi.
 
+## [1.6.5] — 2026-11-12
+
+### Fixed
+
+- Place Next on the right, immediately to the left of Motion on/off in the
+  architecture header, with Previous alongside it. Preserve the viewport-fit
+  layout and lighter AAP palette; wrap the heading above controls on narrow screens.
+
 ## [1.6.4] — 2026-11-12
 
 ### Fixed

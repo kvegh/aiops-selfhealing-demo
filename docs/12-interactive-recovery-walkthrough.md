@@ -2,7 +2,7 @@
 
 **[Open the interactive AIOps visualization](https://kvegh.github.io/aiops-selfhealing-demo/)**
 
-Version: **1.6.4**. This static presenter walkthrough illustrates the existing
+Version: **1.6.5**. This static presenter walkthrough illustrates the existing
 missing-`zabbix-agent2` recovery scenario. It is separate from the live audience
 website and makes no infrastructure connections. All findings, status changes,
 and timing are simulated; a successful walkthrough is not live recovery proof.
@@ -25,8 +25,10 @@ current diagnostic evidence, and links to complete repository source. Escape
 closes the dialog.
 
 On viewports at least 1100 CSS pixels wide and 650 high, the current-step
-explanation and controls sit above the workflow in the left column. The
-architecture uses the remaining viewport height in the right column; its SVG
+explanation sits above the workflow in the left column. **Previous** and
+**Next** sit in the architecture header, with **Next** immediately to the left
+of **Motion on/off**. On narrow screens the heading wraps above these controls.
+The architecture uses the remaining viewport height in the right column; its SVG
 keeps its aspect ratio and includes the complete AAP platform. The workflow
 and unusually long explanations scroll within their own space. Narrow or
 short windows retain the naturally scrolling page and horizontal diagram
@@ -177,3 +179,7 @@ For release 1.6.4, the user requested publication with the existing checks.
 No additional browser-test job or dependency was added. The 14 existing
 model/application-handler tests and text-contrast checks pass; rendered
 laptop/desktop fit and real-browser accessibility remain unverified.
+
+Release 1.6.5 keeps that layout and palette, and restores navigation to the
+right-hand architecture header, immediately before the motion control, following
+the user’s manual feedback. Browser verification remains unperformed.
