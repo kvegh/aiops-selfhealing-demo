@@ -1521,3 +1521,18 @@ the existing frontend, and keeps the five-second artifact-settling pause. No
 browser, dependency, new CI job or automation/infrastructure change was added.
 
 Implementation commit: `0ed10dc`.
+
+## 2026-11-12 — Keep the official Core 2.20 image unmodified
+
+Implementation `841ae3f` replaces eight DNS lookup-plugin calls with the existing
+base host's native RHEL DNS utility. One four-query batch checks both exact A
+records and successful empty AAAA answers while preserving each whole-probe
+retry budget. Failed DNS answers cannot count as evidence of absent IPv6. This
+follows the owner's decision to avoid an extra Python DNS dependency or custom
+EE. Existing base package readiness now includes the DNS utility package.
+
+Protected numeric guards also accept native Ansible integer metadata while
+continuing to reject Booleans and invalid values. Nine focused tests passed in
+the actual unmodified Core 2.20.10 EE; a read-only real RHEL DNS batch validated
+the output format. Existing local regression suites passed. Full fresh-target
+AAP deployment remains a separate acceptance step.
