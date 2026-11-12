@@ -22,8 +22,8 @@ simulation; the walkthrough distinguishes AAP platform capabilities from the
 agent instructions and hardening still to do. See the
 [presenter, validation, and GitHub Pages guide](docs/12-interactive-recovery-walkthrough.md).
 [Open the published visualization](https://kvegh.github.io/aiops-selfhealing-demo/).
-GitHub Pages uses the included Actions workflow. Frontend release: **1.1.6**.
-The palette uses a deep navy AAP platform with a thin red brand accent,
+GitHub Pages uses the included Actions workflow. Frontend release: **1.6.4**.
+The palette uses a slate-blue AAP header and pale blue platform with a thin red brand accent,
 blue MCP paths, teal AI/execution accents, and labeled failure/recovery states.
 **Ansible Automation Platform** is the large, bold platform title, alongside
 its prominent **TRUSTED EXECUTION LAYER** role. The other components put
@@ -32,6 +32,10 @@ smaller Red Hat Enterprise Linux, Zabbix in this case, and Claude in this case
 captions. Codex, Copilot, and other runtimes
 can represent the broader agent role; the current launcher remains Claude
 Code CLI, and the visualization does not provision additional integrations.
+On wide laptop/desktop screens, the explanation and controls sit beside a
+viewport-fitted architecture so the full AAP platform stays visible. Supporting
+evidence is available in **Technical detail**. Narrow or short windows retain
+natural scrolling to preserve readable labels.
 
 ## What this is
 

@@ -88,6 +88,18 @@ templates, and the status page are still outstanding.
   stack. All three pages now make zero external requests, so they render
   identically on an audience phone with nothing but venue wifi.
 
+## [1.6.4] — 2026-11-12
+
+### Fixed
+
+- Fit the complete architecture to available height on wide laptop/desktop
+  screens. Explanation and navigation now sit above the workflow at the left;
+  supporting evidence moves into the existing Technical detail dialog. Narrow
+  and short screens retain natural scrolling and readable diagram panning.
+- Replaced the near-black AAP block with a slate-blue header, pale blue body,
+  and light internal panels with navy text, preserving bold AAP branding and
+  clearly distinguished request, execution, monitoring and failure paths.
+
 ## [1.6.3] — 2026-11-10
 
 ### Fixed

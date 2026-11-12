@@ -22,6 +22,10 @@
     group.dataset.flow = flow.id;
     group.dataset.from = flow.from;
     group.dataset.to = flow.to;
+    // A crisp light casing keeps active routes legible across the slate AAP header.
+    const outline = document.createElementNS(svgNS, 'path');
+    outline.setAttribute('d', flow.path);
+    outline.setAttribute('class', 'flow-outline');
     const line = document.createElementNS(svgNS, 'path');
     line.setAttribute('d', flow.path);
     line.setAttribute('class', 'flow-line');
@@ -31,7 +35,7 @@
     signal.setAttribute('d', flow.path);
     signal.setAttribute('class', 'flow-signal');
     signal.setAttribute('pathLength', '100');
-    group.append(line, signal);
+    group.append(outline, line, signal);
     byId('flows').append(group);
     flowElements.set(flow.id, group);
   });

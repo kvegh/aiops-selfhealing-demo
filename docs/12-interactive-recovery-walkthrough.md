@@ -2,7 +2,7 @@
 
 **[Open the interactive AIOps visualization](https://kvegh.github.io/aiops-selfhealing-demo/)**
 
-Version: **1.1.6**. This static presenter walkthrough illustrates the existing
+Version: **1.6.4**. This static presenter walkthrough illustrates the existing
 missing-`zabbix-agent2` recovery scenario. It is separate from the live audience
 website and makes no infrastructure connections. All findings, status changes,
 and timing are simulated; a successful walkthrough is not live recovery proof.
@@ -20,8 +20,17 @@ shortcuts: left/right arrows, Home/End, and R to restart. The presenter chooses
 when each step advances; there is no autoplay. **Motion on/off** controls finite
 flow animations. Reduced-motion preferences default to motion off. On narrow
 screens, the architecture scrolls sideways so its text remains legible.
-**Technical detail** opens relevant Ansible/EDA excerpts or illustrations and
-links to the complete repository source. Escape closes the dialog.
+**Technical detail** opens relevant Ansible/EDA excerpts or illustrations, the
+current diagnostic evidence, and links to complete repository source. Escape
+closes the dialog.
+
+On viewports at least 1100 CSS pixels wide and 650 high, the current-step
+explanation and controls sit above the workflow in the left column. The
+architecture uses the remaining viewport height in the right column; its SVG
+keeps its aspect ratio and includes the complete AAP platform. The workflow
+and unusually long explanations scroll within their own space. Narrow or
+short windows retain the naturally scrolling page and horizontal diagram
+panning. No body-overflow clipping or forced fullscreen mode is used.
 
 The continuous story has 17 stops: healthy baseline; “An error suddenly arises.”
 (the missing agent package); Zabbix
@@ -40,7 +49,7 @@ confirms the result after the remediation job succeeds.
 32 px SVG text with a 20 px **TRUSTED EXECUTION LAYER** label alongside it.
 The title has a bounded width so job-dispatch and MCP paths remain clear.
 The other components keep functionality as the primary label: **PROD SERVER**,
-**MONITORING**, and **AGENTIC AI**, using 22 px headings with 11 px product
+**MONITORING**, and **AGENTIC AI**, using 22 px headings with 11–13 px product
 captions: Red Hat Enterprise Linux, Zabbix in this case, and Claude in this case.
 
 EDA is inside the AAP platform. An AAP job starts the AI agent runtime. The
@@ -85,8 +94,8 @@ generation, incident memory, ITSM, or audience website controls.
 
 ## Color and status
 
-AAP uses a deep navy header and platform with a thin Red Hat red (`#ee0000`)
-brand accent. The headline remains dark; red is limited to small fixed brand
+AAP uses a slate-blue header, pale blue platform, and light internal panels
+with a thin Red Hat red (`#ee0000`) brand accent. The headline remains dark; red is limited to small fixed brand
 details rather than large surfaces. Brand color does not change with the
 incident state. White surfaces and crisp
 blue interactions keep the presentation light; teal identifies the AI runtime
@@ -163,3 +172,8 @@ The user declined installing Chromium on the server. Playwright's temporary QA
 library was installed with approval, but no browser was installed or run.
 Rendered desktop/mobile layout and real-browser accessibility behavior remain
 unverified; the minimal DOM harness is an interaction check only.
+
+For release 1.6.4, the user requested publication with the existing checks.
+No additional browser-test job or dependency was added. The 14 existing
+model/application-handler tests and text-contrast checks pass; rendered
+laptop/desktop fit and real-browser accessibility remain unverified.
