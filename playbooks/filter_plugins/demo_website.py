@@ -80,6 +80,42 @@ def safe_dns_records(records, expected_address):
     )
 
 
+def dns_batch_ready(output, hostnames, expected_address):
+    """Verify one native dig batch without adding DNS libraries to the EE.
+
+    Each response must answer its exact question successfully. In particular,
+    a failed AAAA query is not evidence that an IPv6 route is absent.
+    """
+    if (not isinstance(output, str) or not isinstance(hostnames, list)
+            or len(hostnames) != 2 or not all(isinstance(name, str) for name in hostnames)
+            or not isinstance(expected_address, str)):
+        return False
+    queries = [(name.lower().rstrip('.') + '.', kind)
+               for name in hostnames for kind in ('A', 'AAAA')]
+    responses = output.split(';; ->>HEADER<<-')[1:]
+    if len(responses) != len(queries):
+        return False
+    for response, (hostname, kind) in zip(responses, queries):
+        if not re.search(r'\bstatus: NOERROR,', response.splitlines()[0]):
+            return False
+        questions = [match.groups() for line in response.splitlines()
+                     if (match := re.fullmatch(r';([^\s]+)\s+(IN)\s+(A|AAAA)\s*', line))]
+        if questions != [(hostname, 'IN', kind)]:
+            return False
+        addresses = []
+        for line in response.splitlines()[1:]:
+            if not line.strip() or line.startswith(';'):
+                continue
+            fields = line.split()
+            if (len(fields) != 5 or fields[0].lower() != hostname
+                    or not fields[1].isdigit() or fields[2:4] != ['IN', kind]):
+                return False
+            addresses.append(fields[4])
+        if set(addresses) != ({expected_address} if kind == 'A' else set()):
+            return False
+    return True
+
+
 def monitoring_configuration(values):
     """Reject ambient production settings for a managed recovery website."""
     try:
@@ -109,5 +145,6 @@ class FilterModule:
         return {
             "demo_website_configuration": website_configuration,
             "demo_website_safe_dns_records": safe_dns_records,
+            "demo_website_dns_batch_ready": dns_batch_ready,
             "demo_website_monitoring_configuration": monitoring_configuration,
         }

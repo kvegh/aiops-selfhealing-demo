@@ -4,6 +4,7 @@
     argv:
       - rpm
       - -q
+      - bind-utils
       - nginx
       - certbot
       - python3-certbot-nginx
@@ -14,7 +15,7 @@
 - name: Require existing base packages instead of installing dependencies
   ansible.builtin.assert:
     that: demo_zabbix_package_readiness.rc == 0
-    fail_msg: Prepare nginx, certbot, python3-certbot-nginx through Hactar base before deploying this monitoring
+    fail_msg: Prepare bind-utils, nginx, certbot, python3-certbot-nginx through Hactar base before deploying this monitoring
       frontend.
     quiet: true
 - name: Find an existing approved ACME registration
@@ -159,24 +160,40 @@
         state: reloaded
       when: not demo_zabbix_existing_certificate.stat.exists
     - name: Wait for public DNS to identify only the selected hypervisor
-      ansible.builtin.assert:
-        that:
-          - query('community.general.dig', demo_zabbix_config.hostname, qtype='A') | unique | list ==
-            [demo_zabbix_config.hypervisor.public_ipv4]
-          - query('community.general.dig', demo_zabbix_config.hostname, qtype='AAAA') | reject('equalto',
-            '') | list == []
-          - query('community.general.dig', demo_zabbix_config.aap_hostname, qtype='A') | unique | list
-            == [demo_zabbix_config.hypervisor.public_ipv4]
-          - query('community.general.dig', demo_zabbix_config.aap_hostname, qtype='AAAA') | reject('equalto',
-            '') | list == []
-        fail_msg: Public DNS has not converged on the selected hypervisor's IPv4-only monitoring frontend route.
-        quiet: true
+      # Use base-owned RHEL DNS tools, keeping the official EE unmodified.
+      # One batch preserves the existing whole-probe retry budget for all four
+      # queries; a per-item retry loop could multiply a failed run's duration.
+      ansible.builtin.command:
+        argv:
+          - dig
+          - -r
+          - +noall
+          - +comments
+          - +question
+          - +answer
+          - +time=3
+          - +tries=1
+          - "{{ demo_zabbix_config.hostname }}."
+          - A
+          - "{{ demo_zabbix_config.hostname }}."
+          - AAAA
+          - "{{ demo_zabbix_config.aap_hostname }}."
+          - A
+          - "{{ demo_zabbix_config.aap_hostname }}."
+          - AAAA
       register: demo_zabbix_dns_propagation
+      changed_when: false
+      check_mode: false
+      failed_when: >-
+        demo_zabbix_dns_propagation.rc != 0 or
+        not (demo_zabbix_dns_propagation.stdout | demo_website_dns_batch_ready(
+          [demo_zabbix_config.hostname, demo_zabbix_config.aap_hostname],
+          demo_zabbix_config.hypervisor.public_ipv4))
       until: demo_zabbix_dns_propagation is not failed
-      # The controlled demo zone can cache NXDOMAIN for ten minutes. Keep the
-      # existing readiness probe bounded and finish immediately when it resolves.
       retries: 65
       delay: 10
+      no_log: true
+
     - name: Obtain the monitoring frontend certificate with the existing account and webroot renewal
       ansible.builtin.command:
         argv:

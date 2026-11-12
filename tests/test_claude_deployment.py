@@ -14,8 +14,6 @@ import unittest
 
 import yaml
 from ansible.errors import AnsibleFilterError
-from ansible.parsing.yaml.dumper import AnsibleDumper
-from ansible.utils.unsafe_proxy import AnsibleUnsafeText, wrap_var
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,12 +25,24 @@ MCP = importlib.util.module_from_spec(MCP_SPEC)
 MCP_SPEC.loader.exec_module(MCP)
 
 
-class LiteralDumper(AnsibleDumper):
+class LiteralText(str):
+    """Synthetic data explicitly kept literal by the native YAML loader."""
+
+
+class LiteralDumper(yaml.SafeDumper):
     pass
 
 
-LiteralDumper.add_representer(AnsibleUnsafeText,
-    lambda dumper, value: dumper.represent_scalar("!unsafe", value._strip_unsafe()))
+LiteralDumper.add_representer(LiteralText,
+    lambda dumper, value: dumper.represent_scalar("!unsafe", str(value)))
+
+
+def literal_values(value):
+    if isinstance(value, dict):
+        return {str(key): literal_values(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [literal_values(item) for item in value]
+    return LiteralText(value) if isinstance(value, str) else value
 
 
 def release():
@@ -188,7 +198,7 @@ class VertexAndWorkspaceTests(unittest.TestCase):
     def native_run(self, directory, tasks, variables, native):
         fixture = directory / "play.yml"
         fixture.write_text(yaml.dump([{"hosts": "localhost", "connection": "local", "gather_facts": False,
-                                      "vars": wrap_var(variables), "tasks": tasks}], Dumper=LiteralDumper, sort_keys=False))
+                                      "vars": literal_values(variables), "tasks": tasks}], Dumper=LiteralDumper, sort_keys=False))
         environment = dict(os.environ, ANSIBLE_LOCAL_TEMP=str(directory / "local"),
                            ANSIBLE_REMOTE_TEMP=str(directory / "remote"), ANSIBLE_JINJA2_NATIVE=native,
                            ANSIBLE_FILTER_PLUGINS=str(ROOT / "playbooks/filter_plugins"), ANSIBLE_NOCOLOR="1")

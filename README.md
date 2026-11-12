@@ -6,6 +6,24 @@ AI-driven incident remediation for enterprise infrastructure — with the blast 
 
 > **This is a functionality demo, not a production reference architecture.** No attempt is made to follow least-privilege, security hardening, or production-grade guidelines. That is intentional — the goal is to demonstrate the architecture and the self-healing flow, not to provide a deployable solution.
 
+## Ansible Core 2.20 runtime
+
+For Core 2.20 deployments, use the unmodified official AAP 2.7 execution
+environment; project collections come from `collections/requirements.yml`.
+Website and monitoring frontend DNS checks use RHEL's `dig` command from
+`bind-utils`, provided by Hactar base, rather than requiring `dnspython` in the EE.
+One four-query batch checks both frontend and AAP names: each must return only
+the pinned IPv4 address and no IPv6 answer. Failed DNS responses fail the check.
+The existing whole-probe retry counts remain 30 for the website and 65 for the
+monitoring frontend, with ten-second delays; these jobs install no prerequisites.
+
+Runtime validation accepts native tagged integers while continuing to reject
+booleans as schema versions, account IDs, resource IDs or binary sizes. Literal
+credential values remain data. Focused offline validation runs with
+`python -m unittest discover -s tests -p test_core220_runtime.py -v` under the
+selected Ansible runtime; passing it does not establish a successful live
+deployment or monitoring recovery.
+
 ## Interactive recovery walkthrough
 
 **AAP is the Trusted Execution Layer.** Explore one presenter-paced recovery

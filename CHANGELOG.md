@@ -14,6 +14,16 @@ archive during the repository split and is not part of this timeline.
 
 ## [Unreleased] — towards 2.0.0
 
+### Runtime compatibility fixes
+
+- Replace controller-side DNS-library lookups with the base RHEL host's native
+  DNS tools, preserving IPv4-only checks and the existing retry budgets. The
+  official Core 2.20 EE remains unmodified.
+- Accept native Ansible integer subclasses while retaining boolean rejection,
+  identity constraints and literal secret handling. Nine focused checks passed
+  in the actual Core 2.20.10 EE; a real RHEL DNS batch also passed. Complete fresh
+  front-end deployment acceptance remains separate.
+
 The audience-facing button demo: the room causes the outage from their
 phones and watches the platform put it back. Not yet end to end — the
 nginx vhost, Zabbix web scenario, EDA rule, fault-injection and restore

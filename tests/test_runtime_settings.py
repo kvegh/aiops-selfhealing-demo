@@ -21,6 +21,26 @@ runtime = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(runtime)
 
 
+class LiteralText(str):
+    """Synthetic data explicitly kept literal by the native YAML loader."""
+
+
+class LiteralDumper(yaml.SafeDumper):
+    pass
+
+
+LiteralDumper.add_representer(LiteralText,
+    lambda dumper, value: dumper.represent_scalar("!unsafe", str(value)))
+
+
+def literal_values(value):
+    if isinstance(value, dict):
+        return {str(key): literal_values(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [literal_values(item) for item in value]
+    return LiteralText(value) if isinstance(value, str) else value
+
+
 class RuntimeSchemaTests(unittest.TestCase):
     def test_only_the_selected_instance_and_reviewed_names_are_returned(self):
         data = {"schema_version": 1, "instances": {
@@ -64,12 +84,7 @@ class NativeRuntimeExecutionTests(unittest.TestCase):
             if unknown_key: settings["ansible_host"] = "unreviewed.invalid"
             document = {"schema_version": 1, "instances": {"aap27-test-7": settings}}
             vault = VaultLib([("default", VaultSecret(b"synthetic-test-password"))])
-            from ansible.parsing.yaml.dumper import AnsibleDumper
-            from ansible.utils.unsafe_proxy import AnsibleUnsafeText, wrap_var
-            class LiteralDumper(AnsibleDumper):
-                pass
-            LiteralDumper.add_representer(AnsibleUnsafeText, lambda dumper, value: dumper.represent_scalar('!unsafe', value._strip_unsafe()))
-            ciphertext = vault.encrypt(yaml.dump(wrap_var(document), Dumper=LiteralDumper).encode()).decode()
+            ciphertext = vault.encrypt(yaml.dump(literal_values(document), Dumper=LiteralDumper).encode()).decode()
             password = folder / "password"; password.write_text("wrong-password" if wrong_password else "synthetic-test-password"); password.chmod(0o600)
             tasks = yaml.safe_load((ROOT / "playbooks/tasks/demo_runtime_settings.yml").read_text())
             block = tasks[0]["block"]
@@ -93,9 +108,7 @@ class NativeRuntimeExecutionTests(unittest.TestCase):
             playbook = folder / "play.yml"; playbook.write_text(yaml.safe_dump(play, sort_keys=False))
             extra = folder / "extra.json"; values = {"demo_runtime_settings_vault": ciphertext}
             if controller_unsafe:
-                from ansible.parsing.yaml.dumper import AnsibleDumper
-                from ansible.utils.unsafe_proxy import wrap_var
-                extra = folder / "extra.yml"; extra.write_text(yaml.dump(wrap_var(values), Dumper=AnsibleDumper))
+                extra = folder / "extra.yml"; extra.write_text(yaml.dump(literal_values(values), Dumper=LiteralDumper))
             else: extra.write_text(json.dumps(values))
             extra.chmod(0o600)
             environment = dict(os.environ, ANSIBLE_LOCAL_TEMP=str(folder / "local"), ANSIBLE_REMOTE_TEMP=str(folder / "remote"),

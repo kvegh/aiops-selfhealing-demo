@@ -88,7 +88,7 @@ def workspace(user, configured=""):
 
 
 def safe_directories(results, uid):
-    require(isinstance(results, list) and results and type(uid) is int,
+    require(isinstance(results, list) and results and (isinstance(uid, int) and not isinstance(uid, bool)),
             "Inspect every existing directory before creating the runtime paths.")
     for result in results:
         stat = result.get("stat", {})

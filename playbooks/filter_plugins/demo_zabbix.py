@@ -52,7 +52,7 @@ def configuration(value):
     binding = value.get('cac_import')
     require(isinstance(binding, dict) and set(binding) == {'controller_host', 'inventory_id', 'job_template_id', 'group_id', 'aap_instance_key'}
             and binding['controller_host'] == 'https://' + result['aap_hostname']
-            and all(type(binding[key]) is int and binding[key] > 0 for key in ('inventory_id', 'job_template_id', 'group_id'))
+            and all((isinstance(binding[key], int) and not isinstance(binding[key], bool)) and binding[key] > 0 for key in ('inventory_id', 'job_template_id', 'group_id'))
             and isinstance(binding['aap_instance_key'], str)
             and re.fullmatch(r'[A-Za-z0-9_.-]{1,200}', binding['aap_instance_key']),
             'Import the selected VM configuration with its existing native AAP importer binding first.')

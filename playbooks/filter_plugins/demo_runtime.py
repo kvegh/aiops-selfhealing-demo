@@ -30,7 +30,8 @@ def selected_settings(value, instance):
         raise AnsibleFilterError(message + " Invalid selected instance.")
     if not isinstance(value, dict) or set(value) != {"schema_version", "instances"}:
         raise AnsibleFilterError(message + " Invalid document fields.")
-    if type(value["schema_version"]) is not int or value["schema_version"] != 1:
+    # Native core 2.20 YAML integers carry tags; bool must still be refused.
+    if (not isinstance(value["schema_version"], int) or isinstance(value["schema_version"], bool)) or value["schema_version"] != 1:
         raise AnsibleFilterError(message + " Unsupported schema version.")
     if not isinstance(value["instances"], dict) or instance not in value["instances"]:
         raise AnsibleFilterError(message + " Missing selected namespace.")

@@ -29,7 +29,7 @@ def release(value):
             "Use only the reviewed official Linux x64 native release URL.")
     require(isinstance(value.get("sha256"), str)
             and re.fullmatch(r"[0-9a-f]{64}", value["sha256"])
-            and type(value.get("bytes")) is int and 0 < value["bytes"] <= 1024 ** 3,
+            and (isinstance(value.get("bytes"), int) and not isinstance(value.get("bytes"), bool)) and 0 < value["bytes"] <= 1024 ** 3,
             "Pin the official binary SHA-256 and exact positive size.")
     return {key: value[key] for key in ("version", "platform", "url", "sha256", "bytes")}
 
@@ -168,12 +168,12 @@ def agent_servers(text, project, definition):
 
 def repair_template(value, inventory, project):
     """Resolve the one existing saved repair; never accept caller target overrides."""
-    require(type(inventory) is int and inventory > 0 and type(project) is int and project > 0,
+    require((isinstance(inventory, int) and not isinstance(inventory, bool)) and inventory > 0 and (isinstance(project, int) and not isinstance(project, bool)) and project > 0,
             "Run from the existing AAP job's native inventory and project.")
     require(isinstance(value, dict) and value.get("count") == 1 and value.get("next") is None
             and len(value.get("results", [])) == 1, "Resolve exactly one existing selected repair template.")
     row = value["results"][0]
-    require(type(row.get("id")) is int and row["id"] > 0 and row.get("name") == "Deploy Zabbix Agent"
+    require((isinstance(row.get("id"), int) and not isinstance(row.get("id"), bool)) and row["id"] > 0 and row.get("name") == "Deploy Zabbix Agent"
             and row.get("playbook") == "playbooks/deploy_zabbix_agent.yml" and row.get("limit") == "testserver1"
             and row.get("inventory") == inventory and row.get("project") == project
             and all(row.get(key) is False for key in ("ask_inventory_on_launch", "ask_limit_on_launch",
@@ -314,7 +314,7 @@ def launched_repairs(text, repair):
                 value = value["result"]
             require(isinstance(value, dict), "Read the actual native repair launch response.")
             job = value.get("job", value.get("id"))
-            require(type(job) is int and job > 0 and value.get("id", job) == job
+            require((isinstance(job, int) and not isinstance(job, bool)) and job > 0 and value.get("id", job) == job
                     and value.get("job_template", repair) == repair,
                     "The repair response must identify the selected template's actual child job.")
             identities.append(job)
