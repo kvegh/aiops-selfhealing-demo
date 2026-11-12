@@ -1374,3 +1374,30 @@ The test exercised a stopped service rather than package removal. It establishes
 this controlled demo flow, not a production migration, unrestricted remediation
 catalogue or completed formal code review. The production tested-commit pin was
 not changed.
+
+## Fit the architecture to the viewport and lighten AAP
+
+The user reported the bottom AAP platform extending below the screen and
+requested a lighter appearance. Release 1.6.4 places the explanation and
+navigation above the workflow in the left column on wide laptop/desktop
+viewports. The right architecture panel fits its SVG to available height
+while retaining aspect ratio. Supporting evidence moves into the existing
+Technical detail dialog. Narrow or short windows retain natural page scrolling.
+The fitted arrangement applies at 1100 CSS pixels wide and 650 high or greater.
+
+AAP retains its large bold name and structured platform form with a slate-blue
+header, pale blue body, light internal panels and navy text. Active flow paths
+use a crisp light casing where they cross the header. An independently reviewed
+sizing chain and named explanation scroll region address layout/accessibility
+concerns without adding a frontend framework or changing the recovery story.
+
+The user explicitly requested pushing the prepared fix without adding the
+proposed GitHub browser-test job for now. Both runtime syntax checks, all 14
+existing model/application-handler tests, HTML IDs/ARIA checks, six key text
+contrast checks (minimum 5.40:1) and diff checks passed. Rendered screen fit
+and real-browser accessibility remain unverified; source checks are not
+presented as browser proof. No browser, dependency, CI or infrastructure
+configuration change was made. An isolated checkout preserves unrelated
+unpublished deployment commits in the original checkout.
+
+Implementation commit: `d8e6680`.
