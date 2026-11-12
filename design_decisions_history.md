@@ -1401,3 +1401,22 @@ configuration change was made. An isolated checkout preserves unrelated
 unpublished deployment commits in the original checkout.
 
 Implementation commit: `d8e6680`.
+
+
+## Keep Next beside the motion control
+
+After manually checking release 1.6.4, the user reported improved screen fit
+and requested Next on the right immediately to the left of Motion on/off.
+Release 1.6.5 moves the existing Previous/Next controls into the architecture
+header, directly before Motion, preserving the fitted diagram and lighter AAP
+palette. The header wraps above the controls on narrow screens, long Next
+labels wrap within their button, and primary controls precede the workflow
+list in keyboard order. Explicit desktop grid placement preserves the columns.
+
+Both runtime syntax checks, all 14 existing story/handler tests and diff checks
+passed. Source review covered header sizing, label wrapping and keyboard order;
+HTML IDs, ARIA references and control order were checked. No browser was
+installed or run, and rendered layout remains unverified. No CI job, dependency,
+automation runtime or infrastructure configuration changed.
+
+Implementation commit: `5232ee3`.
