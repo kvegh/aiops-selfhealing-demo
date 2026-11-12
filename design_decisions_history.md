@@ -1420,3 +1420,25 @@ installed or run, and rendered layout remains unverified. No CI job, dependency,
 automation runtime or infrastructure configuration changed.
 
 Implementation commit: `5232ee3`.
+
+
+## Highlight rule matching and AI correlation
+
+The user found that the status-only Rule condition matched and Correlating
+three sources moments did not draw the audience's attention. Release 1.6.6
+adds a teal status band, bold label and stronger component outline at those
+two steps. One 0.9-second border emphasis settles into a persistent cue for
+presenter pauses. Leaving the step clears its cue; returning replays the
+emphasis. Existing Motion off and reduced-motion defaults suppress animation
+while preserving the static cue.
+
+The implementation uses existing step state with SVG/CSS only; runtime
+JavaScript, navigation placement, layout, recovery story and dependencies are
+unchanged. Independent source review checked geometry, CSS specificity and
+motion handling, and led to a shorter AI status band to clear the footnote.
+Both runtime syntax checks, all 14 existing story/handler tests, HTML/ARIA and
+diff checks passed. Status text contrast is 6.27:1, band border 3.27:1, and
+component border 4.64:1. Browser rendering, animation and exact glyph fit remain
+unverified; no browser installation or additional CI job was performed.
+
+Implementation commit: `b96abc8`.
