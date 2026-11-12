@@ -1465,3 +1465,23 @@ run, so rendered colour balance remains unverified. No dependency, CI or
 infrastructure change was made.
 
 Implementation commit: `d8758f1`.
+
+
+## Let uploaded Pages artifact metadata settle
+
+Two fresh 1.6.7 publication runs uploaded the frontend successfully but the
+immediately following deploy-pages action found zero artifacts; later API reads
+found the valid uploads. An in-place publication-job rerun also reproduced the
+known duplicate-name failure after reupload. No successful deployment was
+claimed from these attempts.
+
+Release 1.6.8 retains the approved slate-grey AI palette and adds a single
+five-second pause after upload in the existing publish job. This is a small
+mitigation for the observed metadata visibility delay, not a readiness guarantee.
+No new job, dependency, action upgrade, permission, staging rule or failure-masking
+path was added. Source review and YAML checks confirmed those boundaries; actual
+publication remains the decisive check. The workflow comment links to the Pages
+troubleshooting guidance. Use a fresh workflow run after duplicate uploads rather
+than rerunning a job that uploads the same artifact name again.
+
+Implementation commit: `150dcc4`.
