@@ -22,7 +22,7 @@ simulation; the walkthrough distinguishes AAP platform capabilities from the
 agent instructions and hardening still to do. See the
 [presenter, validation, and GitHub Pages guide](docs/12-interactive-recovery-walkthrough.md).
 [Open the published visualization](https://kvegh.github.io/aiops-selfhealing-demo/).
-GitHub Pages uses the included Actions workflow. Frontend release: **1.6.8**.
+GitHub Pages uses the included Actions workflow. Frontend release: **1.7.0**.
 Publication includes a five-second pause after upload because Pages artifact
 lookup was observed to lag behind successful uploads.
 The palette uses a slate-blue AAP header and pale blue platform with a thin red brand accent,
@@ -44,6 +44,18 @@ natural scrolling to preserve readable labels.
 Rule matching and AI correlation use highlighted status labels and a brief
 component emphasis that settles into a persistent cue for presenter pauses.
 **Motion off** suppresses the animation while preserving the highlight.
+
+Choose **Enable presentation mode** for the parallel projector layout, and
+**Exit presentation mode** to return immediately. Both views share the same
+recovery story, current step, monitoring state and motion setting. The projector
+view gives the architecture more space, enlarges key labels and the current
+caption, uses high-contrast text and thicker routes on a plain background, and
+hides the detailed step list. Full explanations and sources remain in
+**Technical detail**. Arrow keys, Previous/Next and Restart work in both views.
+The switch uses local page state and does not reload or enter fullscreen;
+browser fullscreen remains available separately. Actual room/projector and
+rendered-browser verification remain unperformed.
+
 
 ## What this is
 

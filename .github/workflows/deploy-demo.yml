@@ -31,6 +31,7 @@ jobs:
         run: |
           node --check demo/src/scenario.js
           node --check demo/src/app.js
+          node --check demo/src/presentation.js
           node --test demo/tests/*.test.cjs
 
   publish:
@@ -55,7 +56,7 @@ jobs:
         run: |
           mkdir -p "${RUNNER_TEMP}/aiops-demo/src"
           cp demo/index.html demo/icon.svg "${RUNNER_TEMP}/aiops-demo/"
-          cp demo/src/scenario.js demo/src/app.js demo/src/styles.css "${RUNNER_TEMP}/aiops-demo/src/"
+          cp demo/src/scenario.js demo/src/app.js demo/src/presentation.js demo/src/styles.css demo/src/presentation.css "${RUNNER_TEMP}/aiops-demo/src/"
           touch "${RUNNER_TEMP}/aiops-demo/.nojekyll"
       - name: Upload the walkthrough
         uses: actions/upload-pages-artifact@v4

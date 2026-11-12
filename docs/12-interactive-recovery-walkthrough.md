@@ -2,7 +2,7 @@
 
 **[Open the interactive AIOps visualization](https://kvegh.github.io/aiops-selfhealing-demo/)**
 
-Version: **1.6.8**. This static presenter walkthrough illustrates the existing
+Version: **1.7.0**. This static presenter walkthrough illustrates the existing
 missing-`zabbix-agent2` recovery scenario. It is separate from the live audience
 website and makes no infrastructure connections. All findings, status changes,
 and timing are simulated; a successful walkthrough is not live recovery proof.
@@ -51,6 +51,50 @@ still unresolved; monitoring confirmation; verified recovery.
 **AAP is the Trusted Execution Layer.** AI investigates, reasons, discovers,
 and selects. AAP executes changes through existing automation. Monitoring
 confirms the result after the remediation job succeeds.
+
+## Presentation mode
+
+Use **Enable presentation mode** in the header to switch instantly to the
+parallel projector design. The button becomes **Exit presentation mode**.
+Switching preserves the current step, URL step fragment, monitoring and job
+states, and explicit motion preference. Restart resets the story while keeping
+the selected view. Reloading starts in the normal design; no browser storage
+or extra preference service is used.
+
+The projector view uses a wider, simpler architecture drawing with larger
+functional labels and status text, stronger outlines and route strokes, dark
+text on light surfaces, and a plain background. AAP retains its strong platform
+form and prominent product name; AI remains neutral slate with steel-blue
+reasoning cues. Every AI interaction still crosses its MCP interface, all server
+changes still originate at AAP, and job success still precedes monitoring proof.
+The normal detailed workflow list is hidden, leaving a prominent current-step
+title and short caption. **Technical detail** retains the complete explanation,
+Ansible/EDA excerpts, evidence and repository links. Previous/Next, arrow keys,
+Restart and Motion on/off work in both views; Next remains immediately left of
+Motion. Motion remains finite and presenter-paced, with the same reduced-motion
+default. The switch never requests browser fullscreen automatically.
+
+This implements the researched presentation guidance: fewer simultaneous details,
+large meaningful labels, familiar sans-serif text, clear luminance contrast,
+colour plus text/dash/shape cues, and restrained manually controlled motion.
+Slide recommendations such as 24–28 pt body and 36–44 pt titles are starting
+points; SVG text scales with the projected drawing, so source units do not prove
+physical readability. Check the actual projector, normal room lighting and back
+row before relying on it. Narrow or short windows retain readable scrolling or
+panning rather than clipping the architecture.
+
+References: [presentation typography and motion guidance](https://servicedesk.sc.edu/about/offices_and_divisions/digital-accessibility/toolbox/documents_pdfs/microsoft_powerpoint/other_tips_powerpoint/index.php),
+[W3C enhanced text contrast](https://www.w3.org/WAI/WCAG22/Understanding/contrast-enhanced.html).
+
+The native HTML/CSS/SVG/JavaScript frontend runs directly in a browser without
+Ansible or infrastructure access. `presentation.js` supplies only the second
+SVG geometry and routes; `presentation.css` scopes projector styling; `app.js`
+feeds both drawings from the existing shared scenario/state. A separate drawing
+provides room for larger labels and wrapping without changing the established
+normal design. No framework, build step, runtime fetch, additional infrastructure
+or duplicated recovery-state engine is needed. The application-handler fixture
+checks both drawings and reversible view changes; its synthetic SVG measurement
+is not glyph-fit, accessibility or real-browser evidence.
 
 ## What the diagram means
 
@@ -166,7 +210,7 @@ For future updates or recreation:
 Published project-site URL:
 <https://kvegh.github.io/aiops-selfhealing-demo/>.
 
-The workflow stages an explicit allowlist: `index.html`, `icon.svg`, the three
+The workflow stages an explicit allowlist: `index.html`, `icon.svg`, the five
 runtime JS/CSS files, and `.nojekyll`. It never uploads the repository root,
 playbooks, Vault files, tests, or runtime configuration. Pull requests run the
 model checks without deploying. The browser frontend requires no secrets.
@@ -179,7 +223,23 @@ describes the publishing actions and required permissions.
 
 ## Validation outcome
 
-All 14 model and application-handler tests passed locally and in GitHub Actions.
+The 14 checks preceding presentation mode passed locally and in GitHub Actions.
+Presentation-mode regressions additionally cover reversible switching, shared
+state/component/flow parity through all 17 steps, restart, motion and dialogs.
+For release 1.7.0, all 17 local checks passed (7 application-handler checks and
+10 scenario checks), including forced synthetic multiline word preservation.
+All three runtime scripts passed syntax checks. Source checks confirmed that
+all 14 presentation routes meet their declared component boundaries, avoid
+unrelated component interiors, and keep EDA, Controller and catalog inside AAP.
+Six key presentation text pairs measured 7.16:1–12.50:1 contrast. HTML/ARIA,
+YAML, explicit staging and diff checks passed.
+
+These results establish source and handler behavior, not rendered glyph fit,
+viewport fit or projector legibility. SVG status sizes can scale below the slide
+font starting points on smaller laptop/projector resolutions. A 1920×1080
+fullscreen view is a sensible starting point; verify the actual room from the
+back row. No browser or renderer was available or installed for this change.
+
 The user declined installing Chromium on the server. Playwright's temporary QA
 library was installed with approval, but no browser was installed or run.
 Rendered desktop/mobile layout and real-browser accessibility behavior remain
@@ -210,3 +270,10 @@ later API reads found the uploaded files. The pause is a small mitigation for
 that observed metadata delay, with no additional job or dependency. Job reruns
 can leave duplicate named artifacts; after such a failure, use a fresh workflow
 run instead of rerunning a job that uploads the same named artifact again.
+
+Release 1.7.0 adds the optional parallel presentation drawing and reversible
+mode control using the shared recovery state. The explicit Pages allowlist
+includes the new local presentation script and stylesheet; publication keeps
+the existing five-second artifact-settling pause. No browser, dependency or new
+CI job is introduced. Actual rendered and physical-projector acceptance remains
+unverified until separately performed.

@@ -88,6 +88,19 @@ templates, and the status page are still outstanding.
   stack. All three pages now make zero external requests, so they render
   identically on an audience phone with nothing but venue wifi.
 
+## [1.7.0] — 2026-11-12
+
+### Added
+
+- Optional projector presentation design with an immediate Enable/Exit switch,
+  larger functional labels and status text, high-contrast light surfaces,
+  thicker routes, a plain background and a concise current-step caption.
+- Shared story state across both drawings: switching preserves the step,
+  monitoring/job state and motion preference. Existing navigation, technical
+  detail and the monitoring-verification gate remain available.
+- Interaction regressions for reversible switching and both-view parity through
+  the complete recovery story; explicit Pages staging for the two local assets.
+
 ## [1.6.8] — 2026-11-12
 
 ### Fixed

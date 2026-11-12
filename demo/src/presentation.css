@@ -1,0 +1,164 @@
+/* Projector view only: clearer geometry and typography, with the same story.
+ * Justification: ../../docs/12-interactive-recovery-walkthrough.md#presentation-mode
+ */
+.app[data-view="presentation"]{height:100vh;height:100dvh;max-width:none;display:grid;grid-template-rows:auto minmax(0,1fr);gap:10px;padding:12px 18px;background:#fff}
+.app[data-view="presentation"] .masthead{margin:0;min-width:0;gap:16px}
+.app[data-view="presentation"] .brand{gap:12px}
+.app[data-view="presentation"] .brand .eyebrow,
+.app[data-view="presentation"] .simulation-label,
+.app[data-view="presentation"] .page-footer,
+.app[data-view="presentation"] .workflow-panel{display:none}
+.app[data-view="presentation"] h1{font-size:clamp(22px,2vw,30px)}
+.app[data-view="presentation"] .header-actions{gap:12px}
+.app[data-view="presentation"] .quiet-button{min-height:44px;font-size:14px}
+.app[data-view="presentation"] .workspace{min-height:0;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);gap:8px;align-items:stretch}
+.app[data-view="presentation"] .presenter{grid-column:1;grid-row:1;display:block;min-height:0;margin:0;padding:8px 14px 12px;border:0;border-radius:0;background:#fff}
+.app[data-view="presentation"] .narrative{min-height:0;max-height:none;max-width:none;overflow:visible}
+.app[data-view="presentation"] .narrative .eyebrow{font-size:18px;margin-bottom:6px;color:#334155}
+.app[data-view="presentation"] .narrative h2{font-size:clamp(26px,2.4vw,38px);line-height:1.15;font-weight:700;margin:0;letter-spacing:-.6px}
+.app[data-view="presentation"] #current-description{display:none}
+.app[data-view="presentation"] .architecture-panel{grid-column:1;grid-row:2;display:flex;flex-direction:column;min-height:0;height:auto;border:0;border-radius:0;background:#fff}
+.app[data-view="presentation"] .architecture-panel>:not(#presentation-stage){flex-shrink:0}
+.app[data-view="presentation"] .architecture-heading{padding:0 8px 6px;justify-content:flex-end;gap:12px}
+.app[data-view="presentation"] .architecture-heading>div:first-child{display:none}
+.app[data-view="presentation"] .architecture-actions{width:auto;margin-left:auto;gap:12px;flex-shrink:0}
+.app[data-view="presentation"] .architecture-actions .navigation{gap:12px;flex:none}
+.app[data-view="presentation"] .architecture-actions .next-button{width:clamp(260px,28vw,410px);min-height:56px;padding:8px 16px;gap:14px;flex:none}
+.app[data-view="presentation"] .architecture-actions .next-button small{font-size:12px}
+.app[data-view="presentation"] .architecture-actions .next-button strong{font-size:16px;line-height:1.3}
+.app[data-view="presentation"] .previous-button{font-size:16px;min-height:44px}
+.app[data-view="presentation"] .motion-button{font-size:14px;min-height:44px;padding:10px 12px}
+.app[data-view="presentation"] .flow-caption{min-height:32px;margin:0;padding:3px 10px;border:0;background:#fff}
+.app[data-view="presentation"] .flow-caption p{font-size:clamp(22px,1.8vw,28px);line-height:1.25;color:#243447;font-weight:550}
+.app[data-view="presentation"] .caption-indicator{width:8px;height:8px;background:#334155}
+.app[data-view="presentation"] .pan-hint,
+.app[data-view="presentation"] .reasoning-strip{display:none}
+.app[data-view="presentation"] #presentation-stage{display:flex;flex:1 1 0;min-height:0;min-width:0;overflow:auto;align-items:center;justify-content:center}
+.app[data-view="presentation"] .path-legend{font-size:14px;gap:24px;margin:5px 10px;color:#243447}
+.app[data-view="presentation"] .path-legend i{width:24px;border-top-width:3px}
+.app[data-view="presentation"] .legend-read{color:#0051a8}
+.app[data-view="presentation"] .legend-request{color:#53389e}
+.app[data-view="presentation"] .legend-dispatch{color:#334d68}
+.app[data-view="presentation"] .legend-execute{color:#00555c}
+.app[data-view="presentation"] .architecture-footer{padding:0 10px;gap:16px;align-items:center;flex-direction:row}
+.app[data-view="presentation"] .architecture-footer p{font-size:14px;color:#334155;max-width:none}
+.app[data-view="presentation"] .architecture-footer strong{color:#243447;font-weight:650}
+.app[data-view="presentation"] .source-button{font-size:14px;min-height:44px;color:#0051a8}
+.presentation-architecture{display:block;width:100%;height:100%;min-width:0;min-height:0;flex:none;font-family:Inter,"Segoe UI",system-ui,-apple-system,sans-serif}
+.presentation-architecture text{font-family:inherit}
+.presentation-architecture .projection-fineprint{display:none}
+.app[data-view="presentation"] .presentation-architecture .node-surface{fill:#fff;stroke:#536b83;stroke-width:3}
+.app[data-view="presentation"] .presentation-architecture .node-title{font-size:36px;font-weight:750;letter-spacing:-.5px;fill:#173650}
+.app[data-view="presentation"] .presentation-architecture .node-product{font-size:22px;font-weight:550;fill:#334155}
+.app[data-view="presentation"] .presentation-architecture .node-status{font-size:26px;font-weight:650;fill:#243447}
+.app[data-view="presentation"] .presentation-architecture .component.is-active>.node-surface{stroke:#0051a8;stroke-width:4}
+.app[data-view="presentation"] .presentation-architecture .component[data-tone="healthy"]>.node-surface{fill:#fbfefc;stroke:#287653}
+.app[data-view="presentation"] .presentation-architecture .component[data-tone="healthy"] .node-status{fill:#174c35}
+.app[data-view="presentation"] .presentation-architecture .component[data-tone="problem"]>.node-surface{fill:#fff4f4;stroke:#a30015}
+.app[data-view="presentation"] .presentation-architecture .component[data-tone="problem"] .node-status{fill:#8b1020}
+.app[data-view="presentation"] .presentation-architecture .component[data-tone="pending"]>.node-surface{fill:#fffbeb;stroke:#8a6500}
+.app[data-view="presentation"] .presentation-architecture .component[data-tone="pending"] .node-status{fill:#624409}
+.app[data-view="presentation"] .presentation-architecture .agent-node .node-surface{fill:#eef2f6;stroke:#64748b}
+.app[data-view="presentation"] .presentation-architecture .agent-node.is-active>.node-surface{stroke:#486681;stroke-width:4}
+.app[data-view="presentation"] .presentation-architecture .agent-role{fill:#334155}
+.app[data-view="presentation"] .presentation-architecture .agent-status{font-size:26px;font-weight:650;fill:#334155}
+.app[data-view="presentation"] .presentation-architecture .agent-halo{fill:#dce5ef;opacity:0}
+.app[data-view="presentation"] .presentation-architecture .agent-node.is-active .agent-halo{opacity:.35}
+.app[data-view="presentation"] .presentation-architecture .agent-constellation{stroke:#64748b;stroke-width:3;fill:#fff}
+.app[data-view="presentation"] .presentation-architecture .agent-constellation .agent-core{fill:#64748b;stroke:#fff;stroke-width:2}
+.app[data-view="presentation"] .presentation-architecture .agent-node[data-tone="reasoning"] .agent-constellation{animation:none;stroke:#486681}
+.app[data-view="presentation"] .presentation-architecture .agent-node[data-tone="reasoning"] .agent-core{fill:#486681}
+.app[data-view="presentation"] .presentation-architecture .mcp-node .node-surface{fill:#f2f7ff;stroke:#587a9f;stroke-width:3;stroke-dasharray:8 5}
+.app[data-view="presentation"] .presentation-architecture .mcp-node.is-active .node-surface{fill:#e7f1ff;stroke:#0051a8;stroke-width:4;stroke-dasharray:none}
+.app[data-view="presentation"] .presentation-architecture .mcp-node[data-tone="request"] .node-surface{fill:#f0edff;stroke:#53389e}
+.app[data-view="presentation"] .presentation-architecture .mcp-title{font-size:26px;font-weight:750;fill:#173f69}
+.app[data-view="presentation"] .presentation-architecture .mcp-detail{font-size:22px;font-weight:550;fill:#334155}
+.app[data-view="presentation"] .presentation-architecture .platform-frame{stroke:#587a9f;stroke-width:3}
+.app[data-view="presentation"] .presentation-architecture .platform-header{fill:#355b7b}
+.app[data-view="presentation"] .presentation-architecture .platform-name{font-size:40px;font-weight:750;fill:#fff;letter-spacing:-.5px}
+.app[data-view="presentation"] .presentation-architecture .platform-label{font-size:26px;font-weight:700;fill:#fff;letter-spacing:.3px}
+.app[data-view="presentation"] .presentation-architecture .platform-node .node-surface{fill:#f7fbff;stroke:#587a9f;stroke-width:3}
+.app[data-view="presentation"] .presentation-architecture .platform-node.is-active .node-surface{fill:#fff;stroke:#006b73;stroke-width:4}
+.app[data-view="presentation"] .presentation-architecture .platform-node-title{font-size:28px;font-weight:700;fill:#173650}
+.app[data-view="presentation"] .presentation-architecture .platform-status{font-size:26px;font-weight:650;fill:#243447}
+.app[data-view="presentation"] .presentation-architecture .catalog-node .platform-status{font-size:22px}
+.app[data-view="presentation"] .presentation-architecture .template-surface{fill:#e3edf7;stroke:#587a9f;stroke-width:2}
+.app[data-view="presentation"] .presentation-architecture .template-name{font-size:26px;font-weight:700;fill:#173650}
+.app[data-view="presentation"] .presentation-architecture .catalog-node.is-active .template-surface{fill:#e3f2ff;stroke:#0051a8;stroke-width:3}
+.app[data-view="presentation"] .presentation-architecture .catalog-node[data-tone="selected"] .template-surface{fill:#d6efec;stroke:#006b73;stroke-width:3}
+.app[data-view="presentation"] .presentation-architecture .platform-capability{font-size:22px;font-weight:550;fill:#243447}
+.app[data-view="presentation"] .presentation-architecture .status-highlight{stroke-width:2}
+.app[data-view="presentation"][data-step="matched"] .presentation-architecture .eda-node .status-highlight{fill:#d7f0e9;stroke:#18766a}
+.app[data-view="presentation"][data-step="matched"] .presentation-architecture .eda-node>.node-surface{fill:#edf8f5;stroke:#006b73;stroke-width:4;animation:presentation-eda-focus .9s ease-out 1}
+.app[data-view="presentation"][data-step="matched"] .presentation-architecture #presentation-eda-status{fill:#064e47;font-weight:750}
+.app[data-view="presentation"][data-step="reasoning"] .presentation-architecture .agent-node .status-highlight{fill:#dce5ef;stroke:#486681}
+.app[data-view="presentation"][data-step="reasoning"] .presentation-architecture .agent-node>.node-surface{fill:#e5ecf3;stroke:#486681;stroke-width:4;animation:presentation-agent-focus .9s ease-out 1}
+.app[data-view="presentation"][data-step="reasoning"] .presentation-architecture #presentation-agent-status{fill:#334155;font-weight:750}
+.app[data-view="presentation"] .presentation-architecture .flow{opacity:.42}
+.app[data-view="presentation"] .presentation-architecture .flow-read{color:#0051a8}
+.app[data-view="presentation"] .presentation-architecture .flow-request{color:#53389e;opacity:0}
+.app[data-view="presentation"] .presentation-architecture .flow-event,
+.app[data-view="presentation"] .presentation-architecture .flow-dispatch{color:#334d68}
+.app[data-view="presentation"] .presentation-architecture .flow-execute{color:#006b73;opacity:.22}
+.app[data-view="presentation"] .presentation-architecture .flow-monitor{color:#186440}
+.app[data-view="presentation"] .presentation-architecture .flow-line{stroke-width:4}
+.app[data-view="presentation"] .presentation-architecture .flow-read .flow-line,
+.app[data-view="presentation"] .presentation-architecture .flow-read .flow-outline{stroke-dasharray:10 8}
+.app[data-view="presentation"] .presentation-architecture .flow-monitor .flow-line,
+.app[data-view="presentation"] .presentation-architecture .flow-monitor .flow-outline{stroke-dasharray:8 8}
+.app[data-view="presentation"] .presentation-architecture .flow.is-active{opacity:1}
+.app[data-view="presentation"] .presentation-architecture .flow.is-active>.flow-line{stroke-width:6}
+.app[data-view="presentation"] .presentation-architecture .flow.is-active.flow-execute>.flow-line{stroke-width:7}
+.app[data-view="presentation"] .presentation-architecture .flow-outline{stroke:#fff;stroke-width:9}
+.app[data-view="presentation"] .presentation-architecture .flow.is-active.flow-execute .flow-outline{stroke-width:11}
+.app[data-view="presentation"] .presentation-architecture .flow-signal{stroke-width:7;filter:none}
+.app[data-view="presentation"] .presentation-architecture .flow-execute .flow-signal{stroke-width:9}
+@keyframes presentation-eda-focus{from{stroke-width:7}to{stroke-width:4}}
+@keyframes presentation-agent-focus{from{stroke-width:7}to{stroke-width:4}}
+/* Small windows keep readable type and access to all controls through natural panning. */
+@media(max-width:899px),(max-height:599px){
+  .app[data-view="presentation"]{height:auto;min-height:100vh;min-height:100dvh;grid-template-rows:auto auto}
+  .app[data-view="presentation"] .workspace{min-height:0;grid-template-rows:auto auto}
+  .app[data-view="presentation"] .masthead{flex-wrap:wrap}
+  .app[data-view="presentation"] .header-actions{margin-left:auto}
+  .app[data-view="presentation"] .architecture-heading{flex-wrap:nowrap}
+  .app[data-view="presentation"] .architecture-actions{width:100%;gap:8px}
+  .app[data-view="presentation"] .architecture-actions .navigation{flex:1;min-width:0;gap:8px}
+  .app[data-view="presentation"] .architecture-actions .next-button{flex:1;min-width:0;width:auto;padding:8px 10px;gap:8px}
+  .app[data-view="presentation"] .architecture-actions .next-button strong{font-size:12px}
+  .app[data-view="presentation"] .architecture-actions .next-button small{font-size:10px}
+  .app[data-view="presentation"] .previous-button{font-size:12px;padding:10px 4px}
+  .app[data-view="presentation"] .motion-button{font-size:12px;padding:8px}
+  .app[data-view="presentation"] #presentation-stage{flex:none;min-height:0;align-items:flex-start;justify-content:flex-start}
+  .app[data-view="presentation"] .presentation-architecture{width:1100px;min-width:1100px;height:auto;min-height:454px;flex:none}
+  .app[data-view="presentation"] .path-legend{gap:12px;justify-content:flex-start;font-size:12px}
+  .app[data-view="presentation"] .architecture-footer{flex-wrap:wrap;gap:6px}
+}
+
+/* The existing on-demand detail stays readable without changing the normal dialog. */
+.technical-dialog[data-view="presentation"]{width:min(1100px,calc(100vw - 32px));max-height:calc(100dvh - 32px);padding:28px;overflow:auto;color:#243447}
+.technical-dialog[data-view="presentation"] .eyebrow{font-size:16px;color:#334155}
+.technical-dialog[data-view="presentation"] .close-button{width:48px;height:48px;font-size:32px}
+.technical-dialog[data-view="presentation"] h2{font-size:32px;line-height:1.2}
+.technical-dialog[data-view="presentation"]>p{font-size:22px;line-height:1.5;color:#334155}
+.technical-dialog[data-view="presentation"] .excerpt-note{font-size:18px;color:#334155}
+.technical-dialog[data-view="presentation"] pre{font-size:20px;line-height:1.5;color:#243447;padding:20px}
+.technical-dialog[data-view="presentation"]>a,
+.technical-dialog[data-view="presentation"] .implementation-note>a{font-size:18px;color:#0051a8}
+.technical-dialog[data-view="presentation"] .source-path{font-size:18px;color:#334155}
+.technical-dialog[data-view="presentation"] .evidence-heading{font-size:24px}
+.technical-dialog[data-view="presentation"] .evidence-label,
+.technical-dialog[data-view="presentation"] .evidence strong{font-size:18px;line-height:1.45;color:#334155}
+.technical-dialog[data-view="presentation"] .implementation-note{font-size:18px;line-height:1.5;color:#334155}
+.technical-dialog[data-view="presentation"] .implementation-note strong{font-size:20px}
+@media(max-width:650px){
+  .technical-dialog[data-view="presentation"]{padding:18px}
+  .technical-dialog[data-view="presentation"] .evidence{grid-template-columns:1fr}
+  .technical-dialog[data-view="presentation"] pre{font-size:18px;padding:14px}
+}
+
+/* Keep the added mode control reachable in the original narrow-screen layout. */
+@media(max-width:650px){
+  .app[data-view="standard"] .masthead{flex-wrap:wrap}
+  .app[data-view="standard"] .header-actions{width:100%;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+}
