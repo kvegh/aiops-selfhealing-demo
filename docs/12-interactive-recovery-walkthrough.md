@@ -2,7 +2,7 @@
 
 **[Open the interactive AIOps visualization](https://kvegh.github.io/aiops-selfhealing-demo/)**
 
-Version: **1.6.6**. This static presenter walkthrough illustrates the existing
+Version: **1.6.7**. This static presenter walkthrough illustrates the existing
 missing-`zabbix-agent2` recovery scenario. It is separate from the live audience
 website and makes no infrastructure connections. All findings, status changes,
 and timing are simulated; a successful walkthrough is not live recovery proof.
@@ -107,8 +107,11 @@ AAP uses a slate-blue header, pale blue platform, and light internal panels
 with a thin Red Hat red (`#ee0000`) brand accent. The headline remains dark; red is limited to small fixed brand
 details rather than large surfaces. Brand color does not change with the
 incident state. White surfaces and crisp
-blue interactions keep the presentation light; teal identifies the AI runtime
-and the labeled AAP execution path. Diagnostic paths are dashed blue, job
+blue interactions keep the presentation light. The AI runtime uses a quiet
+slate-grey surface (`#eef2f6`), border/constellation (`#94a3b8`) and dark slate
+text (`#334155`). Its active and reasoning cues use muted steel blue, including
+the diagnostic strip, leaving AAP more visually prominent. Teal identifies
+the labeled AAP execution path and EDA rule-match cue. Diagnostic paths are dashed blue, job
 requests are solid purple, and event/job dispatch is slate.
 
 Failure uses darker crimson with explicit Problem text, while recovery uses
@@ -194,3 +197,8 @@ the user’s manual feedback. Browser verification remains unperformed.
 Release 1.6.6 adds the two status highlights with SVG/CSS and existing step
 state, without changing runtime JavaScript or adding dependencies. Existing
 model/handler checks do not establish rendered animation or layout behavior.
+
+Release 1.6.7 replaces AI-specific green styling with the approved neutral
+slate/steel-blue palette, including glow, status band and finite animations.
+EDA and AAP execution colours and the walkthrough layout remain unchanged.
+Browser-rendered colour balance remains unverified.

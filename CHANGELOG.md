@@ -88,6 +88,14 @@ templates, and the status page are still outstanding.
   stack. All three pages now make zero external requests, so they render
   identically on an audience phone with nothing but venue wifi.
 
+## [1.6.7] — 2026-11-12
+
+### Fixed
+
+- Quiet the central AI agent with the approved slate-grey palette and muted
+  steel-blue reasoning emphasis, including its glow, status band and diagnosis
+  strip. Preserve EDA matching, AAP execution colours and existing motion controls.
+
 ## [1.6.6] — 2026-11-12
 
 ### Fixed
