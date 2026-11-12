@@ -2,7 +2,7 @@
 
 **[Open the interactive AIOps visualization](https://kvegh.github.io/aiops-selfhealing-demo/)**
 
-Version: **1.6.7**. This static presenter walkthrough illustrates the existing
+Version: **1.6.8**. This static presenter walkthrough illustrates the existing
 missing-`zabbix-agent2` recovery scenario. It is separate from the live audience
 website and makes no infrastructure connections. All findings, status changes,
 and timing are simulated; a successful walkthrough is not live recovery proof.
@@ -202,3 +202,11 @@ Release 1.6.7 replaces AI-specific green styling with the approved neutral
 slate/steel-blue palette, including glow, status band and finite animations.
 EDA and AAP execution colours and the walkthrough layout remain unchanged.
 Browser-rendered colour balance remains unverified.
+
+Release 1.6.8 preserves the approved AI palette and adds a five-second pause
+between artifact upload and deployment in the existing Pages publish job.
+Two fresh 1.6.7 runs uploaded successfully but immediately found zero artifacts;
+later API reads found the uploaded files. The pause is a small mitigation for
+that observed metadata delay, with no additional job or dependency. Job reruns
+can leave duplicate named artifacts; after such a failure, use a fresh workflow
+run instead of rerunning a job that uploads the same named artifact again.

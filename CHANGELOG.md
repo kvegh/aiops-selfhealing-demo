@@ -88,6 +88,14 @@ templates, and the status page are still outstanding.
   stack. All three pages now make zero external requests, so they render
   identically on an audience phone with nothing but venue wifi.
 
+## [1.6.8] — 2026-11-12
+
+### Fixed
+
+- Allow uploaded artifact metadata five seconds to settle before the existing
+  Pages deployment action. Two fresh palette-release runs could not immediately
+  find their successfully uploaded artifact; the slate-grey AI palette is unchanged.
+
 ## [1.6.7] — 2026-11-12
 
 ### Fixed

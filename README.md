@@ -22,7 +22,9 @@ simulation; the walkthrough distinguishes AAP platform capabilities from the
 agent instructions and hardening still to do. See the
 [presenter, validation, and GitHub Pages guide](docs/12-interactive-recovery-walkthrough.md).
 [Open the published visualization](https://kvegh.github.io/aiops-selfhealing-demo/).
-GitHub Pages uses the included Actions workflow. Frontend release: **1.6.7**.
+GitHub Pages uses the included Actions workflow. Frontend release: **1.6.8**.
+Publication includes a five-second pause after upload because Pages artifact
+lookup was observed to lag behind successful uploads.
 The palette uses a slate-blue AAP header and pale blue platform with a thin red brand accent,
 blue MCP paths, a quiet slate-grey AI agent with muted steel-blue reasoning
 emphasis, teal AAP execution accents, and labeled failure/recovery states.
