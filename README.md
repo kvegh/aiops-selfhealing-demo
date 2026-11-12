@@ -22,7 +22,7 @@ simulation; the walkthrough distinguishes AAP platform capabilities from the
 agent instructions and hardening still to do. See the
 [presenter, validation, and GitHub Pages guide](docs/12-interactive-recovery-walkthrough.md).
 [Open the published visualization](https://kvegh.github.io/aiops-selfhealing-demo/).
-GitHub Pages uses the included Actions workflow. Frontend release: **1.6.5**.
+GitHub Pages uses the included Actions workflow. Frontend release: **1.6.6**.
 The palette uses a slate-blue AAP header and pale blue platform with a thin red brand accent,
 blue MCP paths, teal AI/execution accents, and labeled failure/recovery states.
 **Ansible Automation Platform** is the large, bold platform title, alongside
@@ -38,6 +38,9 @@ screens, the explanation sits beside a viewport-fitted architecture so the
 full AAP platform stays visible. Supporting
 evidence is available in **Technical detail**. Narrow or short windows retain
 natural scrolling to preserve readable labels.
+Rule matching and AI correlation use highlighted status labels and a brief
+component emphasis that settles into a persistent cue for presenter pauses.
+**Motion off** suppresses the animation while preserving the highlight.
 
 ## What this is
 

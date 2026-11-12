@@ -128,6 +128,15 @@ kbd{font-family:inherit;border:1px solid #d7e0e9;border-radius:3px;padding:1px 4
 .platform-node-title{fill:#173650;font-size:16px;font-weight:550}
 .platform-status{fill:#3c5871;font-size:12px}
 .platform-detail{fill:#4a657d;font-size:11px}
+/* Status-only steps need a visible cue even while the presenter pauses. */
+.status-highlight{fill:#d7f0e9;stroke:#2a8f83;stroke-width:1;opacity:0;pointer-events:none}
+.app[data-step="matched"] .eda-node .status-highlight,
+.app[data-step="reasoning"] .agent-node .status-highlight{opacity:1}
+.app[data-step="matched"] .eda-node>.node-surface,
+.app[data-step="reasoning"] .agent-node>.node-surface{fill:#edf8f5;stroke:#007b84;stroke-width:2.5;animation:status-focus .9s ease-out 1}
+.app[data-step="matched"] #eda-status,
+.app[data-step="reasoning"] #agent-status{fill:#005f5d;font-weight:700}
+@keyframes status-focus{from{stroke-width:5;stroke:#00a5a8}to{stroke-width:2.5;stroke:#007b84}}
 .platform-capability{font-size:12px;fill:#3e5f7b;letter-spacing:.3px}
 .template-surface{fill:#e3edf7;stroke:#a0bdd5}
 .template-name{fill:#173650;font-size:14px;font-weight:550}

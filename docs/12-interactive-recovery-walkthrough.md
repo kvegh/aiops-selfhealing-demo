@@ -2,7 +2,7 @@
 
 **[Open the interactive AIOps visualization](https://kvegh.github.io/aiops-selfhealing-demo/)**
 
-Version: **1.6.5**. This static presenter walkthrough illustrates the existing
+Version: **1.6.6**. This static presenter walkthrough illustrates the existing
 missing-`zabbix-agent2` recovery scenario. It is separate from the live audience
 website and makes no infrastructure connections. All findings, status changes,
 and timing are simulated; a successful walkthrough is not live recovery proof.
@@ -23,6 +23,13 @@ screens, the architecture scrolls sideways so its text remains legible.
 **Technical detail** opens relevant Ansible/EDA excerpts or illustrations, the
 current diagnostic evidence, and links to complete repository source. Escape
 closes the dialog.
+
+At **Rule condition matched** and **Correlating three sources**, a tinted
+status band, bold label and stronger component outline draw attention to the
+transition. A single 0.9-second border emphasis settles into that static cue.
+The cue stays visible while paused; **Motion off** suppresses animation, and
+reduced-motion preferences keep their existing motion-off default. Leaving
+the relevant step removes its cue; revisiting the step replays the emphasis.
 
 On viewports at least 1100 CSS pixels wide and 650 high, the current-step
 explanation sits above the workflow in the left column. **Previous** and
@@ -183,3 +190,7 @@ laptop/desktop fit and real-browser accessibility remain unverified.
 Release 1.6.5 keeps that layout and palette, and restores navigation to the
 right-hand architecture header, immediately before the motion control, following
 the user’s manual feedback. Browser verification remains unperformed.
+
+Release 1.6.6 adds the two status highlights with SVG/CSS and existing step
+state, without changing runtime JavaScript or adding dependencies. Existing
+model/handler checks do not establish rendered animation or layout behavior.

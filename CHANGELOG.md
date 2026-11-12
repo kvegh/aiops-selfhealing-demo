@@ -88,6 +88,14 @@ templates, and the status page are still outstanding.
   stack. All three pages now make zero external requests, so they render
   identically on an audience phone with nothing but venue wifi.
 
+## [1.6.6] — 2026-11-12
+
+### Fixed
+
+- Draw attention to Rule condition matched and Correlating three sources with
+  a highlighted status band, bold label and brief component-border emphasis.
+  Keep a static cue while paused and respect the existing motion controls.
+
 ## [1.6.5] — 2026-11-12
 
 ### Fixed
