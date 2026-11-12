@@ -1485,3 +1485,39 @@ troubleshooting guidance. Use a fresh workflow run after duplicate uploads rathe
 than rerunning a job that uploads the same artifact name again.
 
 Implementation commit: `150dcc4`.
+
+
+## Add a parallel projector presentation design
+
+The user requested a second design for the same content, with an immediate
+Enable presentation mode / Exit presentation mode switch, and explicitly asked
+to apply the researched presentation guidance. Release 1.7.0 adds a wider,
+simpler SVG drawing and scoped projector styling, driven by the same existing
+17-step scenario and application state. Switching keeps the current step, URL
+fragment, job/monitoring state and motion choice. Restart keeps the selected
+view. The established drawing remains available, with the added toggle and
+necessary narrow-header wrapping.
+
+The projector design removes texture and the detailed step list, enlarges the
+current title/caption and key functional labels, strengthens text/route contrast,
+uses thicker connectors and gives AAP strong presence while AI stays neutral
+slate. Two-line status wrapping preserves complete findings. Technical detail
+retains the full explanation, evidence and source, with enlarged projector-dialog
+text. Motion remains finite, presenter-paced and suppressible. The mode never
+requests fullscreen, browser storage, new infrastructure or external data.
+
+Independent implementation/source review covered geometry, palette and layout;
+a separate test stream added view-switch and shared-state regressions. All17
+local checks passed, including both-view parity through the complete story and
+word preservation during synthetic wrapping. Source checks validated all14 route
+endpoints, no unrelated-node crossings, AAP hierarchy, HTML/ARIA and explicit
+Pages staging. Key text contrast measures7.16:1–12.50:1. No source-level blocker
+was found. These are source/fixture results: native glyph fit, browser layout
+and physical projector legibility remain unverified. SVG text scales with the
+available space, so uniform minimum projected font size is not claimed.
+
+The Pages allowlist includes only the two new local runtime assets alongside
+the existing frontend, and keeps the five-second artifact-settling pause. No
+browser, dependency, new CI job or automation/infrastructure change was added.
+
+Implementation commit: `0ed10dc`.
