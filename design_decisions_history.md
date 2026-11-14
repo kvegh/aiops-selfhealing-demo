@@ -1,5 +1,22 @@
 # Design decisions history
 
+## Verify the original workflow after removing the turn cap — 2026-11-14
+
+Implementation `53a86be`, published with documentation at `368e397`, passed a
+normal live run of the original Claude workflow. Claude automatically selected
+and ran the existing agent-repair template, completed all four phases and
+returned successfully. Independent native acceptance confirmed the intended
+service active, fresh monitoring and recovery of the original trigger, with
+zero failed or unreachable events in the successful parent. The separate
+website EDA restore and rearm flow also passed. Test activations were stopped
+after the checks.
+
+No handoff or replacement verification architecture was applied. Earlier
+failures remain historical evidence. This documentation checkpoint distinguishes
+recovered functional acceptance from the owner's still-required uninterrupted
+fresh installation and both demo runs. Exact private identities and job records
+are retained only in the companion repository's encrypted evidence.
+
 ## Remove the turn cap at the owner's direction — 2026-11-14
 
 Implementation `53a86be` (deployment version 1.6.12) removes `--max-turns`

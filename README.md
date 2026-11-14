@@ -36,6 +36,24 @@ Additional focused offline validation runs with
 selected Ansible runtime; passing it does not establish a successful live
 deployment or monitoring recovery.
 
+## Verified live recovery checkpoint
+
+On 2026-11-14, normal Core 2.20 jobs verified the website outage, automatic
+EDA restore and automatic button rearming. A separate controlled agent-service
+outage then reached **Run Claude to analyse and fix**, which automatically
+launched **Deploy Zabbix Agent** and completed its original investigation,
+repair, verification and report. Independent native checks confirmed the
+selected service active, fresh agent data and the original trigger recovered;
+the successful parent had no failed or unreachable task events. Both test
+activations were stopped after acceptance.
+
+This result verifies recovered functional acceptance. Earlier installation and
+turn-cap failures remain in the history; it does not establish an uninterrupted
+fresh installation. The owner's next acceptance target remains one complete
+fresh bare-metal, AAP, Windows and AIOps deployment with both demos passing and
+no failed stage. Detailed instance and job evidence stays in the private
+companion repository's existing encrypted verification file.
+
 ## Interactive recovery walkthrough
 
 **AAP is the Trusted Execution Layer.** Explore one presenter-paced recovery

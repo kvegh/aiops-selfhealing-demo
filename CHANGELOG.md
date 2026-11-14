@@ -14,6 +14,14 @@ archive during the repository split and is not part of this timeline.
 
 ## [Unreleased] — towards 2.0.0
 
+### Live recovery verification
+
+- Verified the original complete Claude recovery workflow after removing the
+  unrequested turn cap: automatic AAP repair, model verification and independent
+  fresh monitoring checks passed. The website EDA restore and rearm flow also
+  passed. These recovered functional results do not establish an uninterrupted
+  fresh installation; earlier failures remain recorded in encrypted evidence.
+
 ### Runtime compatibility fixes
 
 - Replace controller-side DNS-library lookups with the base RHEL host's native
