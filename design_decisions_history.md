@@ -1,5 +1,24 @@
 # Design decisions history
 
+## Preserve optional null Google account metadata — 2026-11-14
+
+Implementation `76b86f0` (deployment version 1.6.11) corrects the selected
+Vertex preflight after a real deployment stopped on optional null `account`
+metadata. Google authorized-user credentials require the client and refresh
+fields; account metadata is optional. Our existing validator incorrectly
+required every supplied ADC value to be a string. Accept null only for that
+optional field and preserve the complete ADC. Required authentication and quota
+fields, approved provider/endpoints, ownership and conflict checks remain in
+force. No credential, provider, permission or deployment architecture changes.
+
+Eight focused Vertex/workspace tests passed in the cached Core 2.20.10 EE,
+including real native preflight with null metadata, idempotent provisioning,
+conflict/race refusal and workspace protections. The empty-string test fixture
+also now retains an actual empty string through Ansible's loader. A protected
+read-only check of the failed job's saved runtime passed the corrected validator
+and confirmed both the complete ADC and input remained equal to their original
+values. The live deployment retry and functional demo acceptance are separate.
+
 ## Add the supplied visualization preview to the README — 2026-11-14
 
 Recorded 2026-11-14 07:27 UTC; the exact user-decision time was not captured.
