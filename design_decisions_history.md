@@ -1,5 +1,23 @@
 # Design decisions history
 
+## Preserve literal nested runtime data on Core 2.20 — 2026-11-14
+
+Implementation `c7531e577e2449f5bc67100baa20a68ba4e8d4e8` (deployment version 1.6.9) fixes runtime loading
+when selected settings contain a nested list. The native Vault loader supplies
+Ansible lazy lists; recursively calling `wrap_var` tried to reconstruct their
+internal type, which Ansible prohibits. Copying mappings and lists into ordinary
+data containers and preserving literal scalar values keeps credential text from
+becoming another template. Namespace, reviewed-field and schema checks remain
+unchanged, as do Vault credentials, ciphertext transport and temporary cleanup.
+
+A native encrypted fixture with a nested activation-key list reproduced the
+exact failure before the fix. All ten runtime-loader tests then passed on actual
+Core 2.20, covering literal canaries, invalid settings and cleanup. The same
+protected saved deployment input also passed native Vault loading and all
+selected bindings offline. No credential or encrypted configuration change was
+needed. This establishes the loader repair; live website deployment and complete
+monitoring/self-healing acceptance require their normal deployment jobs.
+
 ## Validate the normal bounded agent workflow without changing its budget — 2026-11-10
 
 The later v17 event-driven acceptance test passed on source
