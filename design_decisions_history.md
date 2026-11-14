@@ -1,5 +1,28 @@
 # Design decisions history
 
+## Remove the turn cap at the owner's direction — 2026-11-14
+
+Implementation `53a86be` (deployment version 1.6.12) removes `--max-turns`
+entirely from the existing agent invocation. The owner explicitly stated that
+the previous turn cap was not their decision and instructed its removal after
+the parent run exhausted it despite a successful native repair and independently
+confirmed monitoring recovery. The earlier 24/48-turn limits were implementation
+choices and are not current requirements.
+
+Claude retains the original investigation, AAP repair, verification and incident
+report sequence. The proposed handoff of Phase 4 verification was not approved,
+published or applied. The existing runtime timeout, native permissions, saved
+repair/target checks, independent acceptance checks and maintained workspace
+instructions remain unchanged. No encrypted CaC field defines this CLI flag;
+the existing project source update supplies the changed launcher.
+
+Twelve focused tests passed in the cached Core 2.20.10 EE with the declared
+Controller collection 4.8.11, including actual native argument rendering without
+a turn cap, refusal of failed children and stale monitoring, identity/TLS checks
+and protected failure output. Syntax and whitespace checks passed. The synthetic
+failure fixture keeps private canaries outside task-source excerpts. These are
+source checks; the original full live workflow still requires its actual rerun.
+
 ## Preserve optional null Google account metadata — 2026-11-14
 
 Implementation `76b86f0` (deployment version 1.6.11) corrects the selected
