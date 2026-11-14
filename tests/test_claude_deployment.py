@@ -42,7 +42,9 @@ def literal_values(value):
         return {str(key): literal_values(item) for key, item in value.items()}
     if isinstance(value, list):
         return [literal_values(item) for item in value]
-    return LiteralText(value) if isinstance(value, str) else value
+    # Ansible loads an explicitly tagged empty scalar as null. Empty strings
+    # contain no template expression and need no synthetic unsafe marker.
+    return LiteralText(value) if isinstance(value, str) and value else value
 
 
 def release():
@@ -151,6 +153,37 @@ class NativeDownloadTests(unittest.TestCase):
 
 
 class VertexAndWorkspaceTests(unittest.TestCase):
+    def test_optional_adc_account_can_be_null_without_changing_credentials(self):
+        data = vertex()
+        data['adc']['account'] = None
+        before = copy.deepcopy(data)
+        result = FILTERS.vertex(data, '/home/synthetic')
+        self.assertIsNone(result['adc']['account'])
+        self.assertEqual(result['adc'], before['adc'])
+        self.assertEqual(data, before)
+        for field, invalid in (('account', 42), ('account', False), ('account', []),
+                               ('client_secret', None), ('refresh_token', None), ('quota_project_id', None)):
+            changed = copy.deepcopy(data)
+            changed['adc'][field] = invalid
+            with self.subTest(field=field, value=invalid), self.assertRaises(AnsibleFilterError):
+                FILTERS.vertex(changed, '/home/synthetic')
+
+    def test_native_vertex_preflight_preserves_nullable_account_and_protected_values(self):
+        first = yaml.safe_load((ROOT / 'playbooks/tasks/demo_claude_vertex_preflight.yml').read_text())[0]
+        data = vertex()
+        data['adc']['account'] = None
+        tasks = [first, {'ansible.builtin.assert': {'that': [
+            'demo_claude_vertex.adc.account is none',
+            'demo_claude_vertex.adc.client_secret == demo_claude_vertex_auth.adc.client_secret',
+            'demo_claude_vertex.adc.refresh_token == demo_claude_vertex_auth.adc.refresh_token']}, 'no_log': True}]
+        for native in ('false', 'true'):
+            with tempfile.TemporaryDirectory(prefix='vertex-null-account-') as temporary:
+                variables = {'demo_claude_vertex_auth': data, 'demo_mcp_user': {'home': '/home/synthetic'}}
+                result = self.native_run(Path(temporary), tasks, variables, native)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertNotIn(data['adc']['client_secret'], result.stdout + result.stderr)
+                self.assertNotIn(data['adc']['refresh_token'], result.stdout + result.stderr)
+
     def test_vertex_settings_preserve_unrelated_configuration(self):
         config = FILTERS.vertex(vertex(), "/home/synthetic")
         old = {"theme": "preserve", "env": {"UNRELATED": "preserve"}, "hooks": {"keep": []}}

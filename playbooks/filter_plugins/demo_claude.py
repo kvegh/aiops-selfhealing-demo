@@ -63,7 +63,8 @@ def vertex(value, home):
     allowed = {"type", "client_id", "client_secret", "refresh_token", "quota_project_id",
                "universe_domain", "account", "token_uri"}
     require(isinstance(adc, dict) and not set(adc) - allowed and adc.get("type") == "authorized_user"
-            and all(isinstance(item, str) for item in adc.values())
+            and all(isinstance(item, str) or (key == "account" and item is None)
+                    for key, item in adc.items())
             and all(isinstance(adc.get(key), str) and adc[key]
                     for key in ("client_id", "client_secret", "refresh_token", "quota_project_id"))
             and adc.get("universe_domain", "googleapis.com") == "googleapis.com"

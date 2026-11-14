@@ -264,7 +264,7 @@ selected instance's verified hypervisor, testserver and TRA. Importing it
 creates AAP configuration and launches no application or EDA activation.
 Secret-dependent jobs receive a whole-file Vault ciphertext string and stop
 before managed host, DNS or API writes when required settings are missing.
-Deployment version **1.6.10** is documented in [CHANGELOG.md](CHANGELOG.md).
+Deployment version **1.6.11** is documented in [CHANGELOG.md](CHANGELOG.md).
 Failed MCP builds now retain protected stdout/stderr in the runtime user's
 private server `logs/build.log`, then fail and remove the temporary checkout.
 The observed image-build failure is diagnosed: enforcing SELinux denied
@@ -411,7 +411,9 @@ Insights configuration. See the [MCP prerequisites](docs/10-mcp-deployment.md#ta
 **Deploy Claude and MCP Servers** runs `playbooks/deploy_claude.yml`. It installs
 the reviewed native Claude release through the execution environment, provisions
 only the explicitly approved encrypted Vertex authentication and reuses both MCP
-playbooks below. It verifies the actual job user's command/version, preserves
+playbooks below. The optional Google ADC `account` metadata may be null; the
+installer preserves the complete ADC and still requires its authentication and
+quota-project fields. It verifies the actual job user's command/version, preserves
 existing workspace instructions and unrelated settings, and performs no model
 request or activation. See the [Claude deployment procedure](docs/14-claude-deployment.md)
 for ownership/conflict checks, the shared workspace override and the separate

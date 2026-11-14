@@ -111,6 +111,19 @@ templates, and the status page are still outstanding.
 - Interaction regressions for reversible switching and both-view parity through
   the complete recovery story; explicit Pages staging for the two local assets.
 
+## [1.6.11] — 2026-11-14
+
+### Fixed
+
+- Accept null optional `account` metadata in the existing approved Google
+  authorized-user ADC. Preserve its original contents, required authentication
+  fields, quota-project requirement and provider/conflict checks. A failed
+  deployment preflight exposed the overly strict string-only check; this fix
+  does not change credentials or select another authentication provider.
+- Exercise nullable metadata through the real Ansible preflight and retain
+  rejection of invalid optional values and null required fields. Correct the
+  synthetic empty-string fixture so Ansible loads it as an empty string.
+
 ## [1.6.10] — 2026-11-14
 
 ### Fixed
