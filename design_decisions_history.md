@@ -1,5 +1,20 @@
 # Design decisions history
 
+## Add the supplied visualization preview to the README — 2026-11-14
+
+Recorded 2026-11-14 07:27 UTC; the exact user-decision time was not captured.
+The owner requested the supplied AIOps visualization screenshot in this project's
+README as well as the personal project page. Keep the exact original PNG bytes
+in `docs/screenshots/visualization.png` and show a modest 640-pixel-wide preview
+beside the existing walkthrough introduction. Its click destination is the
+supported `#step=1` URL, so the walkthrough starts from the beginning even though
+the screenshot depicts a later step.
+
+This is a documentation/image addition only. Visualization source, deployment
+automation, version metadata and publication workflows are unchanged. The image
+is reused without resizing or regeneration; no tool or dependency is installed.
+Implementation commit: pending the coordinating agent's commit and publication.
+
 ## Manage Zabbix as an API-only appliance under network isolation — 2026-11-14
 
 Implementation `b13e240260ffce761d945321b9fb9f22aeab4a58` (1.6.10) removes

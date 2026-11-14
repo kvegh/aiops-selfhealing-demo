@@ -2,6 +2,12 @@
 
 **[Open the interactive AIOps visualization](https://kvegh.github.io/aiops-selfhealing-demo/)**
 
+<a href="https://kvegh.github.io/aiops-selfhealing-demo/#step=1">
+  <img src="docs/screenshots/visualization.png" alt="AIOps visualization showing monitoring, AI investigation and AAP remediation" width="640">
+</a>
+
+Click the preview to start the walkthrough from its first step.
+
 AI-driven incident remediation for enterprise infrastructure — with the blast radius bounded by architecture, not by prompting.
 
 > **This is a functionality demo, not a production reference architecture.** No attempt is made to follow least-privilege, security hardening, or production-grade guidelines. That is intentional — the goal is to demonstrate the architecture and the self-healing flow, not to provide a deployable solution.
