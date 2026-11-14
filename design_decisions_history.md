@@ -1592,3 +1592,13 @@ continuing to reject Booleans and invalid values. Nine focused tests passed in
 the actual unmodified Core 2.20.10 EE; a read-only real RHEL DNS batch validated
 the output format. Existing local regression suites passed. Full fresh-target
 AAP deployment remains a separate acceptance step.
+
+
+### README preview implementation — 2026-11-14
+
+Implementation `b6edddb54f95f0ce216178b591185ed6eedbaca9` adds the supplied
+README screenshot and first-step link. The public README link and local image
+path were independently read back through GitHub; image Git blob
+`abfd9186a06b1809f9a48475ce5577f01a458cd2` matches the original 259963-byte PNG.
+No runtime code or visualization asset changed; this establishes documentation
+publication, not a new live remediation or browser-interaction result.
