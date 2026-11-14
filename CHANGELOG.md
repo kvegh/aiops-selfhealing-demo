@@ -111,6 +111,18 @@ templates, and the status page are still outstanding.
 - Interaction regressions for reversible switching and both-view parity through
   the complete recovery story; explicit Pages staging for the two local assets.
 
+## [1.6.12] — 2026-11-14
+
+### Fixed
+
+- Remove the unrequested `--max-turns` limit entirely at the owner's explicit
+  direction. Claude retains its complete verification and reporting workflow;
+  the existing runtime timeout, native permissions and independent acceptance
+  checks remain. No verification handoff is introduced.
+- Check the actual native Ansible argument list for absence of the turn cap.
+  Keep synthetic private failure inputs outside source excerpts in the test
+  fixture. Live acceptance remains a separate controlled rehearsal.
+
 ## [1.6.11] — 2026-11-14
 
 ### Fixed

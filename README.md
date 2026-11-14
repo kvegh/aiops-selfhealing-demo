@@ -264,7 +264,7 @@ selected instance's verified hypervisor, testserver and TRA. Importing it
 creates AAP configuration and launches no application or EDA activation.
 Secret-dependent jobs receive a whole-file Vault ciphertext string and stop
 before managed host, DNS or API writes when required settings are missing.
-Deployment version **1.6.11** is documented in [CHANGELOG.md](CHANGELOG.md).
+Deployment version **1.6.12** is documented in [CHANGELOG.md](CHANGELOG.md).
 Failed MCP builds now retain protected stdout/stderr in the runtime user's
 private server `logs/build.log`, then fail and remove the temporary checkout.
 The observed image-build failure is diagnosed: enforcing SELinux denied
@@ -442,10 +442,12 @@ includes call counts and whether a result returned or reported a tool error;
 it does not establish that the requested operation succeeded. Omitted calls and
 malformed records are counted. Arguments, results, model prose and credentials
 remain protected; no raw transcript is stored or displayed.
-The invocation allows 48 turns within the unchanged 600-second hard timeout.
-An earlier invocation exhausted that turn limit after its repair succeeded;
-its cause remains unproved. The diagnostics patch does not establish a fix for
-that failure.
+The invocation has no configured turn cap. The owner rejected the previously
+introduced limit after it caused the parent run to fail despite a successful
+repair. The existing 600-second hard timeout remains. Claude retains its full
+investigation, repair verification and incident-report workflow; the native
+acceptance checks still run afterward. Source tests do not establish a passed
+live rehearsal.
 
 The later normal event-driven rehearsal passed on the v17 demo instance using
 tested source `41166495d72264e882bafe9ec2721649b0d70d9e` (diagnostics implementation

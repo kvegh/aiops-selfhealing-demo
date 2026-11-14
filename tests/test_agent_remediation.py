@@ -80,7 +80,7 @@ class AgentTests(unittest.TestCase):
         play=yaml.safe_load((ROOT/'playbooks/run_claude_analyse_fix.yml').read_text())[0]
         tasks=play['tasks'][0]['block'];run=next(t for t in tasks if t['name']=='Run the bounded agent with native permissions')
         text=str(run)
-        self.assertNotIn('dangerously-skip-permissions',text);self.assertIn('--max-turns',text);self.assertIn('--strict-mcp-config',text)
+        self.assertNotIn('dangerously-skip-permissions',text);self.assertNotIn('--max-turns',text);self.assertIn('--strict-mcp-config',text)
         self.assertNotIn('demo_aap_mcp.token',text);self.assertNotIn('Authorization',text)
         self.assertIn('NODE_EXTRA_CA_CERTS',run['environment']);self.assertEqual(run['timeout'],630)
         hook=next(t for t in tasks if t['name']=='Add the deny-only hook without editing saved settings')
@@ -296,8 +296,11 @@ class NativeArgvTests(unittest.TestCase):
                     'demo_agent_allowed_tools':play['vars']['demo_agent_allowed_tools'],
                     'claude_output':{'rc':1,'stdout':json.dumps({'type':'result','subtype':subtype,
                         'result':'synthetic-secret-canary'}),'stderr':'synthetic-secret-canary'}}
+                # Keep synthetic private data out of source excerpts attached
+                # to an intentional task failure by Core 2.20's formatter.
+                private_variables=folder/'vars.json';private_variables.write_text(json.dumps(variables));private_variables.chmod(0o600)
                 fixture=folder/'play.yml';fixture.write_text(yaml.safe_dump([{'hosts':'localhost','connection':'local',
-                    'gather_facts':False,'vars':variables,'tasks':[task]}],sort_keys=False))
+                    'gather_facts':False,'vars_files':[str(private_variables)],'tasks':[task]}],sort_keys=False))
                 env=dict(os.environ,ANSIBLE_LOCAL_TEMP=str(folder/'local'),ANSIBLE_NOCOLOR='1',
                     ANSIBLE_FILTER_PLUGINS=str(ROOT/'playbooks/filter_plugins'))
                 result=subprocess.run([sys.executable,'-m','ansible.cli.playbook','-i','localhost,',str(fixture)],
@@ -322,7 +325,7 @@ class NativeArgvTests(unittest.TestCase):
                 fixture=folder/'play.yml';fixture.write_text(yaml.safe_dump([{'hosts':'localhost','connection':'local','gather_facts':False,'vars':variables,
                     'tasks':[{'name':'Check actual typed arguments without executing the model','ansible.builtin.assert':{'that':[
                         "argument_vector | type_debug == 'list'","'--permission-mode' in argument_vector", "'--dangerously-skip-permissions' not in argument_vector",
-                        "argument_vector[argument_vector.index('--max-turns') + 1] == '48'",
+                        "'--max-turns' not in argument_vector",
                         "argument_vector[3] == '600'",
                         "'synthetic-secret-canary' not in (argument_vector | join(' '))",
                         "workspace_expression.path == '/home/synthetic/claude-wd'"]}}]}],sort_keys=False))
