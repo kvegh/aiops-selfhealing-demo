@@ -73,7 +73,8 @@ class RuntimeSchemaTests(unittest.TestCase):
 
 
 class NativeRuntimeExecutionTests(unittest.TestCase):
-    def run_loader(self, *, wrong_instance=False, unknown_key=False, wrong_password=False, controller_unsafe=False):
+    def run_loader(self, *, wrong_instance=False, unknown_key=False, wrong_password=False, controller_unsafe=False,
+                   nested_sequence=False):
         with tempfile.TemporaryDirectory(prefix="aiops-runtime-fixture-") as temporary:
             folder = Path(temporary)
             secret_text = "synthetic-protected-{{ forbidden_expression }}"
@@ -81,6 +82,11 @@ class NativeRuntimeExecutionTests(unittest.TestCase):
                 "url": "https://aap27.v07.example.invalid/eda-event-streams/api/eda/v1/external_event_stream/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/post/",
                 "username": "synthetic-user", "password": secret_text,
             }}
+            if nested_sequence:
+                settings["demo_mcp_subscription"] = {
+                    "instance_name": "aap27-test-7", "organization": "synthetic",
+                    "activation_keys": [secret_text],
+                }
             if unknown_key: settings["ansible_host"] = "unreviewed.invalid"
             document = {"schema_version": 1, "instances": {"aap27-test-7": settings}}
             vault = VaultLib([("default", VaultSecret(b"synthetic-test-password"))])
@@ -105,6 +111,10 @@ class NativeRuntimeExecutionTests(unittest.TestCase):
                              "demo_zabbix_event_stream.password | hash('sha256') == '" + hashlib.sha256(secret_text.encode()).hexdigest() + "'",
                          ], "quiet": True}, "no_log": True},
                      ]}]
+            if nested_sequence:
+                play[0]["tasks"][-1]["ansible.builtin.assert"]["that"].append(
+                    "demo_mcp_subscription.activation_keys[0] | hash('sha256') == '"
+                    + hashlib.sha256(secret_text.encode()).hexdigest() + "'")
             playbook = folder / "play.yml"; playbook.write_text(yaml.safe_dump(play, sort_keys=False))
             extra = folder / "extra.json"; values = {"demo_runtime_settings_vault": ciphertext}
             if controller_unsafe:
@@ -122,6 +132,10 @@ class NativeRuntimeExecutionTests(unittest.TestCase):
 
     def test_real_json_extra_vars_preserve_private_ciphertext_and_literal_secret(self):
         result = self.run_loader(); self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_native_nested_sequences_keep_literal_values_without_constructing_lazy_containers(self):
+        result = self.run_loader(nested_sequence=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     def test_controller_unsafe_extra_vars_use_the_same_native_loader(self):
         result = self.run_loader(controller_unsafe=True); self.assertEqual(result.returncode, 0, result.stdout + result.stderr)

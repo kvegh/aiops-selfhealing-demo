@@ -19,7 +19,13 @@ monitoring frontend, with ten-second delays; these jobs install no prerequisites
 
 Runtime validation accepts native tagged integers while continuing to reject
 booleans as schema versions, account IDs, resource IDs or binary sizes. Literal
-credential values remain data. Focused offline validation runs with
+credential values remain data. The selected runtime loader copies nested
+mappings and lists into ordinary data containers before preserving literal
+scalars, so it does not reconstruct Core 2.20's internal lazy lists. Its native
+Vault-loading regression includes a nested activation-key list and checks
+literal values, rejected inputs and temporary-file cleanup:
+`python -m unittest discover -s tests -p test_runtime_settings.py -v`.
+Additional focused offline validation runs with
 `python -m unittest discover -s tests -p test_core220_runtime.py -v` under the
 selected Ansible runtime; passing it does not establish a successful live
 deployment or monitoring recovery.
@@ -252,7 +258,7 @@ selected instance's verified hypervisor, testserver and TRA. Importing it
 creates AAP configuration and launches no application or EDA activation.
 Secret-dependent jobs receive a whole-file Vault ciphertext string and stop
 before managed host, DNS or API writes when required settings are missing.
-Deployment release **1.6.3** is documented in [CHANGELOG.md](CHANGELOG.md).
+Deployment version **1.6.9** is documented in [CHANGELOG.md](CHANGELOG.md).
 Failed MCP builds now retain protected stdout/stderr in the runtime user's
 private server `logs/build.log`, then fail and remove the temporary checkout.
 The observed image-build failure is diagnosed: enforcing SELinux denied

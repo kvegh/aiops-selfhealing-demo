@@ -111,6 +111,16 @@ templates, and the status page are still outstanding.
 - Interaction regressions for reversible switching and both-view parity through
   the complete recovery story; explicit Pages staging for the two local assets.
 
+## [1.6.9] — 2026-11-14
+
+### Fixed
+
+- Preserve literal nested runtime settings without reconstructing Ansible's
+  internal lazy lists. A nested activation-key list previously stopped website
+  startup after successful Vault decryption. The ten native runtime-loader
+  tests and the same saved encrypted deployment input pass on Core 2.20.
+  Live website and monitoring acceptance remain separate.
+
 ## [1.6.8] — 2026-11-12
 
 ### Fixed

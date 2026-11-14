@@ -24,6 +24,16 @@ ALLOWED_SETTINGS = {
 }
 
 
+def _literal_data(value):
+    # Core 2.20 can pass lazy list subclasses to filters. wrap_var rebuilds
+    # sequences with type(value), which those internal containers prohibit.
+    if isinstance(value, dict):
+        return {wrap_var(key): _literal_data(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_literal_data(item) for item in value]
+    return wrap_var(value)
+
+
 def selected_settings(value, instance):
     message = "Runtime settings must contain only reviewed inputs for the selected AAP instance."
     if not isinstance(instance, str) or not re.fullmatch(r"aap27-test-[1-9][0-9]*", instance):
@@ -41,7 +51,7 @@ def selected_settings(value, instance):
             raise AnsibleFilterError(message + " Unreviewed namespace or setting name.")
     # Settings are data. In particular, credential text must never become a
     # second Jinja template after the native Vault loader decrypts it.
-    return wrap_var(dict(value["instances"][instance]))
+    return _literal_data(value["instances"][instance])
 
 
 class FilterModule:
