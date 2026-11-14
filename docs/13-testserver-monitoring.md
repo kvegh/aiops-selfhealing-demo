@@ -20,11 +20,12 @@ the repository alone does not change AAP or Zabbix.
 
 Before interrupting existing monitoring, deployment verifies the selected
 testserver's actual domain UUID, disk, MAC, network and assigned DHCP address.
-It queries that private address from the pinned monitoring VM: `agent.ping` must
-return 1, the hostname must match the selected short name or FQDN, and the minimal
-guest must have no Apache binary. A mismatch stops before the monitoring service
-is stopped. A host requiring Apache monitoring needs a separately reviewed check
-selection rather than silently applying this minimal-guest policy.
+The AAP job configures monitoring through the appliance's private API; it does
+not run `zabbix_get`, shell commands or Ansible inside the appliance. The selected
+native VM and DHCP identity bind the monitoring interface to the correct guest.
+Fresh API history for agent ping, uptime and ICMP must pass before completion.
+A host requiring Apache monitoring needs a separately reviewed check selection
+rather than silently applying this minimal-guest policy.
 
 The inherited **Linux by Zabbix agent** and **ICMP Ping** templates provide the
 appropriate checks. The copied **Apache by HTTP** items, triggers and discovery
@@ -42,7 +43,8 @@ the same records and desired states, including the disabled Apache checks.
 
 ## Completion and event delivery
 
-After starting monitoring, deployment reads back the check ownership and states,
+After enabling the selected monitoring checks through the API, deployment reads
+back the check ownership and states,
 then waits for fresh numeric history from this guest's agent ping, uptime and
 ICMP ping. A copied historical success cannot satisfy this check. The existing
 trusted-HTTPS frontend and selected website action checks still run; only the
