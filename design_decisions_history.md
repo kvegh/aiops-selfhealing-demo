@@ -1,5 +1,28 @@
 # Design decisions history
 
+## Manage Zabbix as an API-only appliance under network isolation — 2026-11-14
+
+Implementation `b13e240260ffce761d945321b9fb9f22aeab4a58` (1.6.10) removes
+connections and command execution over SSH inside the appliance. The owner
+requires appliance management through its private API; hypervisor VM lifecycle
+and reverse-proxy management remain in their existing playbooks. Native domain,
+disk, MAC, network and lease checks plus successful API authentication establish
+ownership. Source inventory retains a disabled metadata-only appliance row.
+
+The owner selected network isolation before boot instead of a separately
+prepared appliance baseline. Existing enforced firewall policy blocks Internet
+forwarding, and the deployment refuses a selected appliance with a release or
+HTTP/HTTPS exception. Inherited monitoring and notifications are disabled through
+the API; only the selected demo is configured. Internet forwarding remains
+blocked afterward. Original saved images and protected authentication material
+are preserved; offline account/key/sudoers injection and service masks are removed.
+
+Twenty-one focused tests passed in the cached Core 2.20 execution environment,
+including the real-Ansible pre-boot guard, native firewall caller/failure cases,
+tagged runtime values, API reconfiguration and CaC publication. Syntax and
+whitespace checks passed. These are source regression results; correction of an
+existing older clone and complete live demo acceptance remain separate.
+
 ## Preserve literal nested runtime data on Core 2.20 — 2026-11-14
 
 Implementation `c7531e577e2449f5bc67100baa20a68ba4e8d4e8` (deployment version 1.6.9) fixes runtime loading
