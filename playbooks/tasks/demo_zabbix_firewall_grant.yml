@@ -44,14 +44,13 @@
           - demo_zabbix_deployment.firewall.guest.instance_number | int == demo_zabbix_config.instance_number
           - demo_zabbix_deployment.firewall.guest.vm_name == demo_zabbix_config.vm_name
           - demo_zabbix_deployment.firewall.guest.hypervisor_machine_id == demo_zabbix_config.hypervisor.machine_id
-          - demo_zabbix_deployment.firewall.guest.machine_id == demo_zabbix_guest_machine_id.stdout | trim
+          - demo_zabbix_deployment.firewall.guest.api_version == demo_zabbix_authenticated_api.version
           - demo_zabbix_deployment.firewall.guest.uuid == demo_zabbix_guest_record.uuid
           - demo_zabbix_deployment.firewall.guest.disk == demo_zabbix_config.disk
           - demo_zabbix_deployment.firewall.guest.network == demo_zabbix_config.vm_network
           - demo_zabbix_deployment.firewall.guest.bridge == demo_zabbix_network.bridge
           - demo_zabbix_deployment.firewall.guest.mac == demo_zabbix_guest_record.mac
           - demo_zabbix_deployment.firewall.guest.address == demo_zabbix_guest_ip
-          - demo_zabbix_deployment.firewall.guest.host_keys == demo_zabbix_guest_record.guest_host_keys
           - demo_zabbix_deployment.firewall.guest.source_sha256 == demo_zabbix_config.source_image.sha256
           - >-
             (item.stdout | demo_zabbix_domain_record(demo_zabbix_config)).uuid ==

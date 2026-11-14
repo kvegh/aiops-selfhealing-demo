@@ -33,20 +33,15 @@ def configuration(value):
             'Supply the verified saved monitoring image and its SHA-256.')
     require(re.fullmatch(r'[A-Za-z0-9_-]+', value.get('vm_network', '')),
             'Choose the isolated libvirt network explicitly.')
-    user = value.get('guest_user', '')
-    require(re.fullmatch(r'[a-z_][a-z0-9_-]*', user) and user != 'root',
-            'Supply the cloned guest non-root management account.')
-    key = value.get('guest_authorized_public_key', '')
-    require(isinstance(key, str) and len(key.split()) == 2,
-            'Supply the public counterpart of the attached Machine key.')
-    website.website_configuration(dict(value, hypervisor=dict(value['hypervisor'], host_keys=[key])))
+    require(not {'guest_user', 'guest_authorized_public_key'}.intersection(value),
+            'Remove obsolete appliance SSH settings; configure Zabbix through its API.')
     version = f"v{result['instance_number']:02d}"
     result.update(hostname=f"zabbix.{version}.{result['zone']}", record_name=f'zabbix.{version}',
                   website_hostname=f"redhat.{version}.{result['zone']}", version=version,
                   vm_name=f'zabbix-{version}', disk=f'/opt/vms/zabbix-{version}.disk.qcow2',
                   vhost_file=f'/etc/nginx/conf.d/demo-zabbix-{version}.conf',
                   auth_file=f'/etc/nginx/demo-zabbix-{version}.htpasswd', source_image=copy.deepcopy(source),
-                  vm_network=value['vm_network'], guest_user=user, guest_authorized_public_key=key,
+                  vm_network=value['vm_network'],
                   memory_mb=4096, vcpus=2)
     result['testserver'] = guests.guest(result, value.get('testserver'), 'testserver1')
     binding = value.get('cac_import')
@@ -60,23 +55,18 @@ def configuration(value):
     return result
 
 
-def metadata(config, host_keys):
-    require(isinstance(host_keys, list) and len(host_keys) == 3, 'Retain the newly generated public guest host keys.')
-    host_keys = [' '.join(str(key).split()[:2]) for key in host_keys]
-    website.website_configuration(dict(config, instance_name=config['instance_name'],
-                                      aap_fqdn=config['aap_hostname'],
-                                      hypervisor=dict(config['hypervisor'], host_keys=host_keys)))
-    return {'schema_version': 1, 'purpose': 'aiops-zabbix', 'instance_name': config['instance_name'],
+def metadata(config):
+    return {'schema_version': 2, 'purpose': 'aiops-zabbix', 'instance_name': config['instance_name'],
             'instance_number': config['instance_number'], 'hostname': config['hostname'],
             'hypervisor_machine_id': config['hypervisor']['machine_id'],
-            'source_sha256': config['source_image']['sha256'], 'guest_host_keys': host_keys}
+            'source_sha256': config['source_image']['sha256']}
 
 
 def domain_record(xml, config):
     try:
         root = ET.fromstring(xml)
         record = json.loads(root.findtext('description') or '{}')
-        expected = metadata(config, record.get('guest_host_keys'))
+        expected = metadata(config)
         require(record == expected, 'The existing domain does not belong to this selected deployment.')
         disks = root.findall("./devices/disk[@device='disk']/source")
         interfaces = root.findall('./devices/interface')
@@ -319,12 +309,11 @@ def delivery_ready(media, actions, admin, definition, media_id, action_id, trigg
 
 
 
-def provenance(config, record, address=None, network=None, machine_id=None):
-    result = {'schema_version':1, 'instance_name':config['instance_name'],
+def provenance(config, record, address=None, network=None, api=None):
+    result = {'schema_version':2, 'instance_name':config['instance_name'],
               'instance_number':config['instance_number'], 'vm_name':config['vm_name'],
               'uuid':record['uuid'], 'disk':config['disk'], 'mac':record['mac'],
-              'guest_host_keys':record['guest_host_keys'], 'host_keys':record['guest_host_keys'],
-              'network':config['vm_network'], 'user':config['guest_user'], 'port':22, 'verified':False,
+              'network':config['vm_network'], 'verified':False,
               'source_sha256':config['source_image']['sha256'],
               'hypervisor_machine_id':config['hypervisor']['machine_id'], 'public_hostname':config['hostname'],
               'nginx_file':config['vhost_file'], 'auth_file':config['auth_file'], 'certificate':config['hostname']}
@@ -341,11 +330,12 @@ def provenance(config, record, address=None, network=None, machine_id=None):
             require(str(gateway) == network['gateway'] and gateway.is_private,
                     'Retain only the observed private bridge gateway.')
             result['gateway'] = str(gateway)
-    if machine_id is not None:
-        require(address is not None and network is not None and isinstance(machine_id, str)
-                and re.fullmatch(r'[0-9a-f]{32}', machine_id) and machine_id != config['hypervisor']['machine_id'],
-                'Require the pinned SSH guest machine identity before marking ownership verified.')
-        result.update(machine_id=machine_id, verified=True)
+    if api is not None:
+        require(address is not None and network is not None and isinstance(api, dict)
+                and api.get('authenticated') is True and isinstance(api.get('version'), str)
+                and re.fullmatch(r'7\.4\.[0-9]+', api['version']),
+                'Require the observed supported API version and successful authentication before publication.')
+        result.update(api_version=api['version'], verified=True)
     return result
 
 
@@ -358,8 +348,8 @@ def source_inventory_variables(config, resource, rows):
             and isinstance(resource.get('gateway'), str),
             'Publish only the authenticated selected guest and its observed gateway.')
     selected = []
-    immutable = ('uuid', 'disk', 'network', 'bridge', 'mac', 'address', 'machine_id',
-                 'hypervisor_machine_id', 'host_keys', 'user', 'port', 'source_sha256', 'gateway')
+    immutable = ('uuid', 'disk', 'network', 'bridge', 'mac', 'address',
+                 'hypervisor_machine_id', 'source_sha256', 'gateway')
     for row in rows:
         require(isinstance(row, dict) and row.get('inventory') == config['cac_import']['inventory_id'],
                 'Use only the existing importer inventory.')
@@ -379,8 +369,8 @@ def source_inventory_variables(config, resource, rows):
                     'Existing source inventory ownership conflicts with this verified guest.')
             selected.append(value)
         else:
-            require(not any(saved.get(field) == resource[field] for field in ('uuid', 'mac', 'machine_id'))
-                    and value.get('vm_uuid') != resource['uuid'] and value.get('machine_id') != resource['machine_id']
+            require(not any(saved.get(field) == resource[field] for field in ('uuid', 'mac'))
+                    and value.get('vm_uuid') != resource['uuid']
                     and not (value.get('ansible_host') == resource['address']
                              and value.get('hypervisor_host') in (None, config['hypervisor']['name']))
                     and not (saved.get('address') == resource['address']
@@ -388,13 +378,17 @@ def source_inventory_variables(config, resource, rows):
                     'Another source inventory host owns this guest identity.')
     require(len(selected) <= 1, 'The selected VM has duplicate source inventory rows.')
     result = selected[0] if selected else {}
+    obsolete = {'ansible_host', 'ansible_user', 'ansible_port', 'ansible_connection',
+                'ansible_python_interpreter', 'ansible_ssh_common_args', 'ansible_ssh_private_key_file',
+                'machine_id', 'host_keys', 'guest_host_keys', 'user', 'port'}
+    result = {key: value for key, value in result.items() if key not in obsolete}
     desired = {'aap_instance_number': config['instance_number'], 'hypervisor_host': config['hypervisor']['name'],
-               'ansible_host': resource['address'], 'ansible_user': resource['user'], 'ansible_port': resource['port'],
-               'vm_uuid': resource['uuid'], 'machine_id': resource['machine_id'], 'host_keys': resource['host_keys']}
+               'zabbix_api_url': resource['api_url'], 'vm_uuid': resource['uuid']}
     require(all(key not in result or result[key] == value for key, value in desired.items()),
             'Existing source connection fields conflict with this guest.')
     result.update(desired)
-    result['vm_resource'] = dict(result.get('vm_resource', {}), **copy.deepcopy(resource))
+    retained = {key: value for key, value in result.get('vm_resource', {}).items() if key not in obsolete}
+    result['vm_resource'] = dict(retained, **copy.deepcopy(resource))
     return wrap_var(result)
 
 

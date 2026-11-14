@@ -32,7 +32,7 @@
     quiet: true
   no_log: true
 
-- name: Prepare one fresh standalone clone with inherited monitoring stopped
+- name: Prepare one fresh standalone appliance clone under verified network isolation
   when: demo_zabbix_config.vm_name not in demo_zabbix_domain_names.stdout_lines
   block:
     - name: Allocate a private workspace on the selected hypervisor
@@ -63,33 +63,10 @@
       changed_when: true
       no_log: true
 
-    - name: Generate fresh private guest host keys only for this clone
-      ansible.builtin.command:
-        argv: [ssh-keygen, -q, -t, "{{ item }}", -N, '', -f, "{{ demo_zabbix_workspace.path }}/ssh_host_{{ item }}_key"]
-      loop: [ed25519, ecdsa, rsa]
-      changed_when: true
-      no_log: true
-
-    - name: Read only the new guest public host keys
-      ansible.builtin.slurp:
-        src: "{{ demo_zabbix_workspace.path }}/ssh_host_{{ item }}_key.pub"
-      loop: [ed25519, ecdsa, rsa]
-      register: demo_zabbix_generated_public_keys
-      no_log: true
-
     - name: Preserve nonsecret creation provenance in the native domain description
       ansible.builtin.set_fact:
         demo_zabbix_creation_metadata: >-
-          {{ demo_zabbix_config | demo_zabbix_metadata(
-               demo_zabbix_generated_public_keys.results | map(attribute='content') |
-               map('b64decode') | list) }}
-      no_log: true
-
-    - name: Prepare the guest management public key without copying its private key
-      ansible.builtin.copy:
-        dest: "{{ demo_zabbix_workspace.path }}/management.pub"
-        content: "{{ demo_zabbix_config.guest_authorized_public_key }}\n"
-        mode: '0600'
+          {{ demo_zabbix_config | demo_zabbix_metadata }}
       no_log: true
 
     - name: Prepare the offline clone bootstrap
@@ -100,7 +77,7 @@
       no_log: true
       diff: false
 
-    - name: Customize only the fresh clone with its own identity, keys and disabled monitoring
+    - name: Prepare only the fresh appliance clone's offline identity and network
       ansible.builtin.command:
         argv:
           - virt-customize
@@ -109,20 +86,6 @@
           - --no-network
           - --hostname
           - "{{ demo_zabbix_config.hostname }}"
-          - --upload
-          - "{{ demo_zabbix_workspace.path }}/management.pub:/tmp/aiops-management.pub"
-          - --upload
-          - "{{ demo_zabbix_workspace.path }}/ssh_host_ed25519_key:/etc/ssh/ssh_host_ed25519_key"
-          - --upload
-          - "{{ demo_zabbix_workspace.path }}/ssh_host_ed25519_key.pub:/etc/ssh/ssh_host_ed25519_key.pub"
-          - --upload
-          - "{{ demo_zabbix_workspace.path }}/ssh_host_ecdsa_key:/etc/ssh/ssh_host_ecdsa_key"
-          - --upload
-          - "{{ demo_zabbix_workspace.path }}/ssh_host_ecdsa_key.pub:/etc/ssh/ssh_host_ecdsa_key.pub"
-          - --upload
-          - "{{ demo_zabbix_workspace.path }}/ssh_host_rsa_key:/etc/ssh/ssh_host_rsa_key"
-          - --upload
-          - "{{ demo_zabbix_workspace.path }}/ssh_host_rsa_key.pub:/etc/ssh/ssh_host_rsa_key.pub"
           - --run
           - "{{ demo_zabbix_workspace.path }}/bootstrap.sh"
           - --selinux-relabel
@@ -190,7 +153,7 @@
       changed_when: true
       no_log: true
   always:
-    - name: Remove only the private temporary guest-key workspace
+    - name: Remove only the private temporary appliance-preparation workspace
       ansible.builtin.file:
         path: "{{ demo_zabbix_workspace.path }}"
         state: absent
@@ -211,7 +174,7 @@
   changed_when: false
   no_log: true
 
-- name: Validate native ownership, disk, network and guest public keys
+- name: Validate native ownership, disk and network
   ansible.builtin.set_fact:
     demo_zabbix_guest_record: "{{ demo_zabbix_existing_domain_xml.stdout | demo_zabbix_domain_record(demo_zabbix_config) }}"
   no_log: true
@@ -226,6 +189,18 @@
 
 - name: Recheck enforced isolation immediately before guest startup
   ansible.builtin.include_tasks: demo_zabbix_firewall_check.yml
+
+- name: Require the appliance to have no Internet release or HTTP allowance before startup
+  ansible.builtin.assert:
+    that: >-
+      ((demo_zabbix_firewall_expected_policy.released_clients | default([])) +
+       (demo_zabbix_firewall_expected_policy.https_clients | default([])) +
+       (demo_zabbix_firewall_expected_policy.http_clients | default([]))) |
+      selectattr('bridge', 'equalto', demo_zabbix_network.bridge) |
+      selectattr('mac', 'equalto', demo_zabbix_guest_record.mac) | list | length == 0
+    quiet: true
+    fail_msg: The Zabbix appliance must remain isolated from the Internet before boot and during API configuration.
+  no_log: true
 
 - name: Require an existing saved owner to match this exact native guest before startup
   ansible.builtin.assert:

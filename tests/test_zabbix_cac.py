@@ -114,7 +114,7 @@ class LookupModule(LookupBase):
 from pathlib import Path
 import json
 spec={'controller_host':{},'controller_oauthtoken':{'no_log':True},'validate_certs':{'type':'bool'},
- 'max_retries':{'type':'int'},'inventory':{},'name':{},'variables':{'type':'dict'},'state':{},
+ 'max_retries':{'type':'int'},'inventory':{},'name':{},'variables':{'type':'dict'},'state':{},'enabled':{'type':'bool'},
  'hosts':{'type':'list'},'preserve_existing_hosts':{'type':'bool'},'job_template':{},'extra_vars':{'type':'dict'},
  'wait':{'type':'bool'},'interval':{'type':'int'},'timeout':{'type':'int'}}
 m=AnsibleModule(argument_spec=spec)
@@ -123,6 +123,8 @@ assert p['controller_host']==s['origin'] and p['controller_oauthtoken']==s['toke
 assert p['max_retries']==0
 operation=OPERATION; s['calls'].append(operation)
 if operation=='host':
+ assert p['enabled'] is False
+ assert not any(key in p['variables'] for key in ('ansible_host','ansible_user','ansible_port','host_keys','machine_id'))
  existing=[row for row in s['source_hosts'] if row['name']!=p['name']]
  updated={'id':301,'inventory':int(p['inventory']),'name':p['name'],'variables':json.dumps(p['variables'])}
  s['source_hosts']=existing+[updated]

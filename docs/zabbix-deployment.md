@@ -32,9 +32,6 @@ as `demo_website_deployment`, plus:
 
 - `source_image`: exact saved path and SHA-256 checksum;
 - `vm_network`: the existing isolated libvirt network;
-- `guest_user`: the new guest's explicit non-root management account;
-- `guest_authorized_public_key`: the public counterpart of the attached Machine
-  key, with its optional comment removed;
 - `isolation_policy`: the complete current approved recovery policy, including
   any separately approved clients. The playbook validates it and never changes it.
 - `testserver`: the selected allocation's existing verified `testserver1-vNN`
@@ -100,21 +97,29 @@ custom failure expression must not override that result.
 
 ## Clone preparation and runtime access
 
-The single target's SSH public keys, machine ID and current isolation policy are
+The hypervisor's SSH public keys, machine ID and current isolation policy are
 checked before any clone write. Disk/name collisions are preserved for review.
-Before its first boot, the new image receives a fresh machine identity and fresh
-SSH host keys, DHCP configuration and the public management key. The monitoring
-server and inherited monitoring agents are masked offline. The database and web
-frontend can therefore start without running inherited polling or alert actions.
+The clone preparation no longer creates a guest account, management key or
+sudoers entry. Obsolete guest management inputs are rejected. Existing hypervisor
+isolation is verified before boot, and the job refuses Internet release or
+HTTP/HTTPS exceptions for the appliance. Services boot normally; configuration
+then disables inherited polling and notifications through the internal API.
 No packages or collections are installed by this playbook.
 
+The owner selected network isolation instead of a separate prepared baseline.
+The original image is preserved, and no guest service masks are introduced.
+Internet forwarding remains blocked after configuration; only the existing
+declared local demo connections are permitted. The API-only source changes are
+still awaiting live acceptance.
+
 Native libvirt domain description metadata retains the allocation, source hash,
-hypervisor identity and generated guest public keys. A rerun validates the actual
-domain UUID, disk and network and reuses those keys. Management always traverses
-the pinned hypervisor with both SSH host-key checks enabled. DHCP must identify
+hypervisor identity, without guest public keys. Native ownership validates the actual
+domain UUID, disk and network. Hypervisor operations retain their pinned SSH
+connection; the AAP job calls the appliance API directly over its internal LAN.
+DHCP must identify
 the actual selected domain MAC; another lease cannot select another guest.
 
-While the cloned server is stopped, API configuration disables inherited hosts,
+While Internet access remains blocked, API configuration disables inherited hosts,
 actions, media types, discovery and web scenarios, and neutralizes copied scripts.
 Only the selected version's website host, HTTP-status item and trigger are then
 configured. The check uses the versioned website HTTPS name, verifies its chain
@@ -154,12 +159,12 @@ destinations are removed; the selected current association keeps its ID, and
 unrelated non-EDA associations are preserved disabled. These are Event Stream
 Basic credentials, separate from the MCP/API bearer used to configure Zabbix.
 
-The monitoring server is started after quarantine and reconciliation. Forwarding
+The monitoring server boots under hypervisor network isolation. Event forwarding
 stays disabled while DNS, trusted frontend HTTPS and the Basic gate are checked.
 The job then rereads the reconciled objects, selected webhook script/parameters,
 recipient and all action states. Only after those values match does it enable
 the selected action as the final API write. A subsequent read confirms its state.
-Failed authentication or initial quarantine leaves the server stopped. After
+Failed authentication or initial quarantine leaves Internet access blocked. After
 quarantine succeeds, failures before the final enable step leave forwarding
 disabled.
 
@@ -185,7 +190,8 @@ an incorrect response or certificate still fails deployment.
 
 Basic authentication covers the **entire public Zabbix frontend**, including
 its public API path. No public API exception is added. Configuration API calls
-use the guest loopback HTTP endpoint over its verified SSH connection. Existing
+use the guest's private HTTP endpoint directly from the execution environment,
+with its existing bearer and without an appliance SSH connection or tunnel. Existing
 website jobs running on the pinned hypervisor may use that new guest's private
 HTTP API with the explicit clone bearer. This internal transport is distinct
 from the public, certificate-verified HTTPS frontend.
@@ -195,23 +201,25 @@ from the public, certificate-verified HTTPS frontend.
 The protected `demo_zabbix_instance` job artifact first retains ownership before
 startup, then the DHCP route before API configuration. Later failures therefore
 preserve useful cleanup evidence. After success it returns the actual guest UUID,
-disk, MAC, IP/address, network, bridge, machine ID, public SSH keys, source hash
+disk, MAC, IP/address, network, bridge, source hash
 and owned nginx/TLS paths, plus the
 verified private API URL and new website item/trigger IDs. It never returns the
 API token. Final results also identify the selected media/action and requested
-delivery state. Early ownership is marked unverified until the fresh guest machine
-identity has been authenticated through its pinned SSH key. The deployment
+delivery state. Early ownership is marked unverified until its native domain and
+DHCP identity are checked and its private API authenticates. Schema 2 records
+include the API version and omit guest SSH keys, account and machine ID. The deployment
 coordinator persists verified provenance in the existing source inventory's
-`vm_resource` and the owning use case's encrypted configuration, so decommissioning
+disabled metadata-only row's `vm_resource` and the owning use case's encrypted configuration, so decommissioning
 can prove ownership. AutoDeploy allocation retains only primary AAP ownership. Website
 monitoring requires the target-local URL/token/IDs as `demo_website_zabbix`
 in the same instance's private runtime settings.
 
 Offline checks exercise exact naming and ownership, refusal of foreign disks or
 networks, target-only Event Stream selection and credential-free webhook payloads.
-A real local Ansible/API fixture proves that failed quarantine does not start the
-server and that a successful run disables inherited integrations before starting
-only target monitoring. Reconciliation tests preserve IDs and unrelated objects,
+A real local Ansible/API fixture proves that failed quarantine stops configuration
+and that a successful configuration disables inherited integrations before enabling
+only target monitoring. It does not establish appliance service startup or live
+reachability from an AAP execution environment. Reconciliation tests preserve IDs and unrelated objects,
 reject conflicting names, clear stale destinations and validate exact selected
 authentication. Native execution tests prove that reconciliation or frontend
 failures never enable forwarding, and that successful forwarding enable is the

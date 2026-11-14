@@ -57,7 +57,7 @@
         demo_zabbix_source_variables: >-
           {{ demo_zabbix_config | demo_zabbix_source_inventory_variables(
                demo_zabbix_config | demo_zabbix_provenance(demo_zabbix_guest_record,
-                 demo_zabbix_guest_ip, demo_zabbix_network, demo_zabbix_guest_machine_id.stdout | trim),
+                 demo_zabbix_guest_ip, demo_zabbix_network, demo_zabbix_authenticated_api),
                demo_zabbix_source_hosts) }}
 
     - name: Register only the selected verified guest without replacing unrelated host variables
@@ -65,6 +65,7 @@
         inventory: '{{ demo_zabbix_cac_binding.inventory_id | string }}'
         name: '{{ demo_zabbix_config.vm_name }}'
         variables: '{{ demo_zabbix_source_variables }}'
+        enabled: false
         state: present
         controller_host: '{{ demo_zabbix_cac_binding.controller_host }}'
         controller_oauthtoken: '{{ demo_aap_mcp.token }}'
@@ -150,7 +151,7 @@
           - demo_zabbix_deployment.instance_name == demo_zabbix_config.instance_name
           - demo_zabbix_deployment.cac_import == demo_zabbix_cac_binding
           - demo_zabbix_deployment.firewall.guest.uuid == demo_zabbix_guest_record.uuid
-          - demo_zabbix_deployment.firewall.guest.machine_id == demo_zabbix_guest_machine_id.stdout | trim
+          - demo_zabbix_deployment.firewall.guest.api_version == demo_zabbix_authenticated_api.version
           - demo_zabbix_deployment.firewall.guest.gateway == demo_zabbix_network.gateway
         quiet: true
 

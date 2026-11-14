@@ -12,7 +12,7 @@ def deployment():
     return {'instance_name':'aap27-test-7','instance_number':7,'aap_fqdn':'aap27.v07.example.invalid','zone':'example.invalid',
         'cac_import':{'controller_host':'https://aap27.v07.example.invalid','inventory_id':101,'job_template_id':102,'group_id':103,'aap_instance_key':'aap27-v07'},
         'hypervisor':{'name':'recovery','address':'192.0.2.50','public_ipv4':'8.8.8.8','user':'automation','port':22,'machine_id':'1'*32,'host_keys':['ssh-ed25519 AAAA']},
-        'source_image':{'path':'/opt/vms/zabbix-disk.qcow2','sha256':'a'*64},'vm_network':'isolated','guest_user':'automation','guest_authorized_public_key':'ssh-ed25519 AAAA',
+        'source_image':{'path':'/opt/vms/zabbix-disk.qcow2','sha256':'a'*64},'vm_network':'isolated',
         'testserver':{'verified':True,'vm_name':'testserver1-v07','address':'192.0.2.124','uuid':'22222222-2222-2222-2222-222222222222',
           'machine_id':'2'*32,'hypervisor_machine_id':'1'*32,'user':'automation','port':22,'host_keys':['ssh-ed25519 AAAA']}}
 
@@ -28,24 +28,27 @@ class VersionedZabbixTests(unittest.TestCase):
             invalid=deployment();invalid[key]=value
             with self.assertRaises(AnsibleFilterError):policy.configuration(invalid)
 
-    def test_native_metadata_disk_network_and_public_keys_must_all_belong_to_the_allocation(self):
+    def test_native_metadata_disk_network_and_authenticated_api_belong_to_the_allocation(self):
         import xml.etree.ElementTree as E
-        config=policy.configuration(deployment());record=policy.metadata(config,['ssh-ed25519 AAAA']*3)
+        config=policy.configuration(deployment());record=policy.metadata(config)
         root=E.Element('domain');E.SubElement(root,'name').text=config['vm_name'];E.SubElement(root,'uuid').text='11111111-1111-1111-1111-111111111111'
         E.SubElement(root,'description').text=json.dumps(record);devices=E.SubElement(root,'devices')
         disk=E.SubElement(devices,'disk',device='disk');E.SubElement(disk,'source',file=config['disk'])
         interface=E.SubElement(devices,'interface',type='network');E.SubElement(interface,'source',network='isolated');E.SubElement(interface,'mac',address='52:54:00:12:34:56')
-        xml=E.tostring(root).decode();result=policy.domain_record(xml,config);self.assertEqual(result['guest_host_keys'],record['guest_host_keys'])
+        xml=E.tostring(root).decode();result=policy.domain_record(xml,config)
+        self.assertEqual(result['schema_version'],2)
+        self.assertFalse({'guest_host_keys','host_keys','user','port','machine_id'} & set(result))
         early=policy.provenance(config,result);self.assertNotIn('ip',early)
         self.assertFalse(early['verified'])
         routed=policy.provenance(config,result,'192.0.2.123');self.assertEqual(routed['api_url'],'http://192.0.2.123/api_jsonrpc.php')
         self.assertNotIn('token',routed);self.assertNotIn('password',routed)
-        verified=policy.provenance(config,result,'192.0.2.123',{'bridge':'vmbr0','gateway':'192.0.2.1'},'2'*32)
-        self.assertTrue(verified['verified']);self.assertEqual(verified['machine_id'],'2'*32)
+        verified=policy.provenance(config,result,'192.0.2.123',{'bridge':'vmbr0','gateway':'192.0.2.1'},{'version':'7.4.12','authenticated':True})
+        self.assertTrue(verified['verified']);self.assertEqual(verified['api_version'],'7.4.12')
         self.assertEqual(verified['address'],'192.0.2.123');self.assertEqual(verified['bridge'],'vmbr0')
-        self.assertEqual(verified['network'],'isolated');self.assertEqual(verified['host_keys'],record['guest_host_keys'])
-        for identity in ('', '1'*32, 'not-a-machine-id'):
-            with self.assertRaises(AnsibleFilterError):policy.provenance(config,result,'192.0.2.123',{'bridge':'vmbr0'},identity)
+        self.assertEqual(verified['network'],'isolated')
+        self.assertFalse({'guest_host_keys','host_keys','user','port','machine_id'} & set(verified))
+        for evidence in ({},{'version':'7.4.12','authenticated':False},{'version':'7.4.12','authenticated':1},{'version':'not-a-version','authenticated':True}):
+            with self.assertRaises(AnsibleFilterError):policy.provenance(config,result,'192.0.2.123',{'bridge':'vmbr0'},evidence)
         indexed=xml.replace('file="'+config['disk']+'"','file="'+config['disk']+'" index="1"')
         self.assertEqual(policy.domain_record(indexed,config),result)
         for source_extra in (' index="0"',' protocol="https"',' index="x"'):
@@ -136,17 +139,13 @@ class QuarantineExecutionTests(unittest.TestCase):
         server=ThreadingHTTPServer(('127.0.0.1',0),Handler);thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
         try:
             with tempfile.TemporaryDirectory(prefix='zabbix-api-fixture-') as directory:
-                folder=Path(directory);marker=folder/'server-started'
+                folder=Path(directory);marker=folder/'api-configuration-completed'
                 for original in (ROOT/'playbooks/tasks').glob('demo_zabbix_*.yml'):
                     (folder/original.name).write_text(original.read_text().replace('http://127.0.0.1/api_jsonrpc.php',f'http://127.0.0.1:{server.server_address[1]}/api_jsonrpc.php'))
                 tasks=yaml.safe_load((folder/'demo_zabbix_monitoring.yml').read_text())
-                next(row for row in tasks if row['name']=='Stop and mask the monitoring server before inspecting inherited integrations')['ansible.builtin.command']['argv']=[sys.executable,'-c','print("masked")']
-                next(row for row in tasks if row['name']=='Require the selected versioned guest hostname')['ansible.builtin.command']['argv']=[sys.executable,'-c','print("zabbix.v07.example.invalid")']
-                hosts=folder/'hosts';hosts.write_text('127.0.0.1 localhost\n192.0.2.1 redhat.v07.example.invalid aap27.v07.example.invalid zabbix.v07.example.invalid\n')
-                next(row for row in tasks if row['name']=='Keep the selected guest first in its owned frontend proxy aliases')['ansible.builtin.lineinfile']['path']=str(hosts)
-                tasks[-1].pop('ansible.builtin.systemd_service');tasks[-1]['ansible.builtin.command']={'argv':[sys.executable,'-c','from pathlib import Path;import sys;Path(sys.argv[1]).touch()',str(marker)]};tasks[-1]['changed_when']=True
+                tasks.append({'name':'Fixture API configuration completed','ansible.builtin.command':{'argv':[sys.executable,'-c','from pathlib import Path;import sys;Path(sys.argv[1]).touch()',str(marker)]},'changed_when':True})
                 (folder/'files').mkdir();shutil.copy(ROOT/'playbooks/files/demo-zabbix-event-stream.js',folder/'files')
-                variables={'demo_zabbix_config':policy.configuration(deployment()),'demo_zabbix_network':{'gateway':'192.0.2.1','bridge':'vmbr0'},'demo_zabbix_clone_api_token':'synthetic-clone-bearer','demo_zabbix_delivery':{'url':'https://aap27.v07.example.invalid/events','username':'synthetic-user','password':'synthetic-password'},'demo_zabbix_enable_delivery':delivery,'demo_zabbix_enable_testserver_monitoring':monitor}
+                variables={'demo_zabbix_api_url':f'http://127.0.0.1:{server.server_address[1]}/api_jsonrpc.php','demo_zabbix_config':policy.configuration(deployment()),'demo_zabbix_network':{'gateway':'192.0.2.1','bridge':'vmbr0'},'demo_zabbix_clone_api_token':'synthetic-clone-bearer','demo_zabbix_delivery':{'url':'https://aap27.v07.example.invalid/events','username':'synthetic-user','password':'synthetic-password'},'demo_zabbix_enable_delivery':delivery,'demo_zabbix_enable_testserver_monitoring':monitor}
                 if finalize:
                     frontend=yaml.safe_load((ROOT/'playbooks/tasks/demo_zabbix_frontend.yml').read_text())[-2:]
                     frontend[0]['ansible.builtin.uri']['url']=f'http://127.0.0.1:{server.server_address[1]}/frontend'
@@ -174,22 +173,21 @@ class QuarantineExecutionTests(unittest.TestCase):
                 path=folder/'play.yml';path.write_text(yaml.dump([{'hosts':'localhost','connection':'local','gather_facts':False,'vars':variables,'tasks':tasks}],Dumper=AnsibleDumper,sort_keys=False))
                 environment=dict(os.environ,ANSIBLE_FILTER_PLUGINS=str(ROOT/'playbooks/filter_plugins'),ANSIBLE_LOCAL_TEMP=str(folder/'local'),ANSIBLE_REMOTE_TEMP=str(folder/'remote'),ANSIBLE_NOCOLOR='1')
                 response=subprocess.run([sys.executable,'-m','ansible.cli.playbook','-i','localhost,',*vault_arguments,str(path)],cwd=folder,env=environment,text=True,capture_output=True,timeout=150)
-                self.assertEqual(hosts.read_text(),'127.0.0.1 localhost\n192.0.2.1 zabbix.v07.example.invalid redhat.v07.example.invalid aap27.v07.example.invalid\n')
                 return response,marker.exists(),api
         finally:server.shutdown();server.server_close();thread.join(timeout=5)
     def test_unsupported_website_sample_never_enables_forwarding(self):
         api=Api(False);api.website_ready=False
-        result,started,api=self.run_tasks(api=api,finalize=True,delivery=True)
+        result,configured,api=self.run_tasks(api=api,finalize=True,delivery=True)
         self.assertNotEqual(result.returncode,0,result.stdout+result.stderr)
-        self.assertTrue(started)
+        self.assertTrue(configured)
         self.assertIn('Wait for a fresh successful website sample',result.stdout)
         self.assertFalse(any(method=='action.update' and str(params.get('status'))=='0'
             for method,params in api.calls))
 
-    def test_rejected_quarantine_never_starts_the_server(self):
-        result,started,api=self.run_tasks(True);self.assertNotEqual(result.returncode,0,result.stdout+result.stderr);self.assertFalse(started);self.assertIn('action.update',[x[0] for x in api.calls])
-    def test_only_target_monitoring_starts_after_inherited_integrations_are_disabled(self):
-        result,started,api=self.run_tasks();self.assertEqual(result.returncode,0,result.stdout+result.stderr);self.assertTrue(started)
+    def test_rejected_quarantine_never_completes_configuration(self):
+        result,configured,api=self.run_tasks(True);self.assertNotEqual(result.returncode,0,result.stdout+result.stderr);self.assertFalse(configured);self.assertIn('action.update',[x[0] for x in api.calls])
+    def test_only_target_monitoring_is_enabled_after_inherited_integrations_are_disabled(self):
+        result,configured,api=self.run_tasks();self.assertEqual(result.returncode,0,result.stdout+result.stderr);self.assertTrue(configured)
         for kind in ('action','mediatype','drule','host','httptest'):self.assertEqual(int(api.tables[kind][0]['status']),1)
         self.assertIn('Inherited clone integration disabled',api.tables['script'][0]['command'])
         target=next(x for x in api.tables['host'] if x.get('host')=='demo-website-v07');self.assertEqual(int(target['status']),0)
@@ -197,15 +195,15 @@ class QuarantineExecutionTests(unittest.TestCase):
         self.assertEqual(int(next(x for x in api.tables['action'] if x.get('name')=='AIOps v07 website events')['status']),1)
 
     def test_rerun_reuses_monitoring_and_delivery_objects(self):
-        first,started,api=self.run_tasks();self.assertEqual(first.returncode,0,first.stdout+first.stderr)
+        first,configured,api=self.run_tasks();self.assertEqual(first.returncode,0,first.stdout+first.stderr)
         identities={key:[row[api.ids[key]] for row in rows] for key,rows in api.tables.items()}
-        second,started,api=self.run_tasks(api=api);self.assertEqual(second.returncode,0,second.stdout+second.stderr)
-        self.assertTrue(started)
+        second,configured,api=self.run_tasks(api=api);self.assertEqual(second.returncode,0,second.stdout+second.stderr)
+        self.assertTrue(configured)
         self.assertEqual({key:[row[api.ids[key]] for row in rows] for key,rows in api.tables.items()},identities)
 
     def test_protected_injected_values_do_not_leave_api_configuration_unrendered(self):
-        result,started,api=self.run_tasks(unsafe=True);self.assertEqual(result.returncode,0,result.stdout+result.stderr)
-        self.assertTrue(started)
+        result,configured,api=self.run_tasks(unsafe=True);self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+        self.assertTrue(configured)
         media=next(x for x in api.tables['mediatype'] if x.get('name')=='AIOps v07 event stream')
         self.assertIn('new HttpRequest()',media['script'])
         parameters={x['name']:x['value'] for x in media['parameters']}
@@ -215,16 +213,16 @@ class QuarantineExecutionTests(unittest.TestCase):
     def test_native_cli_vault_variables_reach_only_the_selected_guest_api(self):
         # Component coverage for native Ansible Vault values in a vars file;
         # Controller launch extra_vars do not support inline Vault transport.
-        result,started,api=self.run_tasks(vaulted=True);self.assertEqual(result.returncode,0,result.stdout+result.stderr)
-        self.assertTrue(started)
+        result,configured,api=self.run_tasks(vaulted=True);self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+        self.assertTrue(configured)
         media=next(x for x in api.tables['mediatype'] if x.get('name')=='AIOps v07 event stream')
         parameters={x['name']:x['value'] for x in media['parameters']}
         self.assertEqual(parameters['password'],'synthetic-password')
 
     def test_final_forwarding_enable_follows_frontend_and_exact_target_readbacks(self):
-        result,started,api=self.run_tasks(finalize=True,delivery=True)
+        result,configured,api=self.run_tasks(finalize=True,delivery=True)
         self.assertEqual(result.returncode,0,result.stdout+result.stderr)
-        self.assertTrue(started);self.assertTrue(api.frontend_verified)
+        self.assertTrue(configured);self.assertTrue(api.frontend_verified)
         enabled=[row for row in api.tables['action'] if str(row['status'])=='0']
         self.assertEqual(len(enabled),1);self.assertEqual(enabled[0]['name'],'AIOps v07 website events')
         writes=[(method,params) for method,params in api.calls if not method.endswith('.get') and method!='apiinfo.version']
@@ -233,9 +231,9 @@ class QuarantineExecutionTests(unittest.TestCase):
             [next(row['mediatypeid'] for row in api.tables['mediatype'] if row['name']=='AIOps v07 event stream')])
 
     def test_failed_frontend_never_enables_forwarding(self):
-        result,started,api=self.run_tasks(finalize=True,delivery=True,frontend_ok=False)
+        result,configured,api=self.run_tasks(finalize=True,delivery=True,frontend_ok=False)
         self.assertNotEqual(result.returncode,0,result.stdout+result.stderr)
-        self.assertTrue(started);self.assertFalse(api.frontend_verified)
+        self.assertTrue(configured);self.assertFalse(api.frontend_verified)
         self.assertTrue(all(str(row['status'])=='1' for row in api.tables['action']))
         self.assertFalse(any(method in ('action.create','action.update') and str(params.get('status'))=='0' for method,params in api.calls))
 
@@ -243,9 +241,9 @@ class QuarantineExecutionTests(unittest.TestCase):
         api=Api(False)
         api.tables['host'].append({'hostid':'88','host':'demo-website-v07-imported',
                                   'name':'Existing conflicting record','status':'1','interfaces':[],'macros':[]})
-        result,started,api=self.run_tasks(api=api,finalize=True,delivery=True)
+        result,configured,api=self.run_tasks(api=api,finalize=True,delivery=True)
         self.assertNotEqual(result.returncode,0,result.stdout+result.stderr)
-        self.assertFalse(started);self.assertFalse(api.frontend_verified)
+        self.assertFalse(configured);self.assertFalse(api.frontend_verified)
         self.assertTrue(all(str(row['status'])=='1' for row in api.tables['action']))
         self.assertFalse(any(method in ('action.create','action.update') and str(params.get('status'))=='0' for method,params in api.calls))
 

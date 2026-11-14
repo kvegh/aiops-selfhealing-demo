@@ -1,7 +1,7 @@
 ---
 - name: Apply the declared operation only to the selected cloned Zabbix API
   ansible.builtin.uri:
-    url: http://127.0.0.1/api_jsonrpc.php
+    url: '{{ demo_zabbix_api_url }}'
     method: POST
     headers:
       Authorization: "Bearer {{ demo_zabbix_clone_api_token }}"

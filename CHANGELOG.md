@@ -111,6 +111,23 @@ templates, and the status page are still outstanding.
 - Interaction regressions for reversible switching and both-view parity through
   the complete recovery story; explicit Pages staging for the two local assets.
 
+## [1.6.10] — 2026-11-14
+
+### Fixed
+
+- Configure the Zabbix appliance through its internal API from AAP. Remove
+  appliance SSH connections, guest command execution and injected management
+  account/key/sudoers preparation; retain hypervisor VM lifecycle management.
+- Verify enforced network isolation before boot and refuse appliance Internet
+  release or HTTP/HTTPS exceptions. Disable inherited monitoring and notifications
+  through the API while Internet forwarding remains blocked. Preserve the
+  original saved image, without preparing a separate baseline or masking guest
+  services.
+- Publish schema 2 native VM and authenticated API ownership in disabled,
+  metadata-only source inventory. Preserve exact VM and firewall ownership
+  checks, protected credentials and existing importer behavior. Native local
+  regression coverage does not establish live v20 acceptance.
+
 ## [1.6.9] — 2026-11-14
 
 ### Fixed

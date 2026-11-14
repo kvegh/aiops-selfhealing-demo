@@ -1,31 +1,7 @@
 ---
-- name: Stop and mask the monitoring server before inspecting inherited integrations
-  ansible.builtin.command:
-    argv: [systemctl, mask, --now, zabbix-server.service]
-  register: demo_zabbix_server_masked
-  changed_when: "'Created symlink' in demo_zabbix_server_masked.stderr"
-
-- name: Keep the selected guest first in its owned frontend proxy aliases
-  ansible.builtin.lineinfile:
-    path: /etc/hosts
-    regexp: >-
-      ^{{ ([demo_zabbix_network.gateway, demo_zabbix_config.website_hostname,
-            demo_zabbix_config.aap_hostname, demo_zabbix_config.hostname] | join(' ')) | regex_escape }}$
-    line: >-
-      {{ [demo_zabbix_network.gateway, demo_zabbix_config.hostname,
-          demo_zabbix_config.website_hostname, demo_zabbix_config.aap_hostname] | join(' ') }}
-    state: present
-
-- name: Require the selected versioned guest hostname
-  ansible.builtin.command:
-    argv: [hostname, --fqdn]
-  register: demo_zabbix_actual_hostname
-  changed_when: false
-  failed_when: demo_zabbix_actual_hostname.stdout | trim != demo_zabbix_config.hostname
-
 - name: Verify the copied frontend API path and supported Zabbix version
   ansible.builtin.uri:
-    url: http://127.0.0.1/api_jsonrpc.php
+    url: '{{ demo_zabbix_api_url }}'
     method: POST
     body_format: json
     body:
@@ -49,7 +25,14 @@
     demo_zabbix_rpc_params:
       countOutput: true
 
-- name: Quarantine copied monitoring and every outbound integration before starting the server
+- name: Retain actual authenticated appliance API evidence
+  ansible.builtin.set_fact:
+    demo_zabbix_authenticated_api:
+      version: '{{ demo_zabbix_api_version.json.result }}'
+      authenticated: true
+  no_log: true
+
+- name: Disable copied monitoring and outbound integrations while Internet access remains blocked
   ansible.builtin.include_tasks: demo_zabbix_quarantine.yml
   loop:
     - {name: action, output: [actionid, status]}
@@ -240,10 +223,3 @@
 
 - name: Configure selected website and agent delivery after target checks are reconciled
   ansible.builtin.include_tasks: demo_zabbix_delivery.yml
-
-- name: Unmask the monitoring server only after quarantine and target configuration succeed
-  ansible.builtin.systemd_service:
-    name: zabbix-server.service
-    masked: false
-    enabled: true
-    state: started

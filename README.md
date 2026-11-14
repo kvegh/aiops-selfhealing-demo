@@ -258,7 +258,7 @@ selected instance's verified hypervisor, testserver and TRA. Importing it
 creates AAP configuration and launches no application or EDA activation.
 Secret-dependent jobs receive a whole-file Vault ciphertext string and stop
 before managed host, DNS or API writes when required settings are missing.
-Deployment version **1.6.9** is documented in [CHANGELOG.md](CHANGELOG.md).
+Deployment version **1.6.10** is documented in [CHANGELOG.md](CHANGELOG.md).
 Failed MCP builds now retain protected stdout/stderr in the runtime user's
 private server `logs/build.log`, then fail and remove the temporary checkout.
 The observed image-build failure is diagnosed: enforcing SELinux denied
@@ -338,8 +338,12 @@ Application launch is a separate readiness step.
 
 ### Native monitoring record publication
 
-The existing Zabbix job verifies the clone through pinned SSH, including its
-machine ID and observed bridge gateway. It updates only that VM's native source
+The API-only deployment changes verify the hypervisor, domain UUID, disk, MAC,
+network and DHCP lease, then authenticate to the appliance's private API directly
+from the AAP execution environment. They use no SSH connection into the appliance.
+Schema 2 ownership includes the authenticated API version and excludes guest
+accounts, SSH keys and guest machine ID. The source inventory row is disabled
+and holds metadata only. The job updates only that VM's native source
 inventory record, preserving other variables and placement-group members, then
 waits for the existing **Deploy AIOps Selfhealing Demo CaC** template with its
 saved credentials. No firewall lock is held while the child job runs.
@@ -464,16 +468,20 @@ They create no public MCP listener and do not install or invoke Claude Code.
 Those two standalone MCP jobs remain available; Claude installation is added by
 the combined entry point above.
 Delegated testserver SSH connections read the computed address, user, port and
-temporary trust-file path from the original TRA host. The Zabbix deployment
-publishes its verified machine, disk, network and SSH identities for later MCP
-configuration and guarded cleanup.
+temporary trust-file path from the original TRA host. The Zabbix appliance instead
+publishes native VM and authenticated API ownership for MCP configuration and
+guarded cleanup; it has no managed guest SSH identity.
 The Zabbix MCP invocation maps the existing TRA user to the saved image's
 non-root identity so its private, read-only configuration stays accessible.
 Its verifier JSON-decodes the count after the server's unchanged safety warning
 and still rejects errors or nonnumeric results.
-The Zabbix clone places its own hostname first in the owned hosts-file entry
-for the versioned proxy URLs, and retries repair that entry before checking its
-fully qualified hostname.
+The offline clone preparation retains its versioned hostname configuration.
+The appliance boots under the existing hypervisor network isolation. Before
+startup, the job verifies the complete enforced policy and refuses an Internet
+release or HTTP/HTTPS allowance for that appliance. API configuration disables
+inherited monitoring and notifications, then enables only the selected demo.
+Internet forwarding remains blocked. No separate prepared baseline image or
+guest service masks are used. These source changes still need live acceptance.
 Its public frontend readiness check retries within a bounded window while
 requiring trusted HTTPS, HTTP 401 and the expected Basic authentication
 challenge. A persistent failure stops deployment.

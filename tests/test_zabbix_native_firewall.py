@@ -24,8 +24,7 @@ TASKS = ROOT / 'playbooks/tasks'
 
 def inputs():
     config = policy.configuration(deployment())
-    keys = ['ssh-ed25519 AAAA'] * 3
-    record = policy.metadata(config, keys)
+    record = policy.metadata(config)
     root = ET.Element('domain')
     ET.SubElement(root, 'name').text = config['vm_name']
     ET.SubElement(root, 'uuid').text = '11111111-1111-1111-1111-111111111111'
@@ -39,7 +38,8 @@ def inputs():
     xml = ET.tostring(root).decode()
     native = policy.domain_record(xml, config)
     network = {'bridge': 'demo0', 'gateway': '192.168.70.1'}
-    guest = policy.provenance(config, native, '192.168.70.10', network, '3' * 32)
+    api = {'version': '7.4.12', 'authenticated': True}
+    guest = policy.provenance(config, native, '192.168.70.10', network, api)
     grant = {'bridge': 'demo0', 'ipv4': guest['address'], 'mac': guest['mac'],
              'destinations': [network['gateway']], 'ports': [443]}
     other = {'bridge': 'demo0', 'ipv4': '192.168.70.20', 'mac': '52:54:00:12:34:57',
@@ -50,7 +50,7 @@ def inputs():
         'hactar_source_revision': 'a' * 40, 'protected_production_ipv4': '198.51.100.20', 'guest': guest})
     return {'demo_zabbix_deployment': selected, 'demo_zabbix_config': config,
             'demo_zabbix_network': network, 'demo_zabbix_guest_record': native,
-            'demo_zabbix_guest_ip': guest['address'], 'demo_zabbix_guest_machine_id': {'stdout': guest['machine_id']},
+            'demo_zabbix_guest_ip': guest['address'], 'demo_zabbix_authenticated_api': api,
             'demo_zabbix_firewall_expected_policy': desired, 'hactar_source_public_ip': '198.51.100.20',
             'ansible_facts': {'all_ipv4_addresses': [network['gateway']]},
             'fixture_xml': xml, 'fixture_applied_policy': before, 'fixture_role_calls': [],
@@ -58,6 +58,42 @@ def inputs():
 
 
 class ZabbixNativeFirewallTests(unittest.TestCase):
+    def test_appliance_boot_refuses_internet_allowances_and_preserves_other_guests(self):
+        source = yaml.safe_load((TASKS / 'demo_zabbix_vm.yml').read_text())
+        guard = next(task for task in source if task['name'] ==
+                     'Require the appliance to have no Internet release or HTTP allowance before startup')
+        start = next(task for task in source if task['name'] == 'Start only the prepared monitoring guest')
+        self.assertLess(source.index(guard), source.index(start))
+        values = inputs()
+        client = {'bridge': values['demo_zabbix_network']['bridge'],
+                  'mac': values['demo_zabbix_guest_record']['mac'], 'ipv4': values['demo_zabbix_guest_ip']}
+        other = dict(client, mac='52:54:00:12:34:99')
+        cases = [{'name': 'isolated', 'policy': {}},
+                 {'name': 'other-guest', 'policy': {'released_clients': [other]}}]
+        cases += [{'name': field, 'policy': {field: [client]}}
+                  for field in ('released_clients', 'https_clients', 'http_clients')]
+        with tempfile.TemporaryDirectory(prefix='zabbix-boot-isolation-') as temporary:
+            folder = Path(temporary)
+            transaction = [{'name': 'Exercise the real pre-boot guard', 'block': [
+                {'ansible.builtin.set_fact': {'demo_zabbix_firewall_expected_policy': '{{ item.policy }}'}},
+                guard,
+                {'ansible.builtin.set_fact': {'allowed': '{{ allowed + [item.name] }}'}}],
+                'rescue': [{'ansible.builtin.set_fact': {'refused': '{{ refused + [item.name] }}'}}]}]
+            (folder / 'case.yml').write_text(yaml.safe_dump(transaction, sort_keys=False))
+            values.update(allowed=[], refused=[])
+            tasks = [{'ansible.builtin.include_tasks': str(folder / 'case.yml'), 'loop': cases},
+                     {'ansible.builtin.assert': {'that': [
+                         "allowed == ['isolated', 'other-guest']",
+                         "refused == ['released_clients', 'https_clients', 'http_clients']"]}}]
+            play = folder / 'check.yml'
+            play.write_text(yaml.safe_dump([{'hosts': 'localhost', 'connection': 'local',
+                'gather_facts': False, 'vars': values, 'tasks': tasks}], sort_keys=False))
+            result = subprocess.run([sys.executable, '-m', 'ansible.cli.playbook', '-i', 'localhost,', str(play)],
+                env=dict(os.environ, ANSIBLE_LOCAL_TEMP=str(folder / 'local'),
+                         ANSIBLE_REMOTE_TEMP=str(folder / 'remote'), ANSIBLE_NOCOLOR='1'),
+                text=True, capture_output=True, timeout=45)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
     def run_source_auth(self, token, repository):
         """Exercise native validation and Git URL scoping without network access."""
         with tempfile.TemporaryDirectory(prefix='aiops-source-auth-test-') as temporary:
