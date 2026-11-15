@@ -1,5 +1,35 @@
 # Design decisions history
 
+## Align website DNS readiness with the observed negative cache — 2026-11-15
+
+Implementation `9adfd92bdd44e351a1e9126d3d069a1df4d9be63` (deployment version
+1.6.13) changes the website's existing whole-probe retry count from 30 to 65,
+matching the monitoring frontend's already documented allowance for the
+controlled zone's 600-second negative cache. A fresh website deployment reached
+its saved 300-second Controller deadline during DNS readiness. A subsequent
+authenticated read found the correct IPv4 address at both authoritative
+nameservers while the hypervisor's normal resolver still returned NXDOMAIN.
+The timeout prevented certificate and final HTTPS verification; the failed
+attempt remains historical evidence.
+
+Keep the same resolver, four-query batch, ten-second delay, selected-address and
+absent-IPv6 checks. Return as soon as the original condition passes. The 650
+seconds of retry delays exclude DNS query time and later certificate, nginx and
+HTTPS work. The coordinated private CaC therefore gives only Enable Demo
+Website an 1800-second overall deadline through its normal importer. That saved
+Controller deadline is the hard limit; retry arithmetic is a nominal allowance,
+not a guarantee of elapsed time. No cache flush, resolver fallback, new job,
+credential, VM operation or monitoring release is introduced. Existing
+Agent/Claude runtime guards and the removal of the turn cap remain unchanged.
+
+The updated existing fixture and related website checks passed all 21 tests in
+the cached Core 2.20.10 execution environment, including real Ansible target and
+curl-hostname checks. Full website playbook syntax passed in that environment.
+Scoped strict production lint passed with ansible-lint 26.8.0 and Core 2.16.19.
+The ordinary receiving CaC import and normal website retry must still establish
+trusted HTTPS readiness. Version 1.6.14 records this implementation and its
+qualification without changing executable behavior.
+
 ## Verify the original workflow after removing the turn cap — 2026-11-14
 
 Implementation `53a86be`, published with documentation at `368e397`, passed a

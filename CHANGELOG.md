@@ -119,6 +119,15 @@ templates, and the status page are still outstanding.
 - Interaction regressions for reversible switching and both-view parity through
   the complete recovery story; explicit Pages staging for the two local assets.
 
+## [1.6.14] — 2026-11-15
+
+### Documentation
+
+- Record implementation `9adfd92bdd44e351a1e9126d3d069a1df4d9be63`, its
+  negative-cache rationale and focused qualification in the decision history.
+  This documentation checkpoint changes no executable behavior and does not
+  establish a successful receiving deployment.
+
 ## [1.6.13] — 2026-11-15
 
 ### Fixed
