@@ -1691,3 +1691,12 @@ path were independently read back through GitHub; image Git blob
 `abfd9186a06b1809f9a48475ce5577f01a458cd2` matches the original 259963-byte PNG.
 No runtime code or visualization asset changed; this establishes documentation
 publication, not a new live remediation or browser-interaction result.
+
+
+### Temporary visible task logging until clean deployment acceptance
+
+At the owner's explicit request, implementation `a280f98ea2a6751a47a75f437e0c8c98bd22f346` sets
+deployment task no_log controls to false until clean acceptance. YAML-node
+comparison proves all non-logging fields unchanged. Native credential redaction
+and operational safeguards remain active; job output stays private and reports
+are redacted. This is a troubleshooting policy, not a new demonstrated release.
