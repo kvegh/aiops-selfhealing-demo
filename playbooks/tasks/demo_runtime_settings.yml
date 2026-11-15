@@ -2,7 +2,7 @@
 - name: Load the selected instance's native Vault-encrypted runtime settings
   delegate_to: localhost
   become: false
-  no_log: true
+  no_log: false
   vars:
     # A running job's extra_vars cannot be replaced by set_fact. The producer
     # explicitly supplies the refreshed ciphertext through this same loader.

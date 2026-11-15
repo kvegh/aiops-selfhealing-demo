@@ -8,7 +8,7 @@
       - demo_website_webhook_key | default('') is match('^[A-Za-z0-9_-]{16,256}$')
     fail_msg: Supply the selected target's required protected webhook and DNS inputs before launching this job.
     quiet: true
-  no_log: true
+  no_log: false
 
 - name: Check the certificate and nginx packages already provided by Hactar base
   ansible.builtin.command:
@@ -31,7 +31,7 @@
     recurse: true
     file_type: file
   register: demo_website_acme_accounts
-  no_log: true
+  no_log: false
 
 - name: Require a previously approved certificate account
   ansible.builtin.assert:
@@ -51,7 +51,7 @@
   delegate_to: localhost
   become: false
   register: demo_website_existing_dns
-  no_log: true
+  no_log: false
 
 - name: Refuse to replace another website's DNS address
   ansible.builtin.assert:
@@ -60,7 +60,7 @@
         demo_website_config.hypervisor.public_ipv4)
     fail_msg: The versioned website name has a conflicting DNS record; inspect it before continuing.
     quiet: true
-  no_log: true
+  no_log: false
 
 - name: Read only this versioned website's IPv6 DNS records
   ansible.builtin.uri:
@@ -74,14 +74,14 @@
   delegate_to: localhost
   become: false
   register: demo_website_existing_ipv6_dns
-  no_log: true
+  no_log: false
 
 - name: Refuse an alternate unpinned IPv6 website route
   ansible.builtin.assert:
     that: demo_website_existing_ipv6_dns.json == []
     fail_msg: This IPv4-only website has an unexpected IPv6 DNS record.
     quiet: true
-  no_log: true
+  no_log: false
 
 - name: Publish this versioned website at the selected hypervisor's public IPv4
   ansible.builtin.uri:
@@ -99,7 +99,7 @@
   delegate_to: localhost
   become: false
   when: demo_website_existing_dns.json | length == 0
-  no_log: true
+  no_log: false
 
 - name: Inspect the version-specific nginx configuration before taking ownership
   ansible.builtin.stat:
@@ -111,7 +111,7 @@
     src: "{{ demo_website_config.vhost_file }}"
   register: demo_website_previous_vhost
   when: demo_website_existing_vhost.stat.exists
-  no_log: true
+  no_log: false
 
 - name: Refuse to overwrite an unrelated nginx configuration
   ansible.builtin.assert:
@@ -121,7 +121,7 @@
       in (demo_website_previous_vhost.content | default('') | b64decode)
     fail_msg: An unmanaged nginx file already occupies this version's path.
     quiet: true
-  no_log: true
+  no_log: false
 
 - name: Prepare only the selected version's content and cache directories
   ansible.builtin.file:
@@ -166,7 +166,7 @@
       vars:
         demo_website_tls_ready: false
       when: not demo_website_existing_certificate.stat.exists
-      no_log: true
+      no_log: false
       diff: false
 
     - name: Validate nginx before serving a certificate challenge
@@ -215,7 +215,7 @@
       # monitoring frontend does, while returning immediately on readiness.
       retries: 65
       delay: 10
-      no_log: true
+      no_log: false
 
     - name: Obtain the website certificate with the existing account and webroot renewal
       ansible.builtin.command:
@@ -245,7 +245,7 @@
         setype: httpd_config_t
       vars:
         demo_website_tls_ready: true
-      no_log: true
+      no_log: false
       diff: false
 
     - name: Validate the complete nginx configuration with the HTTPS site
@@ -268,7 +268,7 @@
         mode: '0600'
         setype: httpd_config_t
       when: demo_website_existing_vhost.stat.exists
-      no_log: true
+      no_log: false
       diff: false
 
     - name: Remove only the new version's incomplete virtual host

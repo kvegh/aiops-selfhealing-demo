@@ -1,7 +1,7 @@
 ---
 # Native HTTP modules verify only this private, certificate-checked MCP session.
 - name: Initialize the selected private AAP MCP with its existing bearer
-  no_log: true
+  no_log: false
   ansible.builtin.uri:
     url: "{{ demo_claude_aap.definition.url }}"
     method: POST
@@ -24,14 +24,14 @@
   register: demo_aap_mcp_initialize
 
 - name: Decode the single native JSON or event-stream initialization result
-  no_log: true
+  no_log: false
   ansible.builtin.set_fact:
     demo_aap_mcp_initial: >-
       {{ ((demo_aap_mcp_initialize.content | regex_findall('(?m)^data: *(.*)$') | last)
           if demo_aap_mcp_initialize.content is search('(?m)^data:') else demo_aap_mcp_initialize.content) | from_json }}
 
 - name: Require native initialization before using this session
-  no_log: true
+  no_log: false
   ansible.builtin.assert:
     that:
       - demo_aap_mcp_initial.id == 1
@@ -40,7 +40,7 @@
     quiet: true
 
 - name: Retain only this protocol session's protected headers
-  no_log: true
+  no_log: false
   ansible.builtin.set_fact:
     demo_aap_mcp_headers: >-
       {{ demo_claude_aap.definition.headers | combine({'Accept': 'application/json, text/event-stream',
@@ -49,7 +49,7 @@
            if demo_aap_mcp_initialize.mcp_session_id is defined else {}) }}
 
 - name: Complete initialization of this native private session
-  no_log: true
+  no_log: false
   ansible.builtin.uri:
     url: "{{ demo_claude_aap.definition.url }}"
     method: POST
@@ -63,7 +63,7 @@
     status_code: [200, 202, 204]
 
 - name: Read the current native AAP tool names without launching a job
-  no_log: true
+  no_log: false
   ansible.builtin.uri:
     url: "{{ demo_claude_aap.definition.url }}"
     method: POST
@@ -79,14 +79,14 @@
   register: demo_aap_mcp_tools
 
 - name: Decode the selected native tool list
-  no_log: true
+  no_log: false
   ansible.builtin.set_fact:
     demo_aap_mcp_tool_result: >-
       {{ ((demo_aap_mcp_tools.content | regex_findall('(?m)^data: *(.*)$') | last)
           if demo_aap_mcp_tools.content is search('(?m)^data:') else demo_aap_mcp_tools.content) | from_json }}
 
 - name: Require the existing native read and repair-launch tools
-  no_log: true
+  no_log: false
   ansible.builtin.assert:
     that:
       - demo_aap_mcp_tool_result.id == 2
@@ -97,12 +97,12 @@
     quiet: true
 
 - name: Retain only native tool names for this invocation's deny rules
-  no_log: true
+  no_log: false
   ansible.builtin.set_fact:
     demo_claude_aap_tool_names: "{{ demo_aap_mcp_tool_result.result.tools | map(attribute='name') | list }}"
 
 - name: Read one native job page to verify MCP authorization without a model
-  no_log: true
+  no_log: false
   ansible.builtin.uri:
     url: "{{ demo_claude_aap.definition.url }}"
     method: POST
@@ -122,14 +122,14 @@
   register: demo_aap_mcp_read
 
 - name: Decode the bounded native read result
-  no_log: true
+  no_log: false
   ansible.builtin.set_fact:
     demo_aap_mcp_read_result: >-
       {{ ((demo_aap_mcp_read.content | regex_findall('(?m)^data: *(.*)$') | last)
           if demo_aap_mcp_read.content is search('(?m)^data:') else demo_aap_mcp_read.content) | from_json }}
 
 - name: Require authenticated private MCP read access
-  no_log: true
+  no_log: false
   ansible.builtin.assert:
     that:
       - demo_aap_mcp_read_result.id == 3

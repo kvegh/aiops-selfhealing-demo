@@ -5,13 +5,13 @@
     follow: false
     get_checksum: false
   register: demo_claude_native_auth_current
-  no_log: true
+  no_log: false
 
 - name: Preserve concurrently created native Claude authentication
   ansible.builtin.assert:
     that: demo_claude_native_auth_current.stat.exists == demo_claude_native_auth_before.stat.exists
     quiet: true
-  no_log: true
+  no_log: false
 
 - name: Recheck authentication files immediately before provisioning
   ansible.builtin.stat:
@@ -20,7 +20,7 @@
     checksum_algorithm: sha256
   loop: "{{ demo_claude_auth_files }}"
   register: demo_claude_auth_current_files
-  no_log: true
+  no_log: false
 
 - name: Refuse concurrent authentication changes
   ansible.builtin.assert:
@@ -36,7 +36,7 @@
   loop: "{{ demo_claude_auth_current_files.results }}"
   loop_control:
     index_var: demo_claude_auth_index
-  no_log: true
+  no_log: false
 
 - name: Recheck authentication directories without following links
   ansible.builtin.stat:
@@ -44,13 +44,13 @@
     follow: false
   loop: "{{ demo_claude_auth_directories }}"
   register: demo_claude_auth_current_directories
-  no_log: true
+  no_log: false
 
 - name: Require only the actual runtime account's authentication directories
   ansible.builtin.assert:
     that: demo_claude_auth_current_directories.results | demo_mcp_safe_directories(demo_mcp_user.uid)
     quiet: true
-  no_log: true
+  no_log: false
 
 - name: Create only missing private authentication directories
   ansible.builtin.file:
@@ -62,7 +62,7 @@
     follow: false
   loop: "{{ demo_claude_auth_current_directories.results }}"
   when: not item.stat.exists
-  no_log: true
+  no_log: false
 
 - name: Provision only the explicitly approved Google ADC
   ansible.builtin.copy:
@@ -72,7 +72,7 @@
     group: "{{ demo_mcp_user.gid }}"
     mode: '0600'
     force: false
-  no_log: true
+  no_log: false
   diff: false
 
 - name: Preserve unrelated Claude settings while selecting approved Vertex authentication
@@ -82,5 +82,5 @@
     owner: "{{ demo_mcp_user.name }}"
     group: "{{ demo_mcp_user.gid }}"
     mode: '0600'
-  no_log: true
+  no_log: false
   diff: false

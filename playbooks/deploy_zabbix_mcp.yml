@@ -25,7 +25,7 @@
           ansible.builtin.set_fact:
             demo_zabbix_mcp_config: >-
               {{ demo_mcp_deployment | demo_mcp_zabbix_configuration(demo_zabbix_mcp_api_token | default('')) }}
-          no_log: true
+          no_log: false
 
         - name: Select the public Zabbix MCP source and build recipe
           ansible.builtin.set_fact:
@@ -35,7 +35,7 @@
           ansible.builtin.include_tasks: tasks/demo_mcp_runtime.yml
           args:
             apply:
-              no_log: true
+              no_log: false
 
         - name: Prepare the existing server configuration location
           ansible.builtin.file:
@@ -54,7 +54,7 @@
             group: "{{ demo_mcp_user.gid }}"
             mode: '0600'
             setype: container_file_t
-          no_log: true
+          no_log: false
           diff: false
 
         - name: Preserve the existing container and stdio invocation
@@ -93,7 +93,7 @@
           changed_when: false
           failed_when: false
           register: demo_mcp_protocol_check
-          no_log: true
+          no_log: false
 
         - name: Require an authenticated read-only query to the new Zabbix instance
           ansible.builtin.assert:

@@ -1,5 +1,14 @@
 # AIOps self-healing demo
 
+## Temporary visible deployment logging
+
+At the owner's explicit request, deployment tasks use no_log:false until clean
+deployment acceptance. This temporary direction overrides earlier protected
+task-logging defaults. Keep job output private, redact reports, and never copy
+raw logs or secrets into Git. Authentication, native credential-field redaction
+and existing operational safeguards remain active.
+
+
 **[Open the interactive AIOps visualization](https://kvegh.github.io/aiops-selfhealing-demo/)**
 
 <a href="https://kvegh.github.io/aiops-selfhealing-demo/#step=1">

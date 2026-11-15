@@ -14,6 +14,13 @@ archive during the repository split and is not part of this timeline.
 
 ## [Unreleased] — towards 2.0.0
 
+### Temporary deployment diagnostics
+
+- At the owner's explicit request, set deployment task no_log controls to false
+  until clean deployment acceptance. Preserve every non-logging YAML field,
+  native credential redaction and existing operational safeguards. Keep output
+  private and redact reports. This change does not establish a new demo release.
+
 ### Live recovery verification
 
 - Verified the original complete Claude recovery workflow after removing the

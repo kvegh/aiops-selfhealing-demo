@@ -1,6 +1,6 @@
 ---
 - name: Register only the selected TRA and enable its required RHEL repositories
-  no_log: true
+  no_log: false
   block:
     - name: Require the matching instance's protected subscription inputs
       ansible.builtin.assert:
@@ -31,7 +31,7 @@
         name: redhat.rhel_system_roles.rhc
         tasks_from: set_vars.yml
         apply:
-          no_log: true
+          no_log: false
       vars:
         rhc_state: present
 
@@ -48,7 +48,7 @@
         name: redhat.rhel_system_roles.rhc
         tasks_from: subscription-manager.yml
         apply:
-          no_log: true
+          no_log: false
       vars:
         rhc_state: present
         rhc_organization: "{{ demo_mcp_subscription.organization }}"

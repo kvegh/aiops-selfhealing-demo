@@ -42,7 +42,7 @@
       - mcp__aap-mcp__job_templates_launch_create
   tasks:
     - name: Verify selected resources and execute one bounded agent
-      no_log: true
+      no_log: false
       block:
         - name: Load the selected encrypted runtime
           ansible.builtin.include_tasks: tasks/demo_runtime_settings.yml

@@ -30,7 +30,7 @@
     demo_zabbix_authenticated_api:
       version: '{{ demo_zabbix_api_version.json.result }}'
       authenticated: true
-  no_log: true
+  no_log: false
 
 - name: Disable copied monitoring and outbound integrations while Internet access remains blocked
   ansible.builtin.include_tasks: demo_zabbix_quarantine.yml

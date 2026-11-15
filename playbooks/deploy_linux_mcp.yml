@@ -29,7 +29,7 @@
           ansible.builtin.include_tasks: tasks/demo_mcp_runtime.yml
           args:
             apply:
-              no_log: true
+              no_log: false
 
         - name: Prepare private MCP client SSH and log directories
           ansible.builtin.file:
@@ -55,13 +55,13 @@
             creates: "{{ demo_mcp_user.home }}/.local/share/linux-mcp-server/ssh/id_ed25519"
           become: true
           become_user: "{{ demo_mcp_user.name }}"
-          no_log: true
+          no_log: false
 
         - name: Read only the newly generated public half
           ansible.builtin.slurp:
             src: "{{ demo_mcp_user.home }}/.local/share/linux-mcp-server/ssh/id_ed25519.pub"
           register: demo_mcp_public_key
-          no_log: true
+          no_log: false
 
         - name: Refuse to reuse an unrelated existing client key
           ansible.builtin.assert:
@@ -70,7 +70,7 @@
               'aiops-linux-mcp-v' + ('%02d' | format(demo_mcp_config.instance_number))
             fail_msg: Preserve the existing key and review its ownership before using it for this instance.
             quiet: true
-          no_log: true
+          no_log: false
 
         - name: Install only the public key on the matching new testserver
           delegate_to: testserver1
@@ -91,7 +91,7 @@
               changed_when: false
               check_mode: false
               failed_when: demo_mcp_live_testserver.stdout | trim != demo_mcp_config.testserver.machine_id
-              no_log: true
+              no_log: false
 
             - name: Read the existing testserver account
               ansible.builtin.command:
@@ -103,7 +103,7 @@
               ansible.builtin.set_fact:
                 demo_mcp_testserver_user: >-
                   {{ demo_mcp_testserver_passwd.stdout | demo_mcp_user_record(demo_mcp_config.testserver.user) }}
-              no_log: true
+              no_log: false
 
             - name: Prepare its SSH authorization directory
               ansible.builtin.file:
@@ -123,7 +123,7 @@
                 group: "{{ demo_mcp_testserver_user.gid }}"
                 mode: '0600'
                 setype: ssh_home_t
-              no_log: true
+              no_log: false
 
         - name: Write only the new testserver's pinned SSH keys for the container
           ansible.builtin.copy:
@@ -137,7 +137,7 @@
             owner: "{{ demo_mcp_user.name }}"
             group: "{{ demo_mcp_user.gid }}"
             mode: '0600'
-          no_log: true
+          no_log: false
 
         - name: Configure the existing alias for the new testserver only
           ansible.builtin.copy:
@@ -154,7 +154,7 @@
             owner: "{{ demo_mcp_user.name }}"
             group: "{{ demo_mcp_user.gid }}"
             mode: '0600'
-          no_log: true
+          no_log: false
 
         - name: Use the existing on-demand container and stdio configuration
           ansible.builtin.set_fact:
@@ -195,7 +195,7 @@
           changed_when: false
           failed_when: false
           register: demo_mcp_protocol_check
-          no_log: true
+          no_log: false
 
         - name: Require the read-only check to reach the expected new testserver
           ansible.builtin.assert:

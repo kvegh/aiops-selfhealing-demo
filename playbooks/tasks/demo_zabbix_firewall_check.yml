@@ -4,7 +4,7 @@
 - name: Bind the complete current CaC expectation for native validation
   ansible.builtin.set_fact:
     hactar_isolation_policy: '{{ demo_zabbix_firewall_expected_policy }}'
-  no_log: true
+  no_log: false
 
 - name: Validate the complete CaC input with the reviewed Hactar tasks
   ansible.builtin.include_tasks: '{{ hactar_firewall_source_root }}/playbooks/tasks/replacement-isolation-validate.yml'
@@ -16,11 +16,11 @@
   ansible.builtin.set_fact:
     demo_zabbix_firewall_full_match: '{{ __hactar_isolation_matches | bool }}'
     demo_zabbix_firewall_previous_policy: '{{ demo_zabbix_firewall_expected_policy }}'
-  no_log: true
+  no_log: false
 
 - name: Check only the selected CaC grant's not-yet-applied state
   when: not demo_zabbix_firewall_full_match | bool
-  no_log: true
+  no_log: false
   block:
     - name: Require this instance's existing verified CaC owner before deriving a prior state
       ansible.builtin.assert:
@@ -75,9 +75,9 @@
     that: __hactar_isolation_matches | bool
     quiet: true
     fail_msg: Native isolation does not match the selected complete CaC expectation.
-  no_log: true
+  no_log: false
 
 - name: Restore the desired CaC variable after the read-only comparison
   ansible.builtin.set_fact:
     hactar_isolation_policy: '{{ demo_zabbix_firewall_expected_policy }}'
-  no_log: true
+  no_log: false

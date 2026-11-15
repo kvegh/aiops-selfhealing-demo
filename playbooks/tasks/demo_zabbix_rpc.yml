@@ -18,4 +18,4 @@
   register: demo_zabbix_rpc_response
   failed_when: demo_zabbix_rpc_response.json.error is defined or demo_zabbix_rpc_response.json.result is not defined
   changed_when: demo_zabbix_rpc_method is not search('\\.get$')
-  no_log: true
+  no_log: false

@@ -8,7 +8,7 @@
     demo_website_target_monitoring: >-
       {{ demo_website_zabbix | default({}) | demo_website_monitoring_configuration }}
   when: demo_website_manage_infrastructure | default(false) | bool
-  no_log: true
+  no_log: false
 
 - name: Bind only the new target's monitoring inputs without production defaults
   ansible.builtin.set_fact:
@@ -17,7 +17,7 @@
     demo_zabbix_item_id: "{{ demo_website_target_monitoring.item_id }}"
     demo_zabbix_trigger_id: "{{ demo_website_target_monitoring.trigger_id }}"
   when: demo_website_manage_infrastructure | default(false) | bool
-  no_log: true
+  no_log: false
 
 - name: Require the Zabbix monitoring configuration
   ansible.builtin.assert:
@@ -29,7 +29,7 @@
       - demo_zabbix_api_token is defined
       - demo_zabbix_api_token | length > 0
     quiet: true
-  no_log: true
+  no_log: false
 
 - name: Disable the content trigger during the website transition
   ansible.builtin.uri:
@@ -49,7 +49,7 @@
   delegate_to: "{{ inventory_hostname if (demo_website_manage_infrastructure | default(false) | bool) else 'localhost' }}"
   become: false
   register: demo_trigger_disabled
-  no_log: true
+  no_log: false
   when: demo_monitoring_step == 'before'
 
 - name: Confirm the content trigger was disabled
@@ -57,7 +57,7 @@
     that:
       - demo_trigger_disabled.json.result.triggerids | default([]) | length == 1
     quiet: true
-  no_log: true
+  no_log: false
   when: demo_monitoring_step == 'before'
 
 - name: Disable content sampling while the demo is put away
@@ -78,7 +78,7 @@
   delegate_to: "{{ inventory_hostname if (demo_website_manage_infrastructure | default(false) | bool) else 'localhost' }}"
   become: false
   register: demo_item_disabled
-  no_log: true
+  no_log: false
   when:
     - demo_monitoring_step == 'before'
     - demo_website_state == 'disabled'
@@ -88,7 +88,7 @@
     that:
       - demo_item_disabled.json.result.itemids | default([]) | length == 1
     quiet: true
-  no_log: true
+  no_log: false
   when:
     - demo_monitoring_step == 'before'
     - demo_website_state == 'disabled'
@@ -116,14 +116,14 @@
       delegate_to: "{{ inventory_hostname if (demo_website_manage_infrastructure | default(false) | bool) else 'localhost' }}"
       become: false
       register: demo_previous_sample
-      no_log: true
+      no_log: false
 
     - name: Confirm the content item exists
       ansible.builtin.assert:
         that:
           - demo_previous_sample.json.result | default([]) | length == 1
         quiet: true
-      no_log: true
+      no_log: false
 
     - name: Resume content sampling
       ansible.builtin.uri:
@@ -143,14 +143,14 @@
       delegate_to: "{{ inventory_hostname if (demo_website_manage_infrastructure | default(false) | bool) else 'localhost' }}"
       become: false
       register: demo_item_enabled
-      no_log: true
+      no_log: false
 
     - name: Confirm content sampling resumed
       ansible.builtin.assert:
         that:
           - demo_item_enabled.json.result.itemids | default([]) | length == 1
         quiet: true
-      no_log: true
+      no_log: false
 
     - name: Wait for Zabbix to record a fresh healthy sample
       ansible.builtin.uri:
@@ -179,7 +179,7 @@
         - demo_fresh_sample.json.result[0].lastclock | int > demo_previous_sample.json.result[0].lastclock | default(0) | int
       retries: 12
       delay: 5
-      no_log: true
+      no_log: false
 
     - name: Reenable the trigger after the healthy sample
       ansible.builtin.uri:
@@ -199,11 +199,11 @@
       delegate_to: "{{ inventory_hostname if (demo_website_manage_infrastructure | default(false) | bool) else 'localhost' }}"
       become: false
       register: demo_trigger_enabled
-      no_log: true
+      no_log: false
 
     - name: Confirm the content trigger is enabled
       ansible.builtin.assert:
         that:
           - demo_trigger_enabled.json.result.triggerids | default([]) | length == 1
         quiet: true
-      no_log: true
+      no_log: false

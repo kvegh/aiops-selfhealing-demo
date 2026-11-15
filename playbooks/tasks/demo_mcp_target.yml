@@ -2,7 +2,7 @@
 - name: Validate the selected instance and its verified guests locally
   ansible.builtin.set_fact:
     demo_mcp_config: "{{ demo_mcp_deployment | demo_mcp_configuration }}"
-  no_log: true
+  no_log: false
 
 - name: Require one exact TRA destination
   ansible.builtin.assert:
@@ -11,7 +11,7 @@
       - ansible_host == demo_mcp_config.tra.address
     fail_msg: Select only the verified TRA VM belonging to this instance.
     quiet: true
-  no_log: true
+  no_log: false
 
 - name: Allocate job-local trust for the two verified guests
   ansible.builtin.tempfile:
@@ -34,7 +34,7 @@
     mode: '0600'
   delegate_to: localhost
   become: false
-  no_log: true
+  no_log: false
 
 - name: Enforce the selected guest SSH identity with the existing Machine credential
   ansible.builtin.set_fact:
@@ -45,7 +45,7 @@
     ansible_ssh_common_args: >-
       -o StrictHostKeyChecking=yes
       -o UserKnownHostsFile={{ demo_mcp_trust.path | quote }}
-  no_log: true
+  no_log: false
 
 - name: Verify the connected TRA machine before installing or copying anything
   ansible.builtin.command:
@@ -54,7 +54,7 @@
   changed_when: false
   check_mode: false
   failed_when: demo_mcp_live_machine.stdout | trim != demo_mcp_config.tra.machine_id
-  no_log: true
+  no_log: false
 
 - name: Read the existing TRA runtime account
   ansible.builtin.command:
@@ -65,4 +65,4 @@
 - name: Use the actual existing account rather than creating a client user
   ansible.builtin.set_fact:
     demo_mcp_user: "{{ demo_mcp_passwd.stdout | demo_mcp_user_record(demo_mcp_config.tra.user) }}"
-  no_log: true
+  no_log: false

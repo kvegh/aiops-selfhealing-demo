@@ -2,7 +2,7 @@
 # Keep publication in native Controller objects and the existing CaC importer.
 # Justification: ../../README.md#native-monitoring-record-publication.
 - name: Record the authenticated VM and refresh it through the existing AIOps importer
-  no_log: true
+  no_log: false
   block:
     - name: Require native AAP job identity and this selected instance's API access
       ansible.builtin.assert:

@@ -51,7 +51,7 @@
           demo_zabbix_testserver_polling_started.stdout | int)
       retries: 30
       delay: 5
-      no_log: true
+      no_log: false
 
 - name: Mark the earliest valid website sample for this readiness check
   ansible.builtin.command:
@@ -87,7 +87,7 @@
       demo_zabbix_website_polling_started.stdout | int)
   retries: 30
   delay: 5
-  no_log: true
+  no_log: false
 
 - name: Read back the selected forwarding script and authentication parameters
   ansible.builtin.include_tasks: demo_zabbix_rpc.yml

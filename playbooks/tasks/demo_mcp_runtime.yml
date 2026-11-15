@@ -27,7 +27,7 @@
     src: "{{ item }}"
   loop: [/etc/subuid, /etc/subgid]
   register: demo_mcp_subordinate_ids
-  no_log: true
+  no_log: false
 
 - name: Require existing rootless user namespace allocations
   ansible.builtin.assert:
@@ -36,7 +36,7 @@
     fail_msg: Prepare an approved subordinate user/group range for the existing runtime account first.
     quiet: true
   loop: "{{ demo_mcp_subordinate_ids.results }}"
-  no_log: true
+  no_log: false
 
 - name: Keep the runtime user's container-store parent directories writable by that user
   ansible.builtin.file:
@@ -154,7 +154,7 @@
                   demo_mcp_build_workspace.path ~ '/source'] }}
           register: demo_mcp_build_result
           changed_when: true
-          no_log: true
+          no_log: false
 
       rescue:
         - name: Prepare only this runtime user's private server log directory
@@ -169,7 +169,7 @@
             content: "{{ demo_mcp_build_result.stdout | default('') }}\n{{ demo_mcp_build_result.stderr | default('') }}\n"
             mode: '0600'
           diff: false
-          no_log: true
+          no_log: false
 
         - name: Stop after preserving the failed container build's protected output
           ansible.builtin.fail:

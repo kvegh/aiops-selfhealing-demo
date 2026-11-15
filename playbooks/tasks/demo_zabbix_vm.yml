@@ -5,7 +5,7 @@
     follow: false
     checksum_algorithm: sha256
   register: demo_zabbix_source_image
-  no_log: true
+  no_log: false
 
 - name: Require the exact saved source image before cloning
   ansible.builtin.assert:
@@ -14,7 +14,7 @@
       - not (demo_zabbix_source_image.stat.islnk | default(false))
       - demo_zabbix_source_image.stat.checksum == demo_zabbix_config.source_image.sha256
     quiet: true
-  no_log: true
+  no_log: false
 
 - name: Inspect the reserved destination disk
   ansible.builtin.stat:
@@ -22,7 +22,7 @@
     follow: false
     get_checksum: false
   register: demo_zabbix_destination
-  no_log: true
+  no_log: false
 
 - name: Refuse an orphaned or foreign disk instead of overwriting it
   ansible.builtin.assert:
@@ -30,7 +30,7 @@
       demo_zabbix_config.vm_name in demo_zabbix_domain_names.stdout_lines or
       not demo_zabbix_destination.stat.exists
     quiet: true
-  no_log: true
+  no_log: false
 
 - name: Prepare one fresh standalone appliance clone under verified network isolation
   when: demo_zabbix_config.vm_name not in demo_zabbix_domain_names.stdout_lines
@@ -61,20 +61,20 @@
           - "{{ demo_zabbix_config.source_image.path }}"
           - "{{ demo_zabbix_temporary_disk.path }}"
       changed_when: true
-      no_log: true
+      no_log: false
 
     - name: Preserve nonsecret creation provenance in the native domain description
       ansible.builtin.set_fact:
         demo_zabbix_creation_metadata: >-
           {{ demo_zabbix_config | demo_zabbix_metadata }}
-      no_log: true
+      no_log: false
 
     - name: Prepare the offline clone bootstrap
       ansible.builtin.template:
         src: demo-zabbix-bootstrap.sh.j2
         dest: "{{ demo_zabbix_workspace.path }}/bootstrap.sh"
         mode: '0700'
-      no_log: true
+      no_log: false
       diff: false
 
     - name: Prepare only the fresh appliance clone's offline identity and network
@@ -90,7 +90,7 @@
           - "{{ demo_zabbix_workspace.path }}/bootstrap.sh"
           - --selinux-relabel
       changed_when: true
-      no_log: true
+      no_log: false
 
     - name: Publish the clone atomically without replacing any existing disk
       ansible.builtin.command:
@@ -101,7 +101,7 @@
           - "{{ demo_zabbix_temporary_disk.path }}"
           - "{{ demo_zabbix_config.disk }}"
       changed_when: true
-      no_log: true
+      no_log: false
 
     - name: Set the copied disk's virtualization ownership and label
       ansible.builtin.file:
@@ -138,46 +138,46 @@
           - --print-xml
       register: demo_zabbix_new_domain_xml
       changed_when: false
-      no_log: true
+      no_log: false
 
     - name: Store the verified temporary domain definition
       ansible.builtin.copy:
         dest: "{{ demo_zabbix_workspace.path }}/domain.xml"
         content: "{{ demo_zabbix_new_domain_xml.stdout }}"
         mode: '0600'
-      no_log: true
+      no_log: false
 
     - name: Define only the selected allocation's prepared monitoring guest
       ansible.builtin.command:
         argv: [virsh, -c, 'qemu:///system', define, "{{ demo_zabbix_workspace.path }}/domain.xml"]
       changed_when: true
-      no_log: true
+      no_log: false
   always:
     - name: Remove only the private temporary appliance-preparation workspace
       ansible.builtin.file:
         path: "{{ demo_zabbix_workspace.path }}"
         state: absent
       when: demo_zabbix_workspace.path is defined
-      no_log: true
+      no_log: false
 
     - name: Remove only this job's unpublished temporary disk
       ansible.builtin.file:
         path: "{{ demo_zabbix_temporary_disk.path }}"
         state: absent
       when: demo_zabbix_temporary_disk.path is defined
-      no_log: true
+      no_log: false
 
 - name: Read the actual selected domain definition
   ansible.builtin.command:
     argv: [virsh, -c, 'qemu:///system', dumpxml, "{{ demo_zabbix_config.vm_name }}"]
   register: demo_zabbix_existing_domain_xml
   changed_when: false
-  no_log: true
+  no_log: false
 
 - name: Validate native ownership, disk and network
   ansible.builtin.set_fact:
     demo_zabbix_guest_record: "{{ demo_zabbix_existing_domain_xml.stdout | demo_zabbix_domain_record(demo_zabbix_config) }}"
-  no_log: true
+  no_log: false
 
 - name: Retain verified guest ownership before startup or API configuration
   ansible.builtin.set_stats:
@@ -185,7 +185,7 @@
       demo_zabbix_instance: "{{ demo_zabbix_config | demo_zabbix_provenance(demo_zabbix_guest_record) }}"
     aggregate: false
     per_host: false
-  no_log: true
+  no_log: false
 
 - name: Recheck enforced isolation immediately before guest startup
   ansible.builtin.include_tasks: demo_zabbix_firewall_check.yml
@@ -200,7 +200,7 @@
       selectattr('mac', 'equalto', demo_zabbix_guest_record.mac) | list | length == 0
     quiet: true
     fail_msg: The Zabbix appliance must remain isolated from the Internet before boot and during API configuration.
-  no_log: true
+  no_log: false
 
 - name: Require an existing saved owner to match this exact native guest before startup
   ansible.builtin.assert:
@@ -210,27 +210,27 @@
       - demo_zabbix_deployment.firewall.guest.disk == demo_zabbix_guest_record.disk
     quiet: true
   when: demo_zabbix_deployment.firewall.guest | default({}) | length > 0
-  no_log: true
+  no_log: false
 
 - name: Read the selected guest state
   ansible.builtin.command:
     argv: [virsh, -c, 'qemu:///system', domstate, "{{ demo_zabbix_config.vm_name }}"]
   register: demo_zabbix_guest_state
   changed_when: false
-  no_log: true
+  no_log: false
 
 - name: Require a stopped or normally running owned guest
   ansible.builtin.assert:
     that: demo_zabbix_guest_state.stdout | trim in ['shut off', 'running']
     quiet: true
-  no_log: true
+  no_log: false
 
 - name: Start only the prepared monitoring guest
   ansible.builtin.command:
     argv: [virsh, -c, 'qemu:///system', start, "{{ demo_zabbix_config.vm_name }}"]
   when: demo_zabbix_guest_state.stdout | trim == 'shut off'
   changed_when: true
-  no_log: true
+  no_log: false
 
 - name: Observe DHCP only for the selected domain
   ansible.builtin.command:
@@ -240,12 +240,12 @@
   retries: 40
   delay: 5
   changed_when: false
-  no_log: true
+  no_log: false
 
 - name: Require the DHCP address to belong to the verified domain MAC
   ansible.builtin.set_fact:
     demo_zabbix_guest_ip: "{{ demo_zabbix_guest_lease.stdout | demo_zabbix_guest_address(demo_zabbix_guest_record.mac) }}"
-  no_log: true
+  no_log: false
 
 - name: Retain the pinned DHCP route even if later configuration fails
   ansible.builtin.set_stats:
@@ -253,4 +253,4 @@
       demo_zabbix_instance: "{{ demo_zabbix_config | demo_zabbix_provenance(demo_zabbix_guest_record, demo_zabbix_guest_ip) }}"
     aggregate: false
     per_host: false
-  no_log: true
+  no_log: false

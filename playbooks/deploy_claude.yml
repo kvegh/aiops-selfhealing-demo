@@ -9,7 +9,7 @@
   hosts: all
   become: true
   gather_facts: false
-  no_log: true
+  no_log: false
   tasks:
     - name: Install Claude after verifying its release and selected guest
       block:
@@ -253,7 +253,7 @@
 - name: Publish only completed installation and private MCP readiness
   hosts: all
   gather_facts: false
-  no_log: true
+  no_log: false
   tasks:
     - name: Retain a bounded non-inference installation result
       ansible.builtin.set_stats:

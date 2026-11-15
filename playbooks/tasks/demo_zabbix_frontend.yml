@@ -25,7 +25,7 @@
     recurse: true
     file_type: file
   register: demo_zabbix_acme_accounts
-  no_log: true
+  no_log: false
 - name: Require a previously approved certificate account
   ansible.builtin.assert:
     that: demo_zabbix_acme_accounts.matched | int > 0
@@ -44,13 +44,13 @@
   delegate_to: localhost
   become: false
   register: demo_zabbix_existing_dns
-  no_log: true
+  no_log: false
 - name: Refuse to replace another monitoring frontend's DNS address
   ansible.builtin.assert:
     that: "demo_zabbix_existing_dns.json | demo_website_safe_dns_records(\n  demo_zabbix_config.hypervisor.public_ipv4)"
     fail_msg: The versioned monitoring frontend name has a conflicting DNS record; inspect it before continuing.
     quiet: true
-  no_log: true
+  no_log: false
 - name: Read only this versioned monitoring frontend's IPv6 DNS records
   ansible.builtin.uri:
     url: https://api.godaddy.com/v1/domains/{{ demo_zabbix_config.zone }}/records/AAAA/{{ demo_zabbix_config.record_name
@@ -64,13 +64,13 @@
   delegate_to: localhost
   become: false
   register: demo_zabbix_existing_ipv6_dns
-  no_log: true
+  no_log: false
 - name: Refuse an alternate unpinned IPv6 monitoring frontend route
   ansible.builtin.assert:
     that: demo_zabbix_existing_ipv6_dns.json == []
     fail_msg: This IPv4-only monitoring frontend has an unexpected IPv6 DNS record.
     quiet: true
-  no_log: true
+  no_log: false
 - name: Publish this versioned monitoring frontend at the selected hypervisor's public IPv4
   ansible.builtin.uri:
     url: https://api.godaddy.com/v1/domains/{{ demo_zabbix_config.zone }}/records/A/{{ demo_zabbix_config.record_name
@@ -88,7 +88,7 @@
   delegate_to: localhost
   become: false
   when: demo_zabbix_existing_dns.json | length == 0
-  no_log: true
+  no_log: false
 - name: Inspect the version-specific nginx configuration before taking ownership
   ansible.builtin.stat:
     path: '{{ demo_zabbix_config.vhost_file }}'
@@ -98,14 +98,14 @@
     src: '{{ demo_zabbix_config.vhost_file }}'
   register: demo_zabbix_previous_vhost
   when: demo_zabbix_existing_vhost.stat.exists
-  no_log: true
+  no_log: false
 - name: Refuse to overwrite an unrelated nginx configuration
   ansible.builtin.assert:
     that: not demo_zabbix_existing_vhost.stat.exists or ('# Managed by the AIOps monitoring frontend playbook for
       ' + demo_zabbix_config.hostname + '.') in (demo_zabbix_previous_vhost.content | default('') | b64decode)
     fail_msg: An unmanaged nginx file already occupies this version's path.
     quiet: true
-  no_log: true
+  no_log: false
 - name: Prepare the shared ACME challenge webroot
   ansible.builtin.file:
     path: '{{ item.path }}'
@@ -131,7 +131,7 @@
     group: nginx
     mode: '0640'
     setype: httpd_config_t
-  no_log: true
+  no_log: false
   diff: false
 - name: Provision the versioned HTTPS virtual host with rollback
   block:
@@ -146,7 +146,7 @@
       vars:
         demo_zabbix_tls_ready: false
       when: not demo_zabbix_existing_certificate.stat.exists
-      no_log: true
+      no_log: false
       diff: false
     - name: Validate nginx before serving a certificate challenge
       ansible.builtin.command:
@@ -192,7 +192,7 @@
       until: demo_zabbix_dns_propagation is not failed
       retries: 65
       delay: 10
-      no_log: true
+      no_log: false
 
     - name: Obtain the monitoring frontend certificate with the existing account and webroot renewal
       ansible.builtin.command:
@@ -221,7 +221,7 @@
         setype: httpd_config_t
       vars:
         demo_zabbix_tls_ready: true
-      no_log: true
+      no_log: false
       diff: false
     - name: Validate the complete nginx configuration with the HTTPS site
       ansible.builtin.command:
@@ -243,7 +243,7 @@
         mode: '0600'
         setype: httpd_config_t
       when: demo_zabbix_existing_vhost.stat.exists
-      no_log: true
+      no_log: false
       diff: false
     - name: Remove only the new version's incomplete virtual host
       ansible.builtin.file:
@@ -276,9 +276,9 @@
   until: demo_zabbix_public_frontend.status | default(0) | int == 401
   retries: 12
   delay: 5
-  no_log: true
+  no_log: false
 - name: Require the expected authentication challenge
   ansible.builtin.assert:
     that: '''Basic'' in demo_zabbix_public_frontend.www_authenticate | default('''')'
     quiet: true
-  no_log: true
+  no_log: false

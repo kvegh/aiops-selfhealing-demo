@@ -18,7 +18,7 @@
     status_code: 200
   register: demo_zabbix_inherited_objects
   failed_when: demo_zabbix_inherited_objects.json.error is defined or demo_zabbix_inherited_objects.json.result is not defined
-  no_log: true
+  no_log: false
 
 - name: Disable or neutralize copied outbound integration definitions
   ansible.builtin.uri:
@@ -42,4 +42,4 @@
   register: demo_zabbix_quarantine_updates
   failed_when: demo_zabbix_quarantine_updates.json.error is defined or demo_zabbix_quarantine_updates.json.result is not defined
   changed_when: true
-  no_log: true
+  no_log: false

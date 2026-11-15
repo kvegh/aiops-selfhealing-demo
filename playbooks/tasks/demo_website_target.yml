@@ -5,7 +5,7 @@
     - name: Validate the existing instance allocation and hypervisor pins locally
       ansible.builtin.set_fact:
         demo_website_config: "{{ demo_website_deployment | demo_website_configuration }}"
-      no_log: true
+      no_log: false
 
     - name: Require a single exact hypervisor target before opening SSH
       ansible.builtin.assert:
@@ -15,7 +15,7 @@
           - demo_website_public_hostname == demo_website_config.hostname
         fail_msg: The website must use the selected AAP instance's pinned hypervisor and versioned hostname.
         quiet: true
-      no_log: true
+      no_log: false
 
     - name: Allocate a job-local file for pinned SSH public keys
       ansible.builtin.tempfile:
@@ -36,7 +36,7 @@
         mode: '0600'
       delegate_to: localhost
       become: false
-      no_log: true
+      no_log: false
 
     - name: Use the selected hypervisor identity and version-specific website paths
       ansible.builtin.set_fact:
@@ -57,7 +57,7 @@
         demo_button_marker: "{{ demo_website_config.root }}/.armed"
         demo_website_rate_limit_file: "{{ demo_website_config.rate_limit_file }}"
         demo_website_rate_limit_zone: "{{ demo_website_config.rate_limit_zone }}"
-      no_log: true
+      no_log: false
 
     - name: Verify the connected hypervisor before changing the website
       ansible.builtin.command:
@@ -66,4 +66,4 @@
       changed_when: false
       check_mode: false
       failed_when: demo_website_live_machine_id.stdout | trim != demo_website_config.hypervisor.machine_id
-      no_log: true
+      no_log: false

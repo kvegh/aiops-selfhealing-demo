@@ -28,12 +28,12 @@
     - name: Validate allocation, saved image and exact management identity locally
       ansible.builtin.set_fact:
         demo_zabbix_config: "{{ demo_zabbix_deployment | demo_zabbix_configuration }}"
-      no_log: true
+      no_log: false
 
     - name: Validate the explicitly selected target event stream
       ansible.builtin.set_fact:
         demo_zabbix_delivery: "{{ demo_zabbix_config | demo_zabbix_event_stream(demo_zabbix_event_stream) }}"
-      no_log: true
+      no_log: false
 
     - name: Require explicit protected clone credentials and a single selected hypervisor
       ansible.builtin.assert:
@@ -51,7 +51,7 @@
           - demo_zabbix_enable_testserver_monitoring | default(false) is boolean
         quiet: true
         fail_msg: Supply the selected target and explicit Vault-protected clone, DNS and frontend credentials.
-      no_log: true
+      no_log: false
 
     - name: Allocate a job-local file for verified hypervisor SSH public keys
       ansible.builtin.tempfile:
@@ -74,7 +74,7 @@
       delegate_to: localhost
       become: false
       check_mode: false
-      no_log: true
+      no_log: false
 
     - name: Enforce the selected non-root hypervisor connection
       ansible.builtin.set_fact:
@@ -88,7 +88,7 @@
           -o StrictHostKeyChecking=yes
           -o UserKnownHostsFile={{ demo_zabbix_known_hosts.path | quote }}
           -o BatchMode=yes -o PasswordAuthentication=no -o KbdInteractiveAuthentication=no
-      no_log: true
+      no_log: false
 
     - name: Check actual hypervisor identity before any image or service changes
       ansible.builtin.command:
@@ -97,7 +97,7 @@
       changed_when: false
       check_mode: false
       failed_when: demo_zabbix_live_hypervisor.stdout | trim != demo_zabbix_config.hypervisor.machine_id
-      no_log: true
+      no_log: false
 
   tasks:
     - name: Deploy from the reviewed job-local Hactar source and always remove its checkout
@@ -111,7 +111,7 @@
           loop: [is-active, is-enabled]
           changed_when: false
           check_mode: false
-          no_log: true
+          no_log: false
 
         - name: Inspect only the declared isolated guest network
           ansible.builtin.command:
@@ -119,19 +119,19 @@
           register: demo_zabbix_network_xml
           changed_when: false
           check_mode: false
-          no_log: true
+          no_log: false
 
         - name: Bind the monitoring guest to the existing isolation bridge
           ansible.builtin.set_fact:
             demo_zabbix_network: >-
               {{ demo_zabbix_network_xml.stdout | demo_zabbix_network_details(demo_zabbix_config.vm_network) }}
-          no_log: true
+          no_log: false
 
         - name: Refuse a network outside the existing isolation policy
           ansible.builtin.assert:
             that: demo_zabbix_network.bridge in demo_zabbix_deployment.isolation_policy.bridges
             quiet: true
-          no_log: true
+          no_log: false
 
         - name: Verify complete CaC-derived native isolation before any clone write
           ansible.builtin.include_tasks: tasks/demo_zabbix_firewall_check.yml
@@ -142,11 +142,11 @@
           register: demo_zabbix_domain_names
           changed_when: false
           check_mode: false
-          no_log: true
+          no_log: false
 
         - name: Verify the selected testserver identity before allowing its monitoring
           when: demo_zabbix_enable_testserver_monitoring | default(false) | bool
-          no_log: true
+          no_log: false
           block:
             - name: Read the selected testserver persistent domain
               ansible.builtin.command:
@@ -183,7 +183,7 @@
             - name: Bind the appliance API to its verified native private lease
               ansible.builtin.set_fact:
                 demo_zabbix_api_url: 'http://{{ demo_zabbix_guest_ip }}/api_jsonrpc.php'
-              no_log: true
+              no_log: false
 
             - name: Configure the appliance through its internal API from the AAP job
               ansible.builtin.include_tasks: tasks/demo_zabbix_monitoring.yml
@@ -193,7 +193,7 @@
                   become: false
                   vars:
                     ansible_connection: local
-                  no_log: true
+                  no_log: false
 
             - name: Save this verified VM through the existing source inventory and CaC importer
               ansible.builtin.include_tasks: tasks/demo_zabbix_cac.yml
@@ -201,7 +201,7 @@
                 apply:
                   delegate_to: localhost
                   become: false
-                  no_log: true
+                  no_log: false
 
             - name: Apply only the authenticated owner's CaC-declared host HTTPS permission
               # API quarantine is complete; this permits only the own-bridge service.
@@ -218,7 +218,7 @@
                   become: false
                   vars:
                     ansible_connection: local
-                  no_log: true
+                  no_log: false
 
             - name: Publish verified monitoring provenance for the owning use case and existing source inventory
               ansible.builtin.set_stats:
@@ -233,7 +233,7 @@
                                 'testserver_monitoring_enabled': demo_zabbix_enable_testserver_monitoring | default(false) | bool}) }}
                 aggregate: false
                 per_host: false
-              no_log: true
+              no_log: false
 
             - name: Report the configured monitoring deployment
               ansible.builtin.debug:
@@ -247,7 +247,7 @@
           delegate_to: localhost
           become: false
           check_mode: false
-          no_log: true
+          no_log: false
 
         - name: Remove only this job's public SSH trust file
           ansible.builtin.file:
@@ -257,4 +257,4 @@
           delegate_to: localhost
           become: false
           check_mode: false
-          no_log: true
+          no_log: false

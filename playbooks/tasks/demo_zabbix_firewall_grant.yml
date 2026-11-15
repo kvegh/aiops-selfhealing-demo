@@ -11,7 +11,7 @@
       retries: 5
       delay: 1
       changed_when: demo_zabbix_firewall_lock.rc == 0
-      no_log: true
+      no_log: false
   rescue:
     - name: Stop before granting access when the native guard is unavailable
       ansible.builtin.fail:
@@ -25,7 +25,7 @@
       register: demo_zabbix_firewall_machine_id
       changed_when: false
       failed_when: demo_zabbix_firewall_machine_id.stdout | trim != demo_zabbix_config.hypervisor.machine_id
-      no_log: true
+      no_log: false
 
     - name: Read both current and persistent native guest definitions
       ansible.builtin.command:
@@ -33,7 +33,7 @@
       loop: [[], [--inactive]]
       register: demo_zabbix_firewall_domains
       changed_when: false
-      no_log: true
+      no_log: false
 
     - name: Require the existing selected-instance CaC record to match native and authenticated guest identity
       ansible.builtin.assert:
@@ -61,7 +61,7 @@
         quiet: true
         fail_msg: Publish and verify this instance's real Zabbix ownership in AIOps CaC before granting access; preserve the guest for review.
       loop: '{{ demo_zabbix_firewall_domains.results }}'
-      no_log: true
+      no_log: false
 
     - name: Derive this owner's exact bridge destination and port
       ansible.builtin.set_fact:
@@ -74,13 +74,13 @@
         demo_zabbix_firewall_rich_rule: >-
           rule family="ipv4" priority="0" source address="{{ demo_zabbix_deployment.firewall.guest.address }}/32"
           destination address="{{ demo_zabbix_network.gateway }}/32" port port="443" protocol="tcp" accept
-      no_log: true
+      no_log: false
 
     - name: Require exactly the declared own-bridge TCP 443 permission
       ansible.builtin.assert:
         that: demo_zabbix_firewall_grant in demo_zabbix_firewall_expected_policy.guest_host_clients | default([])
         quiet: true
-      no_log: true
+      no_log: false
 
     - name: Recheck the complete CaC policy before changing either firewall layer
       ansible.builtin.include_tasks: demo_zabbix_firewall_check.yml
@@ -91,7 +91,7 @@
       register: demo_zabbix_firewall_zone
       changed_when: false
       failed_when: demo_zabbix_firewall_zone.stdout | trim != 'libvirt'
-      no_log: true
+      no_log: false
 
     - name: Capture only the exact rule's runtime and permanent presence for bounded restoration
       ansible.builtin.command:
@@ -100,7 +100,7 @@
       register: demo_zabbix_firewall_previous_rules
       changed_when: false
       failed_when: demo_zabbix_firewall_previous_rules.rc not in [0, 1]
-      no_log: true
+      no_log: false
 
     - name: Apply the exact two-layer permission with bounded restoration
       block:
@@ -108,7 +108,7 @@
           ansible.builtin.include_role:
             name: redhat.rhel_system_roles.firewall
             apply:
-              no_log: true
+              no_log: false
           vars:
             firewall:
               - zone: libvirt
@@ -126,13 +126,13 @@
             argv: '{{ ["firewall-cmd"] + item + ["--zone=libvirt", "--query-rich-rule=" ~ demo_zabbix_firewall_rich_rule] }}'
           loop: [[], [--permanent]]
           changed_when: false
-          no_log: true
+          no_log: false
       rescue:
         - name: Restore only the exact rule's previous runtime and permanent states
           ansible.builtin.include_role:
             name: redhat.rhel_system_roles.firewall
             apply:
-              no_log: true
+              no_log: false
           vars:
             firewall:
               - zone: libvirt
@@ -150,7 +150,7 @@
         - name: Bind the one verified pre-grant CaC policy for restoration
           ansible.builtin.set_fact:
             hactar_isolation_policy: '{{ demo_zabbix_firewall_previous_policy }}'
-          no_log: true
+          no_log: false
 
         - name: Restore and verify that pre-grant native policy
           ansible.builtin.include_tasks: '{{ hactar_firewall_source_root }}/playbooks/tasks/replacement-isolation-apply.yml'
@@ -164,4 +164,4 @@
         argv: [rmdir, --, /run/hactar-recovery-policy.lock]
       when: demo_zabbix_firewall_lock.rc | default(1) == 0
       changed_when: true
-      no_log: true
+      no_log: false
