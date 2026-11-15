@@ -125,7 +125,7 @@ class NativeDnsBatchTests(unittest.TestCase):
         loader = DataLoader()
         filter_loader.add_directory(str(ROOT / 'playbooks/filter_plugins'))
         for role, filename, budget in (
-                ('website', 'demo_website_infrastructure.yml', 30),
+                ('website', 'demo_website_infrastructure.yml', 65),
                 ('zabbix', 'demo_zabbix_frontend.yml', 65)):
             source = loader.load_from_file(str(ROOT / 'playbooks/tasks' / filename))
             probe = next(child for task in source for child in task.get('block', [])

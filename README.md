@@ -20,8 +20,13 @@ Website and monitoring frontend DNS checks use RHEL's `dig` command from
 `bind-utils`, provided by Hactar base, rather than requiring `dnspython` in the EE.
 One four-query batch checks both frontend and AAP names: each must return only
 the pinned IPv4 address and no IPv6 answer. Failed DNS responses fail the check.
-The existing whole-probe retry counts remain 30 for the website and 65 for the
-monitoring frontend, with ten-second delays; these jobs install no prerequisites.
+Both frontends allow 65 whole-probe retries with ten-second delays so the
+controlled zone's existing ten-minute negative cache can expire. They return
+as soon as the original checks pass; these jobs install no prerequisites.
+The retry delays allow 650 seconds, plus DNS query time. Apply the matching
+private CaC's 1800-second Enable Demo Website job timeout before deployment:
+the Controller deadline must also allow certificate, nginx and HTTPS checks.
+That deadline remains the hard limit; retry timing is not a wall-clock guarantee.
 
 Runtime validation accepts native tagged integers while continuing to reject
 booleans as schema versions, account IDs, resource IDs or binary sizes. Literal
@@ -282,7 +287,7 @@ selected instance's verified hypervisor, testserver and TRA. Importing it
 creates AAP configuration and launches no application or EDA activation.
 Secret-dependent jobs receive a whole-file Vault ciphertext string and stop
 before managed host, DNS or API writes when required settings are missing.
-Deployment version **1.6.12** is documented in [CHANGELOG.md](CHANGELOG.md).
+Deployment version **1.6.13** is documented in [CHANGELOG.md](CHANGELOG.md).
 Failed MCP builds now retain protected stdout/stderr in the runtime user's
 private server `logs/build.log`, then fail and remove the temporary checkout.
 The observed image-build failure is diagnosed: enforcing SELinux denied

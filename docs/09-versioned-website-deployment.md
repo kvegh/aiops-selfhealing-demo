@@ -23,8 +23,8 @@ approved ACME account, public HTTP/HTTPS reachability and the existing base
 permissions for nginx proxying. The playbook checks package/account readiness;
 it neither installs tools nor registers an account. Prepare the reviewed
 `community.general` collection pin on the target PAH before synchronizing the
-SCM Project. The existing supported execution image needs its DNS Python
-dependency; use the base preparation process if missing.
+SCM Project. Hactar base provides `bind-utils` for the native DNS checks; this
+job installs no prerequisite packages.
 
 The imported hypervisor Machine credential must contain the selected
 hypervisor's authorized SSH key. Enable, Disable, Restore and Arm use the
@@ -88,6 +88,15 @@ The existing lifecycle job deploys the page and verifies HTTP 200 over trusted
 HTTPS using the real hostname and loopback routing. This exercises certificate
 hostname validation without relying on a public-address hairpin. Separately
 check trusted HTTPS from outside the hypervisor after the job finishes.
+
+DNS readiness allows 65 retries with ten-second delays, matching the monitoring
+frontend's allowance for the controlled zone's ten-minute negative cache. It
+returns immediately when both names pass the unchanged IPv4-only checks. The
+650 seconds of retry delays exclude DNS query time and subsequent certificate,
+nginx and HTTPS work. Reapply the matching private CaC's 1800-second Enable Demo
+Website timeout through the normal importer before launching this playbook.
+The saved Controller timeout is the hard deadline; a longer retry allowance
+alone cannot prevent Controller from terminating an unfinished job.
 
 ## Initial recovery state
 

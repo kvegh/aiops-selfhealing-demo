@@ -119,6 +119,24 @@ templates, and the status page are still outstanding.
 - Interaction regressions for reversible switching and both-view parity through
   the complete recovery story; explicit Pages staging for the two local assets.
 
+## [1.6.13] — 2026-11-15
+
+### Fixed
+
+- Give website DNS readiness the existing monitoring frontend's 65 retries at
+  ten-second intervals, allowing the controlled zone's ten-minute negative
+  cache to expire. Keep the original resolver, four-query batch, selected IPv4,
+  absent-IPv6 checks and immediate success behavior.
+- Document the coordinated private CaC change from a 300-second to an
+  1800-second Enable Demo Website job deadline. The previous overall deadline
+  stopped a normal deployment during DNS readiness before certificate and
+  HTTPS verification. DNS retry timing is a nominal allowance, separate from
+  Controller's hard job deadline. Agent/Claude runtime guards are unchanged.
+- Update the existing native DNS-budget fixture. All 21 focused tests passed
+  in Core 2.20.10, including real Ansible target/hostname checks; playbook syntax
+  and scoped strict production lint also passed. A successful normal deployment
+  remains separate; the original failure is retained.
+
 ## [1.6.12] — 2026-11-14
 
 ### Fixed

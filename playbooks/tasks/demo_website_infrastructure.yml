@@ -211,7 +211,9 @@
           [demo_website_config.hostname, demo_website_config.aap_hostname],
           demo_website_config.hypervisor.public_ipv4))
       until: demo_website_dns_propagation is not failed
-      retries: 30
+      # Allow the existing ten-minute negative cache to expire, as the
+      # monitoring frontend does, while returning immediately on readiness.
+      retries: 65
       delay: 10
       no_log: true
 
