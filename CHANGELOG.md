@@ -113,6 +113,11 @@ templates, and the status page are still outstanding.
   stack. All three pages now make zero external requests, so they render
   identically on an audience phone with nothing but venue wifi.
 
+## [1.7.1] — 2026-11-16
+
+- Document the native subscription ownership decision, actual implementation
+  commit, first-registrar boundary and offline qualification limits.
+
 ## [1.7.0] — 2026-11-12
 
 ### Added

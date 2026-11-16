@@ -1,5 +1,32 @@
 # Design decisions history
 
+## Retain native TRA consumer ownership before repository changes — 2026-11-16
+
+Implementation `8c352cf7d67329770649b3b529f320ccabed019d` (deployment version1.7.0) keeps the existing
+certified subscription registration route and writes one root-only native owner
+receipt after successful consumer identity verification. The receipt binds the
+selected instance, guest UUID, authenticated machine identity and exact native
+consumer name/UUID. It is saved before repository enablement because a later
+repository error must not make a genuinely registered consumer unowned on retry.
+The two repositories retain `purge: false`; Insights and unrelated repositories
+are preserved. Native subscription operations share one bounded lock.
+
+The approved minimal VM creator's recovery and normal upstream modes both
+require updates disabled, so the AIOps registration remains the first registrar
+on that maintained path. A separate full VM environment can register earlier;
+this change does not infer ownership for that different path or for copied
+golden-image registrations. Preexisting unproved consumers and ambiguous
+unregister interruptions fail closed. There is no force registration or receipt
+fabrication. Matching Source teardown/template adoption and live acceptance
+remain separate work.
+
+Qualification used the already cached certified collection1.120.5 and official
+Core2.20 runtime:12 focused tests passed, including real atomic receipt writes
+followed by a simulated repository failure and a validated owned retry. Local
+Core2.21 checks also passed. No registration, teardown or redeploy was launched
+for this qualification, and no DNS implementation bytes changed.
+
+
 ## Complete AIOps public DNS v3 registration and guarded retirement — 2026-11-16
 
 Implementation `ca3e66187751b7b7a305d8254c953ad4a75e78b8` (deployment version
