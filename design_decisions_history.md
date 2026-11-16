@@ -1,5 +1,35 @@
 # Design decisions history
 
+## Reconcile selected Linux release metadata before monitoring import — 2026-11-16
+
+Implementation `abe7de546e0f325722239ea152f24ddd31b04878` (deployment version 1.6.15) prevents an
+existing importer from replacing current Linux release metadata with its older
+Source inventory copy. The observed deployment stopped at the unchanged full
+firewall comparison after the importer rendered from that stale copy. The
+failed run remains recorded; a metadata-only repair and normal supported retry
+restored functional deployment.
+
+Before the existing child import, the monitoring play now compares the bound
+Source hypervisor with the complete CaC policy already checked against native
+firewall state. It fills only missing selected testserver and TRA releases,
+preserving order, all other variables and production protections. It reads the
+TRA's own saved workload row and requires its connection, managed-guest record
+and MCP declaration to agree. Unknown guests or other drift stop the import.
+The appliance's exact declared gateway HTTPS application grant remains separate
+from the Source base policy. Complete preimage and readback checks detect
+observed API races without claiming atomic compare-and-swap.
+
+The existing API connection, credentials, importer, transport and native firewall
+guards remain. Current metadata needs no write or extra TRA lookup. All 25
+focused tests passed in cached Core 2.20.10, including native import sequencing,
+owner and API refusals, literal preservation and existing firewall/rollback
+cases. The literal test now checks actual untrusted-template behavior instead
+of an obsolete wrapper-class assertion. A review caught and corrected an
+initial fixture assumption that MCP provenance lived on the hypervisor row;
+the final native qualification uses the actual separate TRA-row layout.
+The automatic omission branch still needs fresh-installation live acceptance.
+Version 1.6.16 documents this implementation without changing executable code.
+
 ## Align website DNS readiness with the observed negative cache — 2026-11-15
 
 Implementation `9adfd92bdd44e351a1e9126d3d069a1df4d9be63` (deployment version
