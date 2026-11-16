@@ -138,3 +138,31 @@ class RegistrationReceiptOrderingTests(unittest.TestCase):
             receipt = json.loads((Path(target) / 'subscription-owner.json').read_text())
             self.assertEqual(receipt['consumer_uuid'], CONSUMER)
             self.assertIs(receipt['retired'], False)
+
+
+class NativeGuestIdentityTests(unittest.TestCase):
+    def test_native_identity_assert_refuses_copied_machine_or_uuid_before_subscription_reads(self):
+        import os
+        import subprocess
+        import sys
+        import tempfile
+        import yaml
+        original = yaml.safe_load((ROOT / 'playbooks/tasks/demo_subscription_owner_read.yml').read_text())[0]
+        for field in ('uuid', 'machine_id'):
+            with self.subTest(field=field), tempfile.TemporaryDirectory(prefix='subscription-native-identity-') as temp:
+                folder = Path(temp)
+                config = owner.configuration(deployment())
+                actual = dict(config['tra'])
+                actual[field] = '99999999-2222-4333-8444-555555555555' if field == 'uuid' else '9' * 32
+                task = copy.deepcopy(original)
+                task['ansible.builtin.command']['argv'] = [sys.executable, '-c', 'import sys;print(sys.argv[1])',
+                    '{{ fixture_uuid if item.path == "/sys/class/dmi/id/product_uuid" else fixture_mid }}']
+                play = [{'hosts': 'localhost', 'connection': 'local', 'gather_facts': False,
+                         'vars': {'demo_subscription_config': config, 'fixture_uuid': actual['uuid'], 'fixture_mid': actual['machine_id']},
+                         'tasks': [task]}]
+                source = folder / 'check.yml'
+                source.write_text(yaml.safe_dump(play, sort_keys=False))
+                env = dict(os.environ, ANSIBLE_LOCAL_TEMP=str(folder/'local'), ANSIBLE_REMOTE_TEMP=str(folder/'remote'),ANSIBLE_NOCOLOR='1')
+                result = subprocess.run([sys.executable,'-m','ansible.cli.playbook','-i','localhost,',str(source)],env=env,capture_output=True,text=True,timeout=60)
+                self.assertNotEqual(result.returncode,0,result.stdout+result.stderr)
+                self.assertIn('failed=1',result.stdout)

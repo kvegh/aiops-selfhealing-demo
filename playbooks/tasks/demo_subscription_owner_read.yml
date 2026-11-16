@@ -1,4 +1,17 @@
 ---
+- name: Read actual native TRA UUID and machine identity while holding its subscription lock
+  ansible.builtin.command:
+    argv: [cat, '{{ item.path }}']
+  loop:
+    - path: /sys/class/dmi/id/product_uuid
+      expected: '{{ demo_subscription_config.tra.uuid }}'
+    - path: /etc/machine-id
+      expected: '{{ demo_subscription_config.tra.machine_id }}'
+  register: demo_subscription_native_identity_read
+  changed_when: false
+  failed_when: demo_subscription_native_identity_read.stdout | trim | lower != item.expected
+  no_log: true
+
 - name: Read the authenticated TRA native fully qualified hostname
   ansible.builtin.command:
     argv: [python3, -c, 'import socket; print(socket.getfqdn())']

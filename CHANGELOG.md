@@ -113,6 +113,15 @@ templates, and the status page are still outstanding.
   stack. All three pages now make zero external requests, so they render
   identically on an audience phone with nothing but venue wifi.
 
+## [1.7.2] — 2026-11-16
+
+- Read the selected TRA's actual SMBIOS UUID and machine ID under the native
+  subscription lock before reading or changing consumer ownership. A copied
+  machine identity cannot stand in for the exact selected VM.
+- Qualification: 13 focused cached Core 2.20 tests passed with the existing
+  certified 1.120.5 collection; native wrong-UUID and wrong-machine-ID guards
+  refuse before subscription access. No live registration or cleanup was run.
+
 ## [1.7.1] — 2026-11-16
 
 - Document the native subscription ownership decision, actual implementation

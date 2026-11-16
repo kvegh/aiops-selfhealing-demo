@@ -25,7 +25,7 @@ AI-driven incident remediation for enterprise infrastructure — with the blast 
 
 The selected TRA subscription setup records its exact native consumer after
 successful registration and before enabling repositories. The root-only receipt
-binds the selected instance, guest UUID, authenticated machine identity and
+binds the selected instance, directly verified SMBIOS guest UUID, authenticated machine identity and
 native consumer name/UUID. Repository failures retain that receipt so an owned
 retry can continue. Registered consumers without matching provenance, copied
 consumers and ambiguous interrupted retirement are refused. There is no forced
@@ -315,7 +315,7 @@ selected instance's verified hypervisor, testserver and TRA. Importing it
 creates AAP configuration and launches no application or EDA activation.
 Secret-dependent jobs receive a whole-file Vault ciphertext string and stop
 before managed host, DNS or API writes when required settings are missing.
-Deployment version **1.7.1** is documented in [CHANGELOG.md](CHANGELOG.md).
+Deployment version **1.7.2** is documented in [CHANGELOG.md](CHANGELOG.md).
 Failed MCP builds now retain protected stdout/stderr in the runtime user's
 private server `logs/build.log`, then fail and remove the temporary checkout.
 The observed image-build failure is diagnosed: enforcing SELinux denied
