@@ -42,6 +42,25 @@ The approved minimal VM creator disables package updates in both recovery and
 normal upstream modes, so this AIOps setup is the first registrar on that path.
 A pre-registered golden image remains an explicit ownership refusal.
 
+## Target-local TRA subscription retirement
+
+`playbooks/retire_tra_subscription.yml` is the fixed-TRA helper for the separate
+Source workload cleanup. The matching CaC template uses the existing TRA
+Machine/Vault credentials, fixed inventory and `tra` limit, a 600-second timeout,
+and only an exact-instance confirmation survey. It verifies the actual native
+UUID, machine ID and saved consumer receipt before unregistration, then requires
+native identity/certificate absence and persists success before returning its
+actual job/template/revision artifact. A repeated owned retirement is idempotent;
+a foreign consumer or ambiguous prior unregister is preserved for recovery.
+
+This helper removes no VM, disk, AAP resource or other consumer. Source waits
+for its successful native job and validates its artifact before the remaining
+workload resources can be retired. The fresh-capture Source CaC helper appends
+this one saved job definition without overwriting a newer instance/runtime
+publication. Matching Source orchestration and live same-AAP cleanup/redeploy
+acceptance remain separate adoption gates. Owned task logging follows the
+existing temporary `no_log: false` direction; raw results remain private.
+
 ## Ansible Core 2.20 runtime
 
 For Core 2.20 deployments, use the unmodified official AAP 2.7 execution
@@ -317,7 +336,7 @@ selected instance's verified hypervisor, testserver and TRA. Importing it
 creates AAP configuration and launches no application or EDA activation.
 Secret-dependent jobs receive a whole-file Vault ciphertext string and stop
 before managed host, DNS or API writes when required settings are missing.
-Deployment version **1.7.6** is documented in [CHANGELOG.md](CHANGELOG.md).
+Deployment version **1.8.0** is documented in [CHANGELOG.md](CHANGELOG.md).
 Failed MCP builds now retain protected stdout/stderr in the runtime user's
 private server `logs/build.log`, then fail and remove the temporary checkout.
 The observed image-build failure is diagnosed: enforcing SELinux denied

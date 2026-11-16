@@ -116,6 +116,21 @@ templates, and the status page are still outstanding.
   stack. All three pages now make zero external requests, so they render
   identically on an audience phone with nothing but venue wifi.
 
+## [1.8.0] — 2026-11-16
+
+- Add the normal target-local TRA subscription retirement helper for Source's
+  workload cleanup. It verifies exact native UUID, machine and consumer ownership,
+  unregisters only that consumer, proves identity/certificate absence and returns
+  actual native job/template/revision evidence before Source can remove its disk.
+- Preserve foreign/copied consumers, ambiguous interruptions, AAP resources and
+  every unrelated owner. Fixed native job routing and visible logging require
+  the matching fresh-capture CaC append; no new credentials or transport.
+- Qualification: two complete native Ansible flows against an isolated temporary
+  subscription CLI prove exact one-time unregister, an idempotent second run and
+  refusal of another consumer receipt. Those plus the logging policy passed
+  in cached Core 2.20; both native flows also passed locally in Core 2.21.
+  No live subscription, VM or AAP operation was performed.
+
 ## [1.7.6] — 2026-11-16
 
 ### Documentation

@@ -1,0 +1,179 @@
+- name: Retire only the selected TRA's proven native subscription
+  hosts: all
+  become: true
+  gather_facts: false
+  pre_tasks:
+  - name: Validate only this instance's existing TRA without requiring a live testserver
+    ansible.builtin.set_fact:
+      demo_subscription_config: '{{ demo_mcp_deployment | demo_subscription_configuration }}'
+      demo_subscription_lock_acquired: false
+    no_log: false
+  - name: Require exact instance confirmation and one matching TRA inventory target
+    ansible.builtin.assert:
+      that:
+      - not ansible_check_mode
+      - ansible_play_hosts_all | length == 1
+      - ansible_host == demo_subscription_config.tra.address
+      - demo_subscription_teardown_confirmation | default('') == demo_subscription_config.instance_name
+      quiet: true
+    no_log: false
+  - name: Allocate job-local trust for the exact existing TRA
+    ansible.builtin.tempfile:
+      state: file
+      prefix: aiops-subscription-retire-trust-
+    delegate_to: localhost
+    become: false
+    register: demo_subscription_trust
+    no_log: false
+  - name: Pin only the selected TRA public keys
+    ansible.builtin.copy:
+      dest: '{{ demo_subscription_trust.path }}'
+      content: '{% for key in demo_subscription_config.tra.host_keys %}
+
+        {{ demo_subscription_config.tra.address }} {{ key }}
+
+        [{{ demo_subscription_config.tra.address }}]:{{ demo_subscription_config.tra.port }} {{ key }}
+
+        {% endfor %}
+
+        '
+      mode: '0600'
+    delegate_to: localhost
+    become: false
+    no_log: false
+  - name: Enforce the existing verified TRA connection
+    ansible.builtin.set_fact:
+      ansible_user: '{{ demo_subscription_config.tra.user }}'
+      ansible_port: '{{ demo_subscription_config.tra.port }}'
+      ansible_password: ''
+      ansible_become_password: ''
+      ansible_host_key_checking: true
+      ansible_ssh_host_key_checking: true
+      ansible_ssh_common_args: -o BatchMode=yes -o PasswordAuthentication=no -o KbdInteractiveAuthentication=no
+        -o StrictHostKeyChecking=yes -o UserKnownHostsFile={{ demo_subscription_trust.path | quote }} -o GlobalKnownHostsFile=/dev/null
+    no_log: false
+  tasks:
+  - name: Verify and retire only the owned consumer while preserving ambiguity
+    block:
+    - name: Wait a bounded time for the exact selected TRA
+      ansible.builtin.wait_for_connection:
+        timeout: 120
+        connect_timeout: 5
+        sleep: 5
+      no_log: false
+    - name: Authenticate its actual machine identity before RHSM access
+      ansible.builtin.command:
+        argv:
+        - cat
+        - /etc/machine-id
+      register: demo_subscription_live_machine
+      changed_when: false
+      failed_when: demo_subscription_live_machine.stdout | trim != demo_subscription_config.tra.machine_id
+      no_log: false
+    - name: Serialize exact retirement against any concurrent registration
+      ansible.builtin.command:
+        argv:
+        - mkdir
+        - --mode=0700
+        - --
+        - /run/aiops-subscription.lock
+      register: demo_subscription_lock_attempt
+      until: demo_subscription_lock_attempt.rc == 0
+      retries: 12
+      delay: 5
+      changed_when: false
+      no_log: false
+    - name: Retain only this invocation's acquired subscription lock
+      ansible.builtin.set_fact:
+        demo_subscription_lock_acquired: true
+      no_log: false
+    - name: Read current consumer and exact existing ownership under that lock
+      ansible.builtin.include_tasks: tasks/demo_subscription_owner_read.yml
+      no_log: false
+    - name: Refuse copied foreign or incompletely retired consumer identities
+      ansible.builtin.assert:
+        that: demo_subscription_observed | demo_subscription_before_retirement(demo_subscription_saved_owner, demo_subscription_config)
+        quiet: true
+      no_log: false
+    - name: Unregister only this recorded current TRA consumer
+      ansible.builtin.command:
+        argv:
+        - subscription-manager
+        - unregister
+      environment:
+        LC_ALL: C
+      when: demo_subscription_observed.registered
+      changed_when: true
+      no_log: false
+    - name: Verify explicit native identity absence after successful unregistration
+      ansible.builtin.command:
+        argv:
+        - subscription-manager
+        - identity
+      environment:
+        LC_ALL: C
+      register: demo_subscription_retired_identity
+      when: demo_subscription_native_files.results[0].stat.exists
+      changed_when: false
+      failed_when: demo_subscription_retired_identity.rc != 1
+      no_log: false
+    - name: Require the native absence message instead of treating any error as success
+      ansible.builtin.assert:
+        that: not (demo_subscription_retired_identity | demo_subscription_identity(demo_subscription_config)).registered
+        quiet: true
+      when: demo_subscription_native_files.results[0].stat.exists
+      no_log: false
+    - name: Require the native consumer certificate actually absent
+      ansible.builtin.stat:
+        path: /etc/pki/consumer/cert.pem
+        follow: false
+      register: demo_subscription_retired_certificate
+      failed_when: demo_subscription_retired_certificate.stat.exists
+      no_log: false
+    - name: Bind the exact consumer's successfully verified retirement receipt
+      ansible.builtin.set_fact:
+        demo_subscription_desired_owner: '{{ demo_subscription_config | demo_subscription_owner(demo_subscription_saved_owner.consumer_uuid,
+          true, demo_subscription_saved_owner.consumer_name) }}'
+      when: demo_subscription_saved_owner is not none
+      no_log: false
+    - name: Persist successful retirement before returning the native result
+      ansible.builtin.include_tasks: tasks/demo_subscription_owner_write.yml
+      when: demo_subscription_saved_owner is not none
+      no_log: false
+    - name: Return only exact noncredential native absence evidence
+      ansible.builtin.set_stats:
+        data:
+          aap_aiops_subscription_absence:
+            instance_name: '{{ demo_subscription_config.instance_name }}'
+            guest_name: '{{ demo_subscription_config.tra.vm_name }}'
+            uuid: '{{ demo_subscription_config.tra.uuid }}'
+            machine_id: '{{ demo_subscription_config.tra.machine_id }}'
+            consumer_uuid: '{{ demo_subscription_saved_owner.consumer_uuid if demo_subscription_saved_owner is not
+              none else none }}'
+            registration_absent: true
+            consumer_certificate_absent: true
+            target_job_id: '{{ awx_job_id | string }}'
+            target_job_template_id: '{{ awx_job_template_id | string }}'
+            target_project_revision: '{{ awx_project_revision }}'
+        per_host: false
+      no_log: false
+    always:
+    - name: Release only this invocation's native subscription lock
+      ansible.builtin.command:
+        argv:
+        - rmdir
+        - --
+        - /run/aiops-subscription.lock
+      when: demo_subscription_lock_acquired | bool
+      changed_when: false
+      no_log: false
+    - name: Remove only this job's temporary TRA trust
+      ansible.builtin.file:
+        path: '{{ demo_subscription_trust.path }}'
+        state: absent
+      when: demo_subscription_trust.path is defined
+      delegate_to: localhost
+      become: false
+      no_log: false
+    no_log: false
+  no_log: false
