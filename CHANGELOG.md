@@ -12,6 +12,9 @@ surface:
 History starts at `v1.0.0`. The pre-split history was moved to a private
 archive during the repository split and is not part of this timeline.
 
+The README tracks frontend presentation and deployment automation versions
+separately. Where those numbers overlap, the entries below name the component.
+
 ## [Unreleased] — towards 2.0.0
 
 ### Temporary deployment diagnostics
@@ -113,6 +116,15 @@ templates, and the status page are still outstanding.
   stack. All three pages now make zero external requests, so they render
   identically on an audience phone with nothing but venue wifi.
 
+## [1.7.6] — 2026-11-16
+
+### Documentation
+
+- Clarify that the two historical 1.7.0 entries describe frontend presentation
+  and deployment automation, preserving their original numbers and dates.
+- Document the original implementation commits and advance the working
+  deployment documentation version without changing runtime code.
+
 ## [1.7.5] — 2026-11-16
 
 - Document the temporary visible-logging decision, exact implementation commit
@@ -146,7 +158,7 @@ templates, and the status page are still outstanding.
 - Document the native subscription ownership decision, actual implementation
   commit, first-registrar boundary and offline qualification limits.
 
-## [1.7.0] — 2026-11-12
+## Frontend [1.7.0] — 2026-11-12
 
 ### Added
 
@@ -159,7 +171,7 @@ templates, and the status page are still outstanding.
 - Interaction regressions for reversible switching and both-view parity through
   the complete recovery story; explicit Pages staging for the two local assets.
 
-## [1.7.0] — 2026-11-16
+## Deployment [1.7.0] — 2026-11-16
 
 - Bind selected TRA RHSM registration to exact native guest and consumer
   provenance. Persist the root-only ownership receipt before repository changes

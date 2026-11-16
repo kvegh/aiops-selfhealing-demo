@@ -1,5 +1,20 @@
 # Design decisions history
 
+## Clarify frontend and deployment version history — 2026-11-16
+
+Presentation implementation `0ed10dc8a1ea29cb3978a46551fffab553793fdd` changed
+the README's frontend version from 1.6.8 to 1.7.0 and added the projector view.
+Its README still identified deployment release 1.6.3 separately. Later,
+subscription implementation `8c352cf7d67329770649b3b529f320ccabed019d` advanced
+the deployment working version from 1.6.20 to 1.7.0. Both historical changelog
+headings used the same number without naming the component.
+
+The headings now identify Frontend and Deployment, retaining both original
+numbers, dates and change descriptions. The README's frontend version remains
+1.7.0; deployment documentation advances to 1.7.6 under the existing convention.
+This clarification preserves runtime files, source qualification and actual
+publication and deployment acceptance states.
+
 ## Preserve temporary visible logging for subscription tasks — 2026-11-16
 
 Implementation `a6a7362c3450dd3e85dd4c2aafbb777f56f0c7db` (deployment version1.7.4) applies the owner's
