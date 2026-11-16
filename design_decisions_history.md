@@ -1,5 +1,32 @@
 # Design decisions history
 
+## Retire only the owned TRA consumer through its normal target-local job — 2026-11-16
+
+Implementation `125abb313b56b120f1ba383a44cad0df1ab86ecd` (deployment1.8.0) adds a fixed-TRA subscription
+retirement playbook for Source's separate workload teardown. It reuses the
+existing target AAP Machine/Vault credential path, confirms the exact selected
+instance, directly checks native UUID/machine ID and requires the root-only
+consumer ownership receipt. After native unregister it proves identity and
+consumer-certificate absence, persists successful retirement and returns exact
+job/template/project-revision evidence. Source must verify that actual job before
+removing the helper's definitions or the TRA disk. No appliance connection,
+new credential type, AAP rollback or VM removal is introduced by this helper.
+
+Foreign/copied consumers and ambiguous interrupted unregisters remain preserved.
+An already verified owned retirement can be repeated without another external
+unregister. The fresh-capture CaC append keeps the existing inventory/project,
+fixed `tra` limit and credentials, requires only exact-instance confirmation and
+retains a 600-second normal job timeout. Owned tasks retain the owner's temporary
+visible logging direction. No job is launched merely by publishing the code.
+
+Two native Ansible fixture flows prove one exact unregister plus idempotent
+retry, and refusal of a different consumer receipt. Together with logging policy
+they passed under cached Core2.20; native flows also passed under local Core2.21.
+All external CLI paths were redirected into temporary fixtures. These results
+are offline qualification; live Source ownership and same-AAP redeploy remain
+separate acceptance gates.
+
+
 ## Clarify frontend and deployment version history — 2026-11-16
 
 Presentation implementation `0ed10dc8a1ea29cb3978a46551fffab553793fdd` changed

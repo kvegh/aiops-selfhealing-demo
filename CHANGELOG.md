@@ -116,6 +116,11 @@ templates, and the status page are still outstanding.
   stack. All three pages now make zero external requests, so they render
   identically on an audience phone with nothing but venue wifi.
 
+## [1.8.1] — 2026-11-16
+
+- Document the normal target-local retirement decision, implementation commit,
+  native fixture qualification and separate live adoption/acceptance gates.
+
 ## [1.8.0] — 2026-11-16
 
 - Add the normal target-local TRA subscription retirement helper for Source's
