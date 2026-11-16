@@ -113,6 +113,11 @@ templates, and the status page are still outstanding.
   stack. All three pages now make zero external requests, so they render
   identically on an audience phone with nothing but venue wifi.
 
+## [1.7.5] — 2026-11-16
+
+- Document the temporary visible-logging decision, exact implementation commit
+  and non-logging inverse/native qualification evidence.
+
 ## [1.7.4] — 2026-11-16
 
 - Apply the owner's existing temporary `no_log: false` direction to every owned

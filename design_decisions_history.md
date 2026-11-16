@@ -1,5 +1,21 @@
 # Design decisions history
 
+## Preserve temporary visible logging for subscription tasks — 2026-11-16
+
+Implementation `a6a7362c3450dd3e85dd4c2aafbb777f56f0c7db` (deployment version1.7.4) applies the owner's
+existing `no_log: false`-until-clean direction to all owned subscription tasks,
+includes and blocks. This corrects the new feature's logging defaults to the
+existing explicit instruction; it changes no ownership, native identity,
+registration, repository or retirement behavior. Vendor certified-role masking
+and native credential-field redaction remain. Raw outputs stay in private AAP
+or protected local evidence and are redacted in reports.
+
+Exact parsed-YAML comparison against `caf02817d07626df7196565d52863ca49462c06b`
+proved the three maintained task files differ only in `no_log` fields. Eleven
+policy and native wrong-identity/refusal/retry tests passed under cached Core2.20
+and local Core2.21. Live registration and workload teardown remain unverified.
+
+
 ## Recheck actual TRA SMBIOS identity inside the subscription lock — 2026-11-16
 
 Implementation `be1bdc055a9c8d0fd17450a7796b2fa7c8c95aac` (deployment version1.7.2) adds a direct native SMBIOS
