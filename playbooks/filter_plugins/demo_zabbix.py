@@ -5,6 +5,7 @@ import ipaddress
 import json
 from pathlib import Path
 import re
+import uuid
 import xml.etree.ElementTree as ET
 
 from ansible.errors import AnsibleFilterError
@@ -392,6 +393,156 @@ def source_inventory_variables(config, resource, rows):
     return wrap_var(result)
 
 
+def _source_variables(row):
+    value = row.get('variables') or {}
+    if isinstance(value, str):
+        value = AnsibleLoader(value._strip_unsafe() if isinstance(value, AnsibleUnsafeText) else value).get_single_data()
+    require(isinstance(value, dict), 'Keep the existing Source variables as a mapping.')
+    return copy.deepcopy(value)
+
+
+def _source_literal_data(value):
+    # Native Core 2.20 lazy containers cannot be directly reconstructed by wrap_var.
+    if isinstance(value, dict):
+        return {wrap_var(key): _source_literal_data(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_source_literal_data(item) for item in value]
+    return wrap_var(value)
+
+
+def source_policy_plan(config, deployment, rows, proof):
+    """Fill only omitted declared testserver1/TRA releases on the bound Source host."""
+    projection = deployment.get('isolation_policy')
+    require(isinstance(projection, dict) and isinstance(rows, list) and len(rows) <= 256,
+            'Use the checked CaC policy and bounded existing Source inventory.')
+    expected = projection.get('released_clients', [])
+    require(isinstance(expected, list) and all(isinstance(item, dict) and set(item) == {'bridge', 'ipv4', 'mac'}
+            for item in expected) and len({json.dumps(item, sort_keys=True) for item in expected}) == len(expected),
+            'Keep unique explicit CaC release identities.')
+    inventory = config['cac_import']['inventory_id']
+    require(all(isinstance(row, dict) and row.get('inventory') == inventory for row in rows),
+            'Use only the bound importer Source inventory.')
+    selected = [row for row in rows if row.get('name') == config['hypervisor']['name']]
+    # Legacy paths with no releases require no new metadata/provenance operation.
+    if not selected and not expected:
+        return {'changed': False, 'needs_owner': False}
+    require(len(selected) == 1, 'Resolve one existing bound Source hypervisor alias.')
+    row = selected[0]; before = _source_variables(row); pin = config['hypervisor']
+    require(type(row.get('id')) is int and row['id'] > 0 and type(row.get('enabled')) is bool
+            and before.get('ansible_host') == pin['address'] and before.get('public_ipv4') == pin['public_ipv4']
+            and before.get('ansible_user') == pin['user'] and str(before.get('ansible_port')) == str(pin['port'])
+            and before.get('machine_id') == pin['machine_id'] and before.get('host_keys') == pin['host_keys'],
+            'Source policy metadata must retain the exact selected hypervisor pin.')
+    aliases = [key for key in ('isolation_policy', 'hactar_isolation_policy') if key in before]
+    require('isolation_policy' in aliases, 'Keep the existing primary Source isolation policy.')
+    missing = []
+    for key in aliases:
+        current = before[key]
+        require(isinstance(current, dict) and isinstance(current.get('released_clients', []), list),
+                'Keep explicit Source policy mappings and release lists.')
+        present = current.get('released_clients', [])
+        require(present == [item for item in expected if item in present],
+                'Source releases may only be an unchanged ordered CaC subset.')
+        for item in expected:
+            if item not in present and item not in missing: missing.append(item)
+    if not missing:
+        return {'changed': False, 'needs_owner': False}
+    checked = proof.get('checked_policy')
+    variants = [copy.deepcopy(projection)]
+    base_variants = variants
+    owner = deployment.get('firewall', {}).get('guest', {})
+    if owner:
+        appliance = proof.get('appliance')
+        require(isinstance(owner, dict) and owner.get('verified') is True and isinstance(appliance, dict)
+                and all(owner.get(key) == appliance.get(key) and key in owner for key in (
+                    'uuid', 'vm_name', 'instance_name', 'bridge', 'address', 'mac', 'gateway', 'hypervisor_machine_id'))
+                and owner['vm_name'] == config['vm_name'] and owner['instance_name'] == config['instance_name']
+                and owner['hypervisor_machine_id'] == pin['machine_id'],
+                'Only the declared authenticated appliance owner may explain its exact application grant.')
+        grant = {'bridge': owner['bridge'], 'ipv4': owner['address'], 'mac': owner['mac'],
+                 'destinations': [owner['gateway']], 'ports': [443]}
+        if grant in projection.get('guest_host_clients', []):
+            base = copy.deepcopy(projection)
+            base['guest_host_clients'] = [item for item in base['guest_host_clients'] if item != grant]
+            variants.append(base)
+            base_variants = [base]
+    require(checked in variants, 'Metadata repair requires the existing complete checked CaC candidate.')
+    for key in aliases:
+        rest = {field: value for field, value in before[key].items() if field != 'released_clients'}
+        require(any(rest == {field: value for field, value in candidate.items() if field != 'released_clients'}
+                    for candidate in base_variants),
+                'Source policy differs beyond the selected roles and exact declared appliance grant.')
+    workload = proof.get('workload')
+    if workload is None:
+        return {'changed': False, 'needs_owner': True}
+    require(isinstance(workload, dict) and type(workload.get('id')) is int and workload['id'] > 0
+            and workload.get('inventory') == proof.get('inventory') and workload.get('name') == proof.get('name'),
+            'Read the exact existing workload host before reconciling Source metadata.')
+    saved = _source_variables(workload)
+    declared = saved.get('demo_zabbix_deployment')
+    require(isinstance(declared, dict) and declared.get('instance_name') == config['instance_name']
+            and declared.get('isolation_policy') == projection
+            and configuration(declared)['hypervisor'] == pin,
+            'Use the same saved workload declaration that supplied the checked policy.')
+    server = guests.guest(config, declared.get('testserver'), 'testserver1')
+    require(server == config['testserver'], 'The selected testserver differs from its saved immutable owner.')
+    owners = {'testserver1': server}
+    server_identity = {'bridge': server.get('bridge'), 'ipv4': server['address'], 'mac': server.get('mac')}
+    if any(item != server_identity for item in missing):
+        tra_row = proof.get('tra_workload')
+        if tra_row is None:
+            return {'changed': False, 'needs_owner': False, 'needs_tra': True}
+        require(isinstance(tra_row, dict) and type(tra_row.get('id')) is int and tra_row['id'] > 0
+                and tra_row.get('inventory') == proof.get('inventory') and tra_row.get('name') == 'tra',
+                'Read only the existing TRA workload host in this exact inventory.')
+        tra_saved = _source_variables(tra_row)
+        mcp = tra_saved.get('demo_mcp_deployment')
+        require(isinstance(mcp, dict), 'The saved TRA host must contain its declared MCP provenance.')
+        prepared = guests.configuration(mcp)
+        require(prepared['instance_name'] == config['instance_name'] and prepared['hypervisor'] == pin
+                and prepared['testserver'] == server, 'MCP role owners must belong to this exact workload instance.')
+        managed = guests.guest(config, tra_saved.get('demo_managed_guest'), 'tra')
+        require(managed == prepared['tra']
+                and tra_saved.get('ansible_host') == managed['address']
+                and tra_saved.get('ansible_user') == managed['user']
+                and str(tra_saved.get('ansible_port')) == str(managed['port'])
+                and tra_saved.get('demo_instance_name') == config['instance_name']
+                and str(tra_saved.get('demo_instance_number')) == str(config['instance_number'])
+                and tra_saved.get('hypervisor_host') == pin['name'],
+                'The saved TRA connection, managed guest and MCP provenance must agree exactly.')
+        owners['tra'] = managed
+    identities = []
+    for role, guest in owners.items():
+        require(all(field in guest for field in ('uuid', 'disk', 'network', 'bridge', 'mac', 'machine_id', 'host_keys'))
+                and str(uuid.UUID(guest['uuid'])) == guest['uuid']
+                and guest['uuid'] != '00000000-0000-0000-0000-000000000000'
+                and re.fullmatch(re.escape('/opt/vms/' + guest['vm_name']) + r'(?:\.disk)?\.qcow2', guest['disk'])
+                and re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_.-]{0,62}', guest['network'])
+                and guest['bridge'] in projection.get('bridges', [])
+                and isinstance(guest['mac'], str) and re.fullmatch(r'(?:[0-9a-f]{2}:){5}[0-9a-f]{2}', guest['mac'])
+                and not int(guest['mac'][:2], 16) & 1 and guest['mac'] != '00:00:00:00:00:00'
+                and guest['machine_id'] not in (pin['machine_id'], '0' * 32),
+                'Require complete immutable Linux role provenance before metadata repair.')
+        require(not any(guest.get(field) == other.get(field) for other_role, other in owners.items() if other_role != role
+                        for field in ('uuid', 'disk', 'mac', 'address', 'machine_id')),
+                'Selected Linux role owners must have distinct immutable identities.')
+        require(not any(set(guest['host_keys']) & set(other['host_keys']) for other_role, other in owners.items()
+                        if other_role != role), 'Selected Linux role owners must retain independent host keys.')
+        identities.append({'bridge': guest['bridge'], 'ipv4': guest['address'], 'mac': guest['mac']})
+    require(all(item in identities for item in missing),
+            'Only this instance testserver1 and TRA may explain missing Source releases.')
+    updated = copy.deepcopy(before)
+    for key in aliases: updated[key]['released_clients'] = copy.deepcopy(expected)
+    identity = {key: row[key] for key in ('id', 'inventory', 'name', 'enabled')}
+    return _source_literal_data({'changed': True, 'needs_owner': False, 'host': identity, 'before': before, 'variables': updated})
+
+
+def source_policy_matches(plan, row, updated=False):
+    """Compare complete variables and exact destination at each native API boundary."""
+    return (isinstance(row, dict) and all(row.get(key) == value for key, value in plan['host'].items())
+            and _source_variables(row) == plan['variables' if updated else 'before'])
+
+
 class FilterModule:
     def filters(self):
         return {'demo_zabbix_configuration':configuration, 'demo_zabbix_metadata':metadata,
@@ -400,4 +551,6 @@ class FilterModule:
                 'demo_zabbix_event_stream':event_stream, 'demo_zabbix_recipient_medias':recipient_medias,
                 'demo_zabbix_provenance':provenance, 'demo_zabbix_reconciliation':reconcile,
                 'demo_zabbix_source_inventory_variables':source_inventory_variables,
+                'demo_zabbix_source_policy_plan':source_policy_plan,
+                'demo_zabbix_source_policy_matches':source_policy_matches,
                 'demo_zabbix_imported_media':imported_media, 'demo_zabbix_delivery_ready':delivery_ready}

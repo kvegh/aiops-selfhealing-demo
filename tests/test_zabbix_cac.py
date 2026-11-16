@@ -15,11 +15,50 @@ import unittest
 import yaml
 from ansible.parsing.vault import VaultLib, VaultSecret
 from ansible.errors import AnsibleFilterError
-from ansible.utils.unsafe_proxy import AnsibleUnsafeText, wrap_var
+from ansible.utils.unsafe_proxy import wrap_var
+from ansible.parsing.dataloader import DataLoader
+from ansible.template import Templar, is_trusted_as_template
 
 from test_zabbix_native_firewall import inputs, policy
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def release_inputs(app_grant=True):
+    values=inputs(); deployment=values['demo_zabbix_deployment']
+    server=deployment['testserver']
+    server.update(disk='/opt/vms/testserver1-v07.disk.qcow2',network='isolated',bridge='demo0',mac='52:54:00:00:00:31')
+    tra=copy.deepcopy(server)
+    tra.update(vm_name='tra-v07',disk='/opt/vms/tra-v07.disk.qcow2',address='192.0.2.125',
+        uuid='33333333-3333-3333-3333-333333333333',machine_id='3'*32,mac='52:54:00:00:00:32',
+        host_keys=['ssh-ed25519 QkJCQg=='])
+    mcp=copy.deepcopy(deployment);mcp['tra']=tra
+    base={'bridge':'demo0','ipv4':'192.0.2.123','mac':'52:54:00:00:00:30'}
+    released=[base]+[{'bridge':guest['bridge'],'ipv4':guest['address'],'mac':guest['mac']} for guest in (server,tra)]
+    projection=deployment['isolation_policy'];projection['released_clients']=released
+    projection['protected_ipv4']=['198.51.100.20']
+    if not app_grant:projection['guest_host_clients']=projection['guest_host_clients'][:1]
+    config=policy.configuration(deployment);values['demo_zabbix_config']=config
+    checked=copy.deepcopy(projection)
+    if app_grant:checked['guest_host_clients']=checked['guest_host_clients'][:1]
+    current=copy.deepcopy(checked);current['released_clients']=[base]
+    pin=config['hypervisor']
+    variables={'ansible_host':pin['address'],'public_ipv4':pin['public_ipv4'],'ansible_user':pin['user'],
+        'ansible_port':pin['port'],'machine_id':pin['machine_id'],'host_keys':pin['host_keys'],
+        'isolation_policy':current,'hactar_isolation_policy':copy.deepcopy(current),
+        'operator_note':'{{ retain_literal }}'}
+    source={'id':302,'inventory':config['cac_import']['inventory_id'],'name':pin['name'],'enabled':True,
+        'variables':json.dumps(variables)}
+    workload={'id':401,'inventory':201,'name':'localhost','variables':json.dumps({
+        'demo_zabbix_deployment':deployment})}
+    tra_workload={'id':403,'inventory':201,'name':'tra','variables':json.dumps({
+        'demo_mcp_deployment':mcp,'demo_managed_guest':tra,'ansible_host':tra['address'],
+        'ansible_user':tra['user'],'ansible_port':tra['port'],'demo_instance_name':config['instance_name'],
+        'demo_instance_number':config['instance_number'],'hypervisor_host':pin['name']})}
+    values.update(demo_zabbix_firewall_previous_policy=checked)
+    proof={'checked_policy':checked,'appliance':values['demo_zabbix_deployment']['firewall']['guest'],
+        'inventory':201,'name':'localhost','workload':workload,'tra_workload':tra_workload}
+    return values,source,workload,proof
 
 
 class ZabbixCaCTests(unittest.TestCase):
@@ -30,19 +69,42 @@ class ZabbixCaCTests(unittest.TestCase):
         source = {'vm_resource': resource, 'operator_note': '{{ retain_literal }}'}
         rows = wrap_var([{'inventory': config['cac_import']['inventory_id'],
                           'name': config['vm_name'], 'variables': json.dumps(source)}])
-        self.assertIsInstance(rows[0]['variables'], AnsibleUnsafeText)
+        self.assertFalse(is_trusted_as_template(rows[0]['variables']))
         result = policy.source_inventory_variables(config, resource, rows)
         self.assertEqual(result['operator_note'], '{{ retain_literal }}')
-        self.assertIsInstance(result['operator_note'], AnsibleUnsafeText)
+        self.assertFalse(is_trusted_as_template(result['operator_note']))
+        self.assertEqual(Templar(loader=DataLoader(),variables={'retain_literal':'must-not-render'}).template(
+            result['operator_note']), '{{ retain_literal }}')
         source['vm_resource'] = dict(resource, uuid='33333333-3333-3333-3333-333333333333')
         rows[0]['variables'] = wrap_var(json.dumps(source))
         with self.assertRaisesRegex(AnsibleFilterError, 'ownership conflicts'):
             policy.source_inventory_variables(config, resource, rows)
 
-    def run_case(self, *, failed_import=False, wrong_owner=False):
+    def run_case(self, *, failed_import=False, wrong_owner=False, reconcile=False, fault=None, app_grant=True):
         with tempfile.TemporaryDirectory(prefix='zabbix-cac-fixture-') as temporary:
             folder = Path(temporary)
             values = inputs()
+            if reconcile:
+                values,policy_host,workload,proof=release_inputs(app_grant)
+                if reconcile=='server_only':
+                    values['demo_zabbix_deployment']['isolation_policy']['released_clients'].pop()
+                    values['demo_zabbix_firewall_previous_policy']['released_clients'].pop()
+                    saved_workload=json.loads(workload['variables'])
+                    saved_workload['demo_zabbix_deployment']=copy.deepcopy(values['demo_zabbix_deployment'])
+                    workload['variables']=json.dumps(saved_workload)
+                if fault in ('uuid','mac','counter','foreign'):
+                    saved_tra=json.loads(proof['tra_workload']['variables'])
+                    role=saved_tra['demo_managed_guest']
+                    if fault=='uuid':role['uuid']='44444444-4444-4444-4444-444444444444'
+                    elif fault=='mac':role['mac']='52:54:00:00:00:99'
+                    elif fault=='counter':saved_tra['demo_instance_number']=8
+                    else:role['hypervisor_machine_id']='9'*32
+                    proof['tra_workload']['variables']=json.dumps(saved_tra)
+                if fault=='unknown':
+                    values['demo_zabbix_deployment']['isolation_policy']['released_clients'].append(
+                        {'bridge':'demo0','ipv4':'192.0.2.126','mac':'52:54:00:00:00:33'})
+                    values['demo_zabbix_firewall_previous_policy']['released_clients'].append(
+                        {'bridge':'demo0','ipv4':'192.0.2.126','mac':'52:54:00:00:00:33'})
             config = values['demo_zabbix_config']
             deployment = copy.deepcopy(values['demo_zabbix_deployment'])
             deployment['cac_import'] = config['cac_import']
@@ -69,6 +131,17 @@ class ZabbixCaCTests(unittest.TestCase):
                 'extra_vars': json.dumps({'aap_cac_project_id': 'aiops-selfhealing-demo'})}
             current = [{'id': 300, 'name': 'existing-source-anchor', 'inventory': group['inventory'],
                         'variables': json.dumps({'operator_note': '{{ retain_literal }}'})}]
+            if reconcile:
+                if reconcile=='current':
+                    prior=json.loads(policy_host['variables'])
+                    for key in ('isolation_policy','hactar_isolation_policy'):
+                        prior[key]['released_clients']=copy.deepcopy(deployment['isolation_policy']['released_clients'])
+                    policy_host['variables']=json.dumps(prior)
+                if fault=='production':
+                    altered=json.loads(policy_host['variables'])
+                    altered['isolation_policy']['protected_ipv4']=['198.51.100.99']
+                    policy_host['variables']=json.dumps(altered)
+                current.append(policy_host)
             if wrong_owner:
                 resource = copy.deepcopy(values['demo_zabbix_deployment']['firewall']['guest'])
                 resource['uuid'] = '22222222-2222-2222-2222-222222222222'
@@ -84,6 +157,9 @@ class ZabbixCaCTests(unittest.TestCase):
                     'variables': json.dumps({'demo_zabbix_deployment': deployment})},
                 'refreshed_template': {'id': 202, 'inventory': 201, 'playbook': 'playbooks/deploy_zabbix_demo.yml',
                     'extra_vars': json.dumps({'demo_runtime_settings_vault': new_cipher})}}
+            if reconcile:
+                state.update(policy_host_name=config['hypervisor']['name'],policy_host_id=302,workload_host=workload,
+                    policy_fault=fault,policy_reads=0,tra_host=proof['tra_workload'])
             state_file = folder / 'controller-fixture.json'
             state_file.write_text(json.dumps(state)); state_file.chmod(0o600)
             collection = folder / 'collections/ansible_collections/ansible/controller/plugins'
@@ -102,7 +178,20 @@ class LookupModule(LookupBase):
   if endpoint=='job_templates/'+str(state['importer']['id']): return [state['importer']]
   if endpoint=='job_templates/202': return [state['refreshed_template']]
   if endpoint.startswith('groups/'): return [state['group']]
-  if endpoint=='hosts' and query['inventory']==201: return [state['refreshed_host']]
+  if endpoint.startswith('hosts/'):
+   if state.get('policy_fault')=='read_denied': raise AssertionError('Synthetic read permission denial')
+   row=next(row for row in state['source_hosts'] if row['id']==int(endpoint.split('/')[1]))
+   state['policy_reads']=state.get('policy_reads',0)+1
+   if state.get('policy_fault')=='race' and state['policy_reads']==1:
+    values=json.loads(row['variables']);values['operator_note']='concurrent';row['variables']=json.dumps(values)
+   if state.get('policy_fault')=='readback' and state['policy_reads']==2: row['variables']='{}'
+   Path(STATE).write_text(json.dumps(state))
+   return wrap_var([row])
+  if endpoint=='hosts' and query['inventory']==201:
+   if query.get('name')=='tra':
+    state['tra_reads']=state.get('tra_reads',0)+1;Path(STATE).write_text(json.dumps(state))
+    return wrap_var([state['tra_host']])
+   return wrap_var([state['workload_host'] if state.get('workload_host') and 'job_launch' not in state['calls'] else state['refreshed_host']])
   if endpoint=='hosts':
    rows=state['source_hosts']
    if 'name' in query: rows=[row for row in rows if row['name']==query['name']]
@@ -121,7 +210,16 @@ m=AnsibleModule(argument_spec=spec)
 p=m.params; path=Path(STATE); s=json.loads(path.read_text())
 assert p['controller_host']==s['origin'] and p['controller_oauthtoken']==s['token'] and p['validate_certs'] is True
 assert p['max_retries']==0
-operation=OPERATION; s['calls'].append(operation)
+operation=OPERATION
+if operation=='host' and p['name']==s.get('policy_host_name'):
+ s['calls'].append('policy_host')
+ if s.get('policy_fault')=='write_denied':
+  path.write_text(json.dumps(s));m.fail_json(msg='Synthetic write permission denial')
+ assert p['enabled'] is True
+ target=next(row for row in s['source_hosts'] if row['name']==p['name'])
+ target['variables']=json.dumps(p['variables'])
+ path.write_text(json.dumps(s));m.exit_json(changed=True,id=target['id'])
+s['calls'].append(operation)
 if operation=='host':
  assert p['enabled'] is False
  assert not any(key in p['variables'] for key in ('ansible_host','ansible_user','ansible_port','host_keys','machine_id'))
@@ -138,6 +236,12 @@ else:
  assert type(p['extra_vars']['debug_logging']) is str
  assert p['extra_vars']['debug_logging'] in choice['choices'].splitlines()
  assert p['extra_vars']['debug_logging']==choice['default']
+ if s.get('policy_host_id'):
+  source=next(row for row in s['source_hosts'] if row['id']==s['policy_host_id'])
+  policy=json.loads(source['variables'])['isolation_policy']
+  projected=json.loads(s['refreshed_host']['variables'])['demo_zabbix_deployment']['isolation_policy']
+  assert policy['released_clients']==projected['released_clients']
+  assert len(policy['guest_host_clients'])==1
 path.write_text(json.dumps(s))
 if operation=='job_launch' and s['failed_import']: m.fail_json(msg='synthetic-import-failure')
 m.exit_json(changed=True,id=501,status='successful')
@@ -182,6 +286,140 @@ m.exit_json(changed=True,id=501,status='successful')
         result, state = self.run_case(wrong_owner=True)
         self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
         self.assertEqual(state['calls'], [])
+
+
+    def test_selected_role_omissions_are_persisted_before_import_and_application_grant_stays_separate(self):
+        for app_grant in (True,False):
+            with self.subTest(app_grant=app_grant):
+                result,state=self.run_case(reconcile=True,app_grant=app_grant)
+                self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+                self.assertEqual(state['calls'],['policy_host','host','group','job_launch'])
+                row=next(row for row in state['source_hosts'] if row['id']==302)
+                variables=json.loads(row['variables'])
+                self.assertEqual(len(variables['isolation_policy']['released_clients']),3)
+                self.assertEqual(len(variables['isolation_policy']['guest_host_clients']),1)
+                self.assertEqual(variables['operator_note'],'{{ retain_literal }}')
+
+    def test_current_source_policy_needs_no_patch_or_optional_tra_proof(self):
+        result,state=self.run_case(reconcile='current')
+        self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+        self.assertEqual(state['calls'],['host','group','job_launch'])
+
+    def test_testserver_only_omission_does_not_read_optional_tra(self):
+        result,state=self.run_case(reconcile='server_only')
+        self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+        self.assertEqual(state.get('tra_reads',0),0)
+        self.assertEqual(state['calls'],['policy_host','host','group','job_launch'])
+
+    def test_unproved_policy_and_api_failures_prevent_child_import(self):
+        for fault in ('unknown','uuid','mac','counter','foreign','production','race','read_denied','readback','write_denied'):
+            with self.subTest(fault=fault):
+                result,state=self.run_case(reconcile=True,fault=fault)
+                self.assertEqual(result.returncode,2,result.stdout+result.stderr)
+                self.assertNotIn('job_launch',state['calls'])
+                self.assertEqual(state['calls'],['policy_host'] if fault in ('readback','write_denied') else [])
+
+
+class SourcePolicyPlannerTests(unittest.TestCase):
+    def setUp(self):
+        self.values,self.source,self.workload,self.proof=release_inputs()
+
+    def plan(self,proof=None):
+        return policy.source_policy_plan(self.values['demo_zabbix_config'],self.values['demo_zabbix_deployment'],
+            [self.source],self.proof if proof is None else proof)
+
+    def test_exact_two_role_repair_is_pure_and_idempotent(self):
+        original=copy.deepcopy((self.values,self.source,self.workload,self.proof))
+        planned=self.plan();self.assertTrue(planned['changed'])
+        self.assertTrue(policy.source_policy_matches(planned,self.source))
+        self.assertEqual((self.values,self.source,self.workload,self.proof),original)
+        self.source['variables']=json.dumps(planned['variables'])
+        self.assertTrue(policy.source_policy_matches(planned,self.source,True))
+        minimal={'checked_policy':self.proof['checked_policy'],'appliance':self.proof['appliance']}
+        self.assertFalse(self.plan(minimal)['changed'])
+
+    def test_testserver_only_repair_does_not_require_tra_evidence(self):
+        self.values['demo_zabbix_deployment']['isolation_policy']['released_clients'].pop()
+        self.proof['checked_policy']['released_clients'].pop()
+        saved=json.loads(self.proof['workload']['variables'])
+        saved['demo_zabbix_deployment']=copy.deepcopy(self.values['demo_zabbix_deployment'])
+        self.proof['workload']['variables']=json.dumps(saved)
+        self.proof.pop('tra_workload')
+        self.assertTrue(self.plan()['changed'])
+
+    def test_tra_saved_record_identity_and_flat_binding_must_match(self):
+        for field,value in (('id',0),('inventory',999),('name','foreign')):
+            with self.subTest(field=field):
+                self.setUp();self.proof['tra_workload'][field]=value
+                with self.assertRaises(AnsibleFilterError):self.plan()
+        for field,value in (('ansible_host','192.0.2.199'),('ansible_user','foreign'),('ansible_port',2223),
+                            ('demo_instance_name','aap27-test-8'),('demo_instance_number',8),('hypervisor_host','foreign')):
+            with self.subTest(field=field):
+                self.setUp();saved=json.loads(self.proof['tra_workload']['variables'])
+                saved[field]=value;self.proof['tra_workload']['variables']=json.dumps(saved)
+                with self.assertRaises(AnsibleFilterError):self.plan()
+
+    def test_extra_identity_role_counter_uuid_mac_and_foreign_pin_fail_closed(self):
+        for case in ('unknown','wrong_role','counter','uuid','mac','hypervisor','duplicate','missing_proof',
+                     'production','other_grant','reordered','native_unchecked','source_pin'):
+            with self.subTest(case=case):
+                self.setUp(); values=self.values;proof=self.proof
+                if case=='unknown':
+                    extra={'bridge':'demo0','ipv4':'192.0.2.126','mac':'52:54:00:00:00:33'}
+                    values['demo_zabbix_deployment']['isolation_policy']['released_clients'].append(extra)
+                    proof['checked_policy']['released_clients'].append(copy.deepcopy(extra))
+                    saved=json.loads(proof['workload']['variables']);saved['demo_zabbix_deployment']=copy.deepcopy(values['demo_zabbix_deployment'])
+                    proof['workload']['variables']=json.dumps(saved)
+                elif case in ('wrong_role','counter','uuid','mac','hypervisor','duplicate'):
+                    saved_tra=json.loads(proof['tra_workload']['variables'])
+                    role=saved_tra['demo_managed_guest']
+                    if case=='wrong_role':role['vm_name']='other-v07'
+                    elif case=='counter':saved_tra['demo_instance_number']=8
+                    elif case=='uuid':role['uuid']='44444444-4444-4444-4444-444444444444'
+                    elif case=='mac':role['mac']='52:54:00:00:00:99'
+                    elif case=='hypervisor':role['hypervisor_machine_id']='9'*32
+                    else:role['uuid']=saved_tra['demo_mcp_deployment']['testserver']['uuid']
+                    proof['tra_workload']['variables']=json.dumps(saved_tra)
+                elif case=='missing_proof':proof.pop('checked_policy')
+                elif case=='native_unchecked':proof['checked_policy']={}
+                else:
+                    current=json.loads(self.source['variables'])
+                    if case=='production':current['isolation_policy']['protected_ipv4']=['198.51.100.99']
+                    elif case=='other_grant':current['isolation_policy']['guest_host_clients'].append({'foreign':True})
+                    elif case=='source_pin':current['machine_id']='9'*32
+                    else:
+                        current['isolation_policy']['released_clients']=list(reversed(values['demo_zabbix_deployment']['isolation_policy']['released_clients'][:2]))
+                    self.source['variables']=json.dumps(current)
+                with self.assertRaises((AnsibleFilterError,ValueError,KeyError)):self.plan()
+
+    def test_pending_and_already_applied_exact_own_grant_leave_base_alias_unchanged(self):
+        for applied in (True,False):
+            with self.subTest(applied=applied):
+                self.setUp()
+                if applied:self.proof['checked_policy']=copy.deepcopy(self.values['demo_zabbix_deployment']['isolation_policy'])
+                planned=self.plan()
+                self.assertEqual(planned['variables']['isolation_policy']['guest_host_clients'],
+                    json.loads(self.source['variables'])['isolation_policy']['guest_host_clients'])
+        self.setUp()
+        self.values['demo_zabbix_deployment']['isolation_policy']['guest_host_clients'].append({'unproved_app':True})
+        with self.assertRaises(AnsibleFilterError):self.plan()
+        self.setUp()
+        variables=json.loads(self.source['variables'])
+        variables['isolation_policy']['guest_host_clients']=copy.deepcopy(
+            self.values['demo_zabbix_deployment']['isolation_policy']['guest_host_clients'])
+        self.source['variables']=json.dumps(variables)
+        with self.assertRaises(AnsibleFilterError):self.plan()
+
+    def test_exact_workload_and_full_preimage_identity_must_match(self):
+        for field in ('id','inventory','name'):
+            with self.subTest(field=field):
+                self.setUp();self.proof['workload'][field]=0 if field!='name' else 'foreign'
+                with self.assertRaises(AnsibleFilterError):self.plan()
+        self.setUp();planned=self.plan()
+        for field in ('id','inventory','name','enabled','variables'):
+            row=copy.deepcopy(self.source)
+            row[field]='{}' if field=='variables' else ('foreign' if field=='name' else 0)
+            self.assertFalse(policy.source_policy_matches(planned,row))
 
 
 if __name__ == '__main__':

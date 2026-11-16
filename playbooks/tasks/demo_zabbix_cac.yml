@@ -60,6 +60,97 @@
                  demo_zabbix_guest_ip, demo_zabbix_network, demo_zabbix_authenticated_api),
                demo_zabbix_source_hosts) }}
 
+    - name: Retain the existing checked CaC candidate and authenticated appliance for metadata-only planning
+      ansible.builtin.set_fact:
+        demo_zabbix_source_policy_proof:
+          checked_policy: '{{ demo_zabbix_firewall_previous_policy | default(none) }}'
+          appliance: '{{ demo_zabbix_source_variables.vm_resource }}'
+          inventory: '{{ awx_inventory_id | int }}'
+          name: '{{ inventory_hostname }}'
+
+    - name: Plan only missing selected Linux role releases on the existing Source hypervisor
+      ansible.builtin.set_fact:
+        demo_zabbix_source_policy_plan: >-
+          {{ demo_zabbix_config | demo_zabbix_source_policy_plan(demo_zabbix_deployment,
+               demo_zabbix_source_hosts, demo_zabbix_source_policy_proof) }}
+
+    - name: Prove missing releases against the same saved workload declaration
+      when: demo_zabbix_source_policy_plan.needs_owner | bool
+      block:
+        - name: Read the existing workload host through the same selected Target API
+          ansible.builtin.set_fact:
+            demo_zabbix_policy_workload: >-
+              {{ query('ansible.controller.controller_api', 'hosts',
+                   query_params={'inventory': awx_inventory_id | int, 'name': inventory_hostname},
+                   host=demo_zabbix_cac_binding.controller_host, oauth_token=demo_aap_mcp.token,
+                   verify_ssl=true, expect_one=true)[0] }}
+
+        - name: Require exact declared role ownership before preparing a Source policy PATCH
+          ansible.builtin.set_fact:
+            demo_zabbix_source_policy_plan: >-
+              {{ demo_zabbix_config | demo_zabbix_source_policy_plan(demo_zabbix_deployment,
+                   demo_zabbix_source_hosts, demo_zabbix_source_policy_proof |
+                   combine({'workload': demo_zabbix_policy_workload})) }}
+
+    - name: Prove only an omission unexplained by the verified testserver against the existing TRA host
+      when: demo_zabbix_source_policy_plan.needs_tra | default(false) | bool
+      block:
+        - name: Read only the saved TRA host in this same workload inventory
+          ansible.builtin.set_fact:
+            demo_zabbix_policy_tra: >-
+              {{ query('ansible.controller.controller_api', 'hosts',
+                   query_params={'inventory': awx_inventory_id | int, 'name': 'tra'},
+                   host=demo_zabbix_cac_binding.controller_host, oauth_token=demo_aap_mcp.token,
+                   verify_ssl=true, expect_one=true)[0] }}
+
+        - name: Require the exact TRA connection and declared immutable role records
+          ansible.builtin.set_fact:
+            demo_zabbix_source_policy_plan: >-
+              {{ demo_zabbix_config | demo_zabbix_source_policy_plan(demo_zabbix_deployment,
+                   demo_zabbix_source_hosts, demo_zabbix_source_policy_proof |
+                   combine({'workload': demo_zabbix_policy_workload, 'tra_workload': demo_zabbix_policy_tra})) }}
+
+    - name: Reconcile only proved missing Source release metadata before invoking the importer
+      when: demo_zabbix_source_policy_plan.changed | bool
+      block:
+        - name: Read the exact Source hypervisor preimage immediately before its metadata PATCH
+          ansible.builtin.set_fact:
+            demo_zabbix_policy_preimage: >-
+              {{ query('ansible.controller.controller_api',
+                   'hosts/' ~ (demo_zabbix_source_policy_plan.host.id | string),
+                   host=demo_zabbix_cac_binding.controller_host, oauth_token=demo_aap_mcp.token,
+                   verify_ssl=true, expect_one=true)[0] }}
+
+        - name: Refuse a changed Source host identity or any changed preimage variable
+          ansible.builtin.assert:
+            that: demo_zabbix_source_policy_plan | demo_zabbix_source_policy_matches(demo_zabbix_policy_preimage)
+            quiet: true
+
+        - name: Save only the selected role release omissions while retaining all other Source variables
+          ansible.controller.host:
+            inventory: '{{ demo_zabbix_source_policy_plan.host.inventory | string }}'
+            name: '{{ demo_zabbix_source_policy_plan.host.name }}'
+            variables: '{{ demo_zabbix_source_policy_plan.variables }}'
+            enabled: '{{ demo_zabbix_source_policy_plan.host.enabled }}'
+            state: present
+            controller_host: '{{ demo_zabbix_cac_binding.controller_host }}'
+            controller_oauthtoken: '{{ demo_aap_mcp.token }}'
+            validate_certs: true
+            max_retries: 0
+
+        - name: Read back the exact Source hypervisor before any importer launch
+          ansible.builtin.set_fact:
+            demo_zabbix_policy_readback: >-
+              {{ query('ansible.controller.controller_api',
+                   'hosts/' ~ (demo_zabbix_source_policy_plan.host.id | string),
+                   host=demo_zabbix_cac_binding.controller_host, oauth_token=demo_aap_mcp.token,
+                   verify_ssl=true, expect_one=true)[0] }}
+
+        - name: Require exact Source metadata persistence and all unrelated variables
+          ansible.builtin.assert:
+            that: demo_zabbix_source_policy_plan | demo_zabbix_source_policy_matches(demo_zabbix_policy_readback, true)
+            quiet: true
+
     - name: Register only the selected verified guest without replacing unrelated host variables
       ansible.controller.host:
         inventory: '{{ demo_zabbix_cac_binding.inventory_id | string }}'

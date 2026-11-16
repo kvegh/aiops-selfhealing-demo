@@ -126,6 +126,24 @@ templates, and the status page are still outstanding.
 - Interaction regressions for reversible switching and both-view parity through
   the complete recovery story; explicit Pages staging for the two local assets.
 
+## [1.6.15] — 2026-11-16
+
+### Fixed
+
+- Before the existing monitoring importer runs, reconcile only omitted selected
+  testserver/TRA release metadata on its bound Source hypervisor. Require the
+  complete checked native policy, saved role provenance, unchanged production
+  protections, a fresh full preimage and exact API readback. Preserve the
+  separate appliance gateway HTTPS grant and refuse unknown owners or drift.
+- Keep the existing credentials, API connection, importer and firewall guards.
+  Current metadata needs no PATCH or additional TRA lookup. Source qualification
+  and live deployment acceptance are separate; earlier deployment failures remain
+  part of the run history.
+- All 25 focused tests passed in the cached Core 2.20.10 environment, including
+  native importer sequencing, exact owner checks, API failure/race refusal,
+  literal handling and the existing firewall rollback cases. The automatic
+  omission-repair branch still needs a fresh deployment's live acceptance.
+
 ## [1.6.14] — 2026-11-15
 
 ### Documentation

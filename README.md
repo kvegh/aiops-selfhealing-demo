@@ -296,7 +296,7 @@ selected instance's verified hypervisor, testserver and TRA. Importing it
 creates AAP configuration and launches no application or EDA activation.
 Secret-dependent jobs receive a whole-file Vault ciphertext string and stop
 before managed host, DNS or API writes when required settings are missing.
-Deployment version **1.6.14** is documented in [CHANGELOG.md](CHANGELOG.md).
+Deployment version **1.6.15** is documented in [CHANGELOG.md](CHANGELOG.md).
 Failed MCP builds now retain protected stdout/stderr in the runtime user's
 private server `logs/build.log`, then fail and remove the temporary checkout.
 The observed image-build failure is diagnosed: enforcing SELinux denied
@@ -387,6 +387,19 @@ waits for the existing **Deploy AIOps Selfhealing Demo CaC** template with its
 saved credentials. No firewall lock is held while the child job runs.
 Its optional logging choice is passed as the string `false`, matching the
 existing importer's declared survey choices and preserving protected output.
+
+Before invoking that importer, the job reconciles missing Source release metadata
+only for the selected testserver and TRA. The complete CaC policy must already
+have passed the native firewall check. Existing releases must remain an ordered
+subset, and every omitted identity must match its saved, verified Linux role.
+The TRA proof comes from its own row in the same workload inventory. Unknown
+guests, changed production exclusions or other policy differences stop the job.
+The appliance's declared gateway HTTPS grant stays separate from the Source base
+policy. The existing Target API connection checks the complete Source host
+preimage immediately before updating its variables and requires exact readback
+before launching the importer. This check detects observed races; it is not an
+atomic compare-and-swap. An already current release list needs no update or
+additional TRA lookup. No native firewall change occurs in this metadata step.
 
 The importer stores the resulting VM and its configuration together under
 `aiops_instances[instance].zabbix`. Its `configuration.firewall` holds the exact
