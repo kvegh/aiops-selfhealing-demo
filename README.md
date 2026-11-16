@@ -296,7 +296,7 @@ selected instance's verified hypervisor, testserver and TRA. Importing it
 creates AAP configuration and launches no application or EDA activation.
 Secret-dependent jobs receive a whole-file Vault ciphertext string and stop
 before managed host, DNS or API writes when required settings are missing.
-Deployment version **1.6.16** is documented in [CHANGELOG.md](CHANGELOG.md).
+Deployment version **1.6.17** is documented in [CHANGELOG.md](CHANGELOG.md).
 Failed MCP builds now retain protected stdout/stderr in the runtime user's
 private server `logs/build.log`, then fail and remove the temporary checkout.
 The observed image-build failure is diagnosed: enforcing SELinux denied
@@ -480,6 +480,26 @@ or DNS is added.
 See the [optional CloudCLI settings](docs/14-claude-deployment.md#optional-two-account-cloudcli-installation).
 The independent monitoring check allows three minutes for passive-agent
 availability and item polling to catch up after a successful repair.
+The existing ordered-report formatter renders each retained phase findings and
+conclusion block separately from the next phase announcement, and separates the
+last phase from the incident report. It preserves every original character and
+its order, including repeated phase summaries in the final report. This affects
+AAP output when the job completes; it changes neither model turns nor live UI
+streaming, prompts, tools, permissions, the four-phase procedure or runtime bounds.
+The already successful rehearsal had combined output items; its original
+presentation remains noncompliant rather than being relabelled by this fix.
+
+After native child, service and fresh-monitoring checks pass, the existing
+`aiops_agent_recovery.tool_diagnostics` artifact now retains the same bounded
+metadata-only summary used for failures: up to 64 ordered allowed tool names,
+assistant-message positions and returned/error states, with total and omitted
+counts. It contains no arguments, tool payloads or model prose. A returned tool
+result is not proof of a successful operation; the independent checks still
+determine acceptance. The original empty CLI result in Controller event output
+has an unknown cause and cannot be reconstructed from retained text messages.
+Source qualification does not establish future live output or artifact retention;
+the next complete deployment must verify both through its normal demonstration.
+
 On failure, the job reports its stage, numeric CLI exit code, recognized
 completion markers and up to 64 ordered tool calls. Tool names come only from
 the runner's allowed list; other names become `unrecognized_tool`. The summary

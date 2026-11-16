@@ -394,6 +394,7 @@
                 repair_job_ids: "{{ demo_agent_children }}"
                 selected_service_active: true
                 fresh_agent_ping_and_original_trigger_recovered: true
+                tool_diagnostics: "{{ claude_output.stdout | demo_claude_agent_diagnostics(demo_agent_allowed_tools) }}"
       rescue:
         - name: Report the failed bounded stage without credential-bearing diagnostics
           ansible.builtin.fail:

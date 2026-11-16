@@ -76,6 +76,122 @@ class AgentTests(unittest.TestCase):
         self.assertEqual(F.agent_report('\n'.join(json.dumps(x) for x in messages+[terminal])),['Phase1 findings','Phase2 findings','Incident report'])
         for events in [messages,messages+[dict(terminal,subtype='error_max_turns',is_error=True)]]:
             with self.assertRaises(AnsibleFilterError):F.agent_report('\n'.join(json.dumps(x) for x in events))
+    def phase_stream(self):
+        report = ("## Incident report\r\nRoot cause and evidence.\r\n\r\n"
+                  "### Phase summaries\r\n**Phase 1 findings:** repeated summary\r\n"
+                  "**Phase 1 conclusion:** repeated conclusion\r\n"
+                  "Entering Phase 2 is quoted here in the final report.\r\n")
+        messages = ["Investigating the selected incident.\r\n\r\nEntering Phase 1 — Monitoring checks.\r\n"]
+        expected = [messages[0]]
+        for phase in range(1, 5):
+            findings = ("**Phase %d findings — checks:**\r\n- Observed evidence.\r\n\r\n"
+                        "**Phase %d conclusion:** Evidence supports the next step.\r\n\r\n" % (phase, phase))
+            following = "Entering Phase %d — Next checks.\r\n" % (phase + 1) if phase < 4 else report
+            if phase == 4:
+                findings += "---\r\n\r\n"
+            messages.append(findings + following)
+            expected.extend([findings, following])
+        events = [{'type':'assistant','message':{'content':[{'type':'text','text':text}]}} for text in messages]
+        events.append({'type':'result','subtype':'success','is_error':False})
+        return '\n'.join(json.dumps(row) for row in events), messages, expected
+
+    def test_phase_boundaries_become_separate_items_without_changing_any_original_text(self):
+        stream, messages, expected = self.phase_stream()
+        rendered = F.agent_report(stream)
+        self.assertEqual(rendered, expected)
+        self.assertEqual(''.join(rendered), ''.join(messages))
+        self.assertEqual(len(rendered), 9)
+        self.assertEqual(rendered[-1], expected[-1])
+        self.assertIn('### Phase summaries', rendered[-1])
+        self.assertIn('Entering Phase 2 is quoted here', rendered[-1])
+        # Already separated output stays separated on a subsequent render.
+        separated = [{'type':'assistant','message':{'content':[{'type':'text','text':part}]}} for part in rendered]
+        separated.append({'type':'result','subtype':'success','is_error':False})
+        self.assertEqual(F.agent_report('\n'.join(json.dumps(row) for row in separated)), rendered)
+
+    def test_incidental_announcements_and_reports_do_not_fabricate_completed_phase_boundaries(self):
+        messages = ['Phase 1 findings and conclusion are discussed in prose.\nEntering Phase 2 — Example.\n',
+                    '**Phase 1 findings:** actual findings, but no conclusion.\nEntering Phase 2 — Not completed.\n',
+                    '**Phase 2 findings:** actual findings.\n**Phase 2 conclusion:** complete.\nEntering Phase 4 — Wrong next phase.\n',
+                    '## Incident report\n**Phase 4 findings:** repeated.\n**Phase 4 conclusion:** repeated.\n']
+        events = [{'type':'assistant','message':{'content':[{'type':'text','text':text}]}} for text in messages]
+        events.append({'type':'result','subtype':'success','is_error':False})
+        self.assertEqual(F.agent_report('\n'.join(json.dumps(row) for row in events)), messages)
+
+    def test_final_report_heading_variants_keep_their_entire_repeated_summaries(self):
+        for heading in ['## Final incident report', '## Final report']:
+            with self.subTest(heading=heading):
+                stream, messages, expected = self.phase_stream()
+                events = [json.loads(line) for line in stream.splitlines()]
+                events[-2]['message']['content'][0]['text'] = messages[-1].replace('## Incident report', heading, 1)
+                expected[-1] = expected[-1].replace('## Incident report', heading, 1)
+                rendered = F.agent_report('\n'.join(json.dumps(row) for row in events))
+                self.assertEqual(rendered, expected)
+                self.assertEqual(''.join(rendered), ''.join(row['message']['content'][0]['text'] for row in events[:-1]))
+                # A separately retained final report must not split again at
+                # quoted announcements in its repeated phase summaries.
+                standalone = [{'type':'assistant','message':{'content':[{'type':'text','text':expected[-1]}]}}, events[-1]]
+                self.assertEqual(F.agent_report('\n'.join(json.dumps(row) for row in standalone)), [expected[-1]])
+
+    def test_second_investigation_cycle_starts_after_separate_phase_four_findings(self):
+        _, messages, expected = self.phase_stream()
+        cycle_two = 'Entering Phase 1 — Monitoring checks (cycle 2).\r\n'
+        report = expected[-1]
+        messages[-1] = expected[-2] + cycle_two
+        expected[-1] = cycle_two
+        for phase in range(1, 5):
+            findings = ('**Phase %d findings (cycle 2):** additional evidence.\r\n'
+                        '**Phase %d conclusion (cycle 2):** checked.\r\n\r\n' % (phase, phase))
+            following = 'Entering Phase %d — Next checks (cycle 2).\r\n' % (phase + 1) if phase < 4 else report
+            messages.append(findings + following)
+            expected.extend([findings, following])
+        events = [{'type':'assistant','message':{'content':[{'type':'text','text':text}]}} for text in messages]
+        events.append({'type':'result','subtype':'success','is_error':False})
+        rendered = F.agent_report('\n'.join(json.dumps(row) for row in events))
+        self.assertEqual(rendered, expected)
+        self.assertEqual(len(rendered), 17)
+        self.assertEqual(''.join(rendered), ''.join(messages))
+        self.assertEqual(rendered[-1], report)
+
+    def test_actual_debug_loop_separates_phases_and_success_artifact_keeps_only_bounded_diagnostics(self):
+        play = yaml.safe_load((ROOT/'playbooks/run_claude_analyse_fix.yml').read_text())[0]
+        tasks = play['tasks'][0]['block']
+        display = copy.deepcopy(next(t for t in tasks if t['name']=='Display ordered phase findings and the incident report'))
+        publish = copy.deepcopy(next(t for t in tasks if t['name']=='Publish only the independently verified supported recovery result'))
+        display['register'] = 'observed_display';publish['register'] = 'observed_publish'
+        phase_stream, _, expected = self.phase_stream()
+        tool='mcp__zabbix__host_get';secret='SYNTHETIC-SUCCESS-TRANSCRIPT-CANARY'
+        events=[{'type':'assistant','message':{'content':[
+            {'type':'text','text':secret}]+[
+            {'type':'tool_use','id':str(i),'name':tool,'input':{'password':secret}} for i in range(70)]}},
+            {'type':'user','message':{'content':[
+            {'type':'tool_result','tool_use_id':str(i),'content':secret} for i in range(70)]}},
+            {'type':'result','subtype':'success','is_error':False,'result':secret}]
+        checks={'ansible.builtin.assert':{'quiet':True,'that':[
+            'observed_display.results | map(attribute="msg") | list == expected_parts',
+            'observed_publish.ansible_stats.data.aiops_agent_recovery.tool_diagnostics.calls | length == 64',
+            'observed_publish.ansible_stats.data.aiops_agent_recovery.tool_diagnostics.omitted_calls == 6',
+            'observed_publish.ansible_stats.data.aiops_agent_recovery.tool_diagnostics.tool_counts[allowed_tool] == 70',
+            'observed_publish.ansible_stats.data.aiops_agent_recovery.tool_diagnostics.unreturned_calls == 0',
+            'observed_publish.ansible_stats.data.aiops_agent_recovery.tool_diagnostics.calls | map(attribute="result") | unique | list == ["returned"]',
+            'observed_publish.ansible_stats.data.aiops_agent_recovery.repair_job_ids == [17]',
+            'observed_publish.ansible_stats.data.aiops_agent_recovery.fresh_agent_ping_and_original_trigger_recovered == true']}}
+        with tempfile.TemporaryDirectory(prefix='agent-safe-success-') as temporary:
+            folder=Path(temporary);path=folder/'test.yml'
+            path.write_text(yaml.safe_dump([{'hosts':'localhost','gather_facts':False,'vars':{
+                'phase_stream':phase_stream,'expected_parts':expected,'allowed_tool':tool,
+                'demo_agent_report':'{{ phase_stream | demo_claude_agent_report }}',
+                'demo_mcp_config':{'instance_name':'synthetic-selected-instance'},'demo_agent_children':[17],
+                'claude_output':{'rc':0,'stdout':'\n'.join(json.dumps(row) for row in events)},
+                'demo_agent_allowed_tools':[tool]},'tasks':[display,publish,checks]}]))
+            env=dict(os.environ,ANSIBLE_FILTER_PLUGINS=str(ROOT/'playbooks/filter_plugins'),
+                ANSIBLE_LOCAL_TEMP=str(folder/'local'),ANSIBLE_REMOTE_TEMP=str(folder/'remote'),ANSIBLE_NOCOLOR='1')
+            result=subprocess.run([sys.executable,'-m','ansible.cli.playbook','-i','localhost,','-c','local',str(path)],
+                env=env,capture_output=True,text=True,timeout=25)
+        output=result.stdout+result.stderr
+        self.assertEqual(result.returncode,0,output)
+        self.assertNotIn(secret,output)
+
     def test_native_runner_arguments_never_include_the_token_or_permission_bypass(self):
         play=yaml.safe_load((ROOT/'playbooks/run_claude_analyse_fix.yml').read_text())[0]
         tasks=play['tasks'][0]['block'];run=next(t for t in tasks if t['name']=='Run the bounded agent with native permissions')

@@ -126,6 +126,21 @@ templates, and the status page are still outstanding.
 - Interaction regressions for reversible switching and both-view parity through
   the complete recovery story; explicit Pages staging for the two local assets.
 
+## [1.6.17] — 2026-11-16
+
+### Fixed
+
+- Separate retained phase findings and conclusions from following announcements
+  and the incident report in the existing AAP output loop. Preserve original text
+  and order, including final repeated phase summaries; change no model turn,
+  prompt, permission, tool allowance, four-phase flow or runtime bound.
+- Publish the existing bounded metadata-only tool diagnostic summary in the
+  successful recovery artifact after independent native verification. Do not
+  add raw transcript, argument or result-payload logging or Controller settings.
+- Keep the original successful rehearsal's presentation gap and missing raw CLI
+  event result explicit. Qualification is separate from the next deployment's
+  actual output/artifact acceptance; no extra incident or model run is performed.
+
 ## [1.6.16] — 2026-11-16
 
 ### Documentation

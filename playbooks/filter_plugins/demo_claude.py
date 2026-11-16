@@ -225,13 +225,32 @@ def agent_report(text):
         messages = [part["text"] for row in events if row.get("type") == "assistant"
                     for part in row.get("message", {}).get("content", []) if part.get("type") == "text"]
         require(bool(messages), "The bounded agent returned no readable incident report.")
-        return messages
+        rendered = []
+        boundary = re.compile(r"(?im)^[ \t]*(?:(?:\*\*)?Entering[ \t]+Phase[ \t]+([1-4])\b|#{1,6}[ \t]+(?:(?:Final[ \t]+)?Incident[ \t]+report|Final[ \t]+report)\b)")
+        for message in messages:
+            start = 0
+            for match in boundary.finditer(message):
+                # Split retained presentation only after that phase's actual
+                # findings and conclusion. Keep the final report, including its
+                # repeated phase summaries, together and every character intact.
+                phase = (int(match.group(1)) - 1 or 4) if match.group(1) else 4
+                preceding = message[start:match.start()]
+                markers = re.search(
+                    r"(?ims)^[ \t]*(?:\*\*)?Phase[ \t]+%d[ \t]+findings\b.*"
+                    r"^[ \t]*(?:\*\*)?Phase[ \t]+%d[ \t]+conclusion\b" % (phase, phase), preceding)
+                if markers is not None:
+                    rendered.append(preceding)
+                    start = match.start()
+                if match.group(1) is None:
+                    break
+            rendered.append(message[start:])
+        return rendered
     except (ValueError, TypeError, KeyError):
         raise AnsibleFilterError("The bounded agent output is not a complete ordered JSON stream.") from None
 
 
 def agent_diagnostics(text, allowed_tools):
-    """Summarize failed invocations without returning model or tool payloads."""
+    """Summarize invocations without returning model or tool payloads."""
     allowed = {name for name in allowed_tools if isinstance(name, str)}
     summary = {"calls": [], "tool_counts": {}, "tool_errors": 0,
                "unreturned_calls": 0, "invalid_records": 0, "omitted_calls": 0}
