@@ -126,6 +126,16 @@ templates, and the status page are still outstanding.
 - Interaction regressions for reversible switching and both-view parity through
   the complete recovery story; explicit Pages staging for the two local assets.
 
+## [1.6.20] — 2026-11-16
+
+### Documentation
+
+- Document implementation `ca3e66187751b7b7a305d8254c953ad4a75e78b8`, exact
+  provider/readiness/retirement ownership controls and the 26 focused native
+  Core 2.20.10 passes, plus the separately requalified delete-check-mode branch.
+- Preserve live provider qualification, publication, CaC import and AAP project
+  synchronization as pending gates. No executable behavior changes.
+
 ## [1.6.19] — 2026-11-16
 
 ### Fixed

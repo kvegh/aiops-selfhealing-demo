@@ -1,5 +1,56 @@
 # Design decisions history
 
+## Complete AIOps public DNS v3 registration and guarded retirement — 2026-11-16
+
+Implementation `ca3e66187751b7b7a305d8254c953ad4a75e78b8` (deployment version
+1.6.19) migrates the two remaining public provider consumers: the existing
+website infrastructure and monitoring frontend tasks. Their public playbook,
+runtime Vault and existing job-template interfaces remain. The earlier Hactar
+and AAP provisioning migration did not change these separate application tasks.
+An audit of the maintained public projects found no further active legacy
+provider endpoint; old duplicate worktrees are not separate implementations.
+
+The workload-local contract reads complete selected A/AAAA/CNAME v3 pages,
+requires the exact selected zone/name/address identity and refuses incomplete
+pages, aliases, alternate IPv6, duplicate A records or another address. Creation
+uses one POST; owned TTL reconciliation uses the individual record ID. No
+uncertain POST is replayed automatically. Exact provider readback is followed by
+bounded native authoritative readiness because API readback alone did not
+establish served publication in the related provider qualification. Existing
+zone-apex NS discovery must agree with provider NS records; nameserver addresses
+are resolved separately, then every literal authority must return the direct
+selected A in the same nonrecursive AA/NOERROR round. There is no unconditional
+publication sleep. The original callers' public DNS gates, HTTPS, certificates,
+nginx rollback, ownership, pinned identities and other YAML fields are unchanged.
+
+The same contract supplies deletion for the separately requested workload
+teardown. Its caller must first validate selected deployment ownership, then
+confirm the exact hostname. It captures and immediately rechecks all record
+contents and IDs before a single exact-ID DELETE, accepts already-absent provider
+responses and requires selected A/AAAA/CNAME absence afterward. Observed drift
+is refused; this is not a claim of atomic provider compare-and-swap. Check mode
+performs reads but neither writes nor selected-name DNS queries. Ownership
+metadata must remain until native cleanup and absence checks succeed.
+
+All 17 focused provider/readiness/retirement tests and nine existing website
+identity/template tests passed in the cached Core 2.20.10 runtime, without
+external networking, host mounts or installations. The added delete-check-mode
+branch was independently requalified in the same cached runtime. Locally,
+14 native cases and three parser cases also passed with Core 2.21.5. Tests use
+actual Ansible URI/include/command tasks with deterministic HTTP/DNS fixtures;
+they cover conflicting ownership, uncertain acknowledgement, ID races,
+negative-to-positive authorities, exhaustion before recursive leaf lookup,
+strict parsing, redirects, idempotence and preservation of unrelated records.
+A semantic inverse confirmed both complete non-DNS wrapper subtrees unchanged.
+
+The matching private CaC raises the existing Enable Website timeout to 3600
+seconds; monitoring's existing 7200-second bound remains. Its separate owner
+reported no hardcoded legacy provider endpoint in decrypted CaC/runtime inputs.
+Those CaC changes, live temporary-name qualification, publication, AAP project
+synchronization and fresh deployment acceptance are separate gates. No live
+provider or infrastructure change was performed for this implementation. Version
+1.6.20 links this implementation and its qualification without runtime changes.
+
 ## Separate retained phases and preserve successful diagnostic metadata — 2026-11-16
 
 Implementation `02d93ca987ae4580c834b2237ea2086305d30657` (deployment version 1.6.17)
