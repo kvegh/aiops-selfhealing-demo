@@ -39,67 +39,11 @@
     fail_msg: Register an approved ACME account separately; this playbook cannot accept legal terms.
     quiet: true
 
-- name: Read only this versioned website's existing IPv4 DNS records
-  ansible.builtin.uri:
-    url: "https://api.godaddy.com/v1/domains/{{ demo_website_config.zone }}/records/A/{{ demo_website_config.record_name }}"
-    method: GET
-    headers:
-      Authorization: "Bearer {{ demo_website_dns_api_token }}"
-    status_code: 200
-    follow_redirects: none
-    validate_certs: true
-  delegate_to: localhost
-  become: false
-  register: demo_website_existing_dns
-  no_log: false
-
-- name: Refuse to replace another website's DNS address
-  ansible.builtin.assert:
-    that: >-
-      demo_website_existing_dns.json | demo_website_safe_dns_records(
-        demo_website_config.hypervisor.public_ipv4)
-    fail_msg: The versioned website name has a conflicting DNS record; inspect it before continuing.
-    quiet: true
-  no_log: false
-
-- name: Read only this versioned website's IPv6 DNS records
-  ansible.builtin.uri:
-    url: "https://api.godaddy.com/v1/domains/{{ demo_website_config.zone }}/records/AAAA/{{ demo_website_config.record_name }}"
-    method: GET
-    headers:
-      Authorization: "Bearer {{ demo_website_dns_api_token }}"
-    status_code: 200
-    follow_redirects: none
-    validate_certs: true
-  delegate_to: localhost
-  become: false
-  register: demo_website_existing_ipv6_dns
-  no_log: false
-
-- name: Refuse an alternate unpinned IPv6 website route
-  ansible.builtin.assert:
-    that: demo_website_existing_ipv6_dns.json == []
-    fail_msg: This IPv4-only website has an unexpected IPv6 DNS record.
-    quiet: true
-  no_log: false
-
-- name: Publish this versioned website at the selected hypervisor's public IPv4
-  ansible.builtin.uri:
-    url: "https://api.godaddy.com/v1/domains/{{ demo_website_config.zone }}/records/A/{{ demo_website_config.record_name }}"
-    method: PUT
-    headers:
-      Authorization: "Bearer {{ demo_website_dns_api_token }}"
-    body_format: json
-    body:
-      - data: "{{ demo_website_config.hypervisor.public_ipv4 }}"
-        ttl: 600
-    status_code: 200
-    follow_redirects: none
-    validate_certs: true
-  delegate_to: localhost
-  become: false
-  when: demo_website_existing_dns.json | length == 0
-  no_log: false
+- name: Publish only this selected workload through guarded v3 DNS
+  ansible.builtin.include_tasks: demo_public_dns.yml
+  vars:
+    demo_public_dns_config: "{{ demo_website_config }}"
+    demo_public_dns_api_token: "{{ demo_website_dns_api_token }}"
 
 - name: Inspect the version-specific nginx configuration before taking ownership
   ansible.builtin.stat:

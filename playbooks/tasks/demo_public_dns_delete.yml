@@ -1,0 +1,62 @@
+---
+# The caller must derive config from the selected workload's validated allocation.
+# This file never discovers a different hostname or deletes an entire record set.
+- name: Require confirmation of the exact selected workload hostname
+  ansible.builtin.assert:
+    that:
+      - demo_public_dns_config | godaddy_v3_selected_config is mapping
+      - demo_public_dns_delete_confirm | default('') == demo_public_dns_config.hostname
+    fail_msg: Confirm the exact selected workload hostname before DNS retirement.
+    quiet: true
+  no_log: false
+
+- name: Read the selected workload DNS retirement preimage
+  ansible.builtin.include_tasks: demo_public_dns_read.yml
+
+- name: Retain the exact selected record IDs and contents before retirement
+  ansible.builtin.set_fact:
+    demo_public_dns_retire_preimage: '{{ demo_public_dns_existing_a }}'
+  no_log: false
+
+- name: Recheck the exact selected DNS preimage immediately before deletion
+  ansible.builtin.include_tasks: demo_public_dns_read.yml
+
+- name: Refuse a changed selected DNS preimage before deleting anything
+  ansible.builtin.assert:
+    that: demo_public_dns_existing_a == demo_public_dns_retire_preimage
+    fail_msg: The selected workload DNS record changed after inspection; no deletion was attempted.
+    quiet: true
+  no_log: false
+
+- name: Delete only the exact unchanged selected v3 record ID once
+  ansible.builtin.uri:
+    url: "https://api.godaddy.com/v3/domains/zones/{{ demo_public_dns_config.zone | urlencode }}/dns-records/{{ demo_public_dns_retire_preimage[0].recordId | urlencode | replace('/', '%2F') }}"
+    method: DELETE
+    headers:
+      Authorization: 'Bearer {{ demo_public_dns_api_token }}'
+    status_code: [204, 404]
+    follow_redirects: none
+    validate_certs: true
+    timeout: 30
+  when:
+    - not ansible_check_mode
+    - demo_public_dns_retire_preimage | length == 1
+  delegate_to: localhost
+  become: false
+  changed_when: true
+  no_log: false
+
+- name: Read back every selected conflicting type after DNS retirement
+  ansible.builtin.include_tasks: demo_public_dns_read.yml
+  when: not ansible_check_mode
+
+- name: Require exact selected DNS absence before retiring owner metadata
+  ansible.builtin.assert:
+    that:
+      - demo_public_dns_existing_a | length == 0
+      - demo_public_dns_existing_aaaa | length == 0
+      - demo_public_dns_existing_cname | length == 0
+    fail_msg: The selected workload DNS record is not absent; retain its ownership metadata.
+    quiet: true
+  when: not ansible_check_mode
+  no_log: false

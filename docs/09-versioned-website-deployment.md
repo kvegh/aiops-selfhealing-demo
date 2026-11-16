@@ -67,10 +67,13 @@ configuration.
 
 ## What the job changes
 
-The job refuses conflicting DNS A records and any AAAA record for the versioned
-website. It creates only that exact A record when absent and waits for public
-DNS to identify the selected hypervisor. Existing DNS records at another
-address are not replaced. The matching AAP name must resolve to the same pinned
+The job reads complete GoDaddy v3 API pages for only the selected A, AAAA and
+CNAME identity. These API reads are not recursive DNS lookups. It refuses more
+than one A record, a conflicting address, any AAAA record or an alias. It creates
+the exact A record once when absent, or normalizes only its owned record's TTL
+through its individual `recordId`. An uncertain create response fails for later
+read-only reconciliation; it is not automatically replayed. Existing DNS
+records at another address are not replaced. The matching AAP name must resolve to the same pinned
 public IPv4 address without an alternate IPv6 route. It creates version-specific
 content, nginx and delivery-cache paths without overwriting an unmanaged virtual host. The existing
 target-side public content checkout is isolated under `/opt/demo-web-src-vNN`;
@@ -89,12 +92,23 @@ HTTPS using the real hostname and loopback routing. This exercises certificate
 hostname validation without relying on a public-address hairpin. Separately
 check trusted HTTPS from outside the hypervisor after the job finishes.
 
-DNS readiness allows 65 retries with ten-second delays, matching the monitoring
+Exact provider name/address/TTL readback precedes authoritative readiness.
+The playbook cross-checks provider and public zone-apex NS records, resolves only
+those nameservers, and queries every literal authority without recursion. One
+complete round must return AA, NOERROR and the exact direct A binding from all
+endpoints. The default authoritative deadline is 900 seconds, capped at 1800,
+with at most 180 rounds and five seconds between failed rounds. It makes no
+recursive query for the selected hostname or its new ancestors before success;
+exhaustion fails while retaining the provider record for inspection.
+
+The subsequent existing public DNS readiness allows 65 retries with ten-second delays, matching the monitoring
 frontend's allowance for the controlled zone's ten-minute negative cache. It
 returns immediately when both names pass the unchanged IPv4-only checks. The
 650 seconds of retry delays exclude DNS query time and subsequent certificate,
-nginx and HTTPS work. Reapply the matching private CaC's 1800-second Enable Demo
-Website timeout through the normal importer before launching this playbook.
+nginx and HTTPS work. Reapply the matching private CaC through the normal importer
+before launching this playbook. Its matching Enable Demo Website definition
+uses a 3600-second timeout to cover both DNS budgets plus certificate and frontend
+verification; this CaC change must be imported into the selected target.
 The saved Controller timeout is the hard deadline; a longer retry allowance
 alone cannot prevent Controller from terminating an unfinished job.
 

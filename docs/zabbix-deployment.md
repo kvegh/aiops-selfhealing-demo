@@ -170,15 +170,26 @@ disabled.
 
 ## DNS, HTTPS and the additional nginx authentication gate
 
-The frontend uses exact-name DNS queries and refuses conflicting A or AAAA
-records. It reuses the separately approved certificate account and existing base
+The frontend uses the same guarded GoDaddy v3 publication contract as the
+website: complete selected A/AAAA/CNAME API pages, at most one directly owned A,
+one-shot creation or individual-ID TTL reconciliation, and exact provider
+readback. Conflicting addresses, aliases and IPv6 records are refused. Neither
+API success nor a process exit code alone proves served DNS readiness.
+It reuses the separately approved certificate account and existing base
 packages. Its managed nginx file supports the ACME webroot challenge, trusted
 public HTTPS and the source deployment's additional Basic-auth gate. nginx uses
 `auth_basic_user_file`; Apache `.htaccess` files are not interpreted by nginx.
 The new hash file and certificate are specific to this deployment version.
 nginx is validated before reload, and its previous managed vhost is restored on
 a failed publication. No production virtual host is edited.
-The existing DNS readiness check allows up to roughly eleven minutes for the
+Before a recursive selected-name lookup, the bounded native authority gate
+requires all approved literal authoritative IPv4 endpoints to return the exact
+direct address in one nonrecursive AA/NOERROR round. Discovery queries only the
+existing zone apex and nameserver hostnames. Its default deadline is 900 seconds,
+with at most 180 rounds and five-second intervals between failed rounds; no fixed
+publication sleep is used. Import the matching CaC timeout covering both DNS
+gates and the rest of the monitoring deployment before launching.
+The subsequent existing public DNS readiness check allows up to roughly eleven minutes for the
 controlled zone's ten-minute negative cache. It returns as soon as both selected
 names resolve correctly, preserves the IPv4-only checks, and stops on expiry.
 A DNS timeout preserves the authenticated clone for the existing deployment

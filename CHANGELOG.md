@@ -126,6 +126,29 @@ templates, and the status page are still outstanding.
 - Interaction regressions for reversible switching and both-view parity through
   the complete recovery story; explicit Pages staging for the two local assets.
 
+## [1.6.19] — 2026-11-16
+
+### Fixed
+
+- Move the website and monitoring frontend's remaining public DNS registration
+  paths to GoDaddy v3, retaining existing playbook/template/runtime interfaces.
+- Read complete exact-name A/AAAA/CNAME pages; refuse foreign addresses, aliases,
+  duplicate A records and incomplete responses. Use individual record IDs for
+  owned TTL reconciliation and deletion; never automatically replay creation.
+- Require exact provider readback followed by bounded authoritative-first native
+  DNS readiness before the unchanged final public checks. Add no unconditional
+  publication delay, dependencies, resolver exceptions or application launch.
+- Supply a workload-local exact-ID retirement include with explicit hostname
+  confirmation, immediate preimage recheck and absence readback. Wiring and live
+  acceptance of the separate workload teardown remain separate work.
+
+Validation: 17 focused provider/readiness/retirement checks and nine existing
+website identity/template tests passed in cached Core 2.20.10 without external
+networking, host mounts or dependency installation. The two callers' non-DNS
+YAML and original public readiness gates are unchanged. Live temporary-name
+qualification, publication, CaC import and AAP project synchronization are
+separate acceptance steps; no live provider or infrastructure write was made.
+
 ## [1.6.18] — 2026-11-16
 
 ### Documentation

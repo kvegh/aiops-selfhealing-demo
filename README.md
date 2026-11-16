@@ -296,7 +296,7 @@ selected instance's verified hypervisor, testserver and TRA. Importing it
 creates AAP configuration and launches no application or EDA activation.
 Secret-dependent jobs receive a whole-file Vault ciphertext string and stop
 before managed host, DNS or API writes when required settings are missing.
-Deployment version **1.6.18** is documented in [CHANGELOG.md](CHANGELOG.md).
+Deployment version **1.6.19** is documented in [CHANGELOG.md](CHANGELOG.md).
 Failed MCP builds now retain protected stdout/stderr in the runtime user's
 private server `logs/build.log`, then fail and remove the temporary checkout.
 The observed image-build failure is diagnosed: enforcing SELinux denied
@@ -632,6 +632,20 @@ the complete audience outage/recovery loop. The deployment uses an existing
 approved ACME account and base-installed packages; it accepts no legal terms
 and installs no dependencies.
 
+Website and monitoring publication now use GoDaddy v3 individual record IDs.
+The existing Enable Website and Deploy Zabbix templates keep their playbook and
+protected runtime inputs; importing their matching CaC and synchronizing the
+project supplies the changed includes. Exact-name provider API reads reject
+conflicting A, AAAA and CNAME records before a write. Creation is attempted once;
+an uncertain response is reconciled by a later read, never an automatic POST retry.
+After exact provider readback, bounded native nonrecursive queries require every
+approved authority to serve the selected address before the first recursive
+selected-name lookup. The existing final public IPv4-only checks remain.
+There is no fixed publication sleep. The same local DNS contract offers exact-ID
+retirement with a preimage recheck and absence readback for workload teardown.
+These source changes require separate live temporary-name qualification and
+normal AAP synchronization before deployment acceptance can be claimed.
+
 After the CaC import, the selected target's fault-template ID and generated
 webhook key can be read through its authenticated HTTPS API. The DNS and webhook
 inputs stay in the private whole-file runtime Vault, organized by selected
@@ -721,6 +735,7 @@ ansible-playbook --syntax-check --vault-password-file /path/to/vault-password -i
 ansible-playbook --syntax-check --vault-password-file /path/to/vault-password -i localhost, playbooks/arm_demo_button.yml
 ANSIBLE_LOCAL_TEMP=/tmp/aiops-hostname-local python3.12 -m unittest discover -s tests -p test_website_hostname.py -v
 python3.12 -m unittest discover -s tests -p test_versioned_website.py -v
+python3.12 -m unittest discover -s tests -p test_public_dns_v3.py -v
 node tests/browser_polling.test.js
 ansible-lint playbooks/tasks/demo_website_rate_limit.yml
 git diff --check

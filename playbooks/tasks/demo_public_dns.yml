@@ -1,0 +1,59 @@
+---
+- name: Read and validate the selected workload publication using v3
+  ansible.builtin.include_tasks: demo_public_dns_read.yml
+
+- name: Create or update the selected v3 A record exactly once when necessary
+  ansible.builtin.uri:
+    url: >-
+      https://api.godaddy.com/v3/domains/zones/{{ demo_public_dns_config.zone | urlencode }}/dns-records{{ '/' ~ (demo_public_dns_existing_a[0].recordId | urlencode | replace('/', '%2F')) if demo_public_dns_existing_a | length == 1 else '' }}
+    method: "{{ 'PUT' if demo_public_dns_existing_a | length == 1 else 'POST' }}"
+    headers:
+      Authorization: "Bearer {{ demo_public_dns_api_token }}"
+    body_format: json
+    body:
+      name: "{{ demo_public_dns_config.record_name }}"
+      type: A
+      data: "{{ demo_public_dns_config.hypervisor.public_ipv4 }}"
+      ttl: 600
+    status_code: "{{ 200 if demo_public_dns_existing_a | length == 1 else 201 }}"
+    follow_redirects: none
+    validate_certs: true
+    timeout: 30
+  when:
+    - not ansible_check_mode
+    - >-
+      demo_public_dns_existing_a | length == 0 or
+      demo_public_dns_existing_a[0].ttl != 600
+  delegate_to: localhost
+  become: false
+  changed_when: true
+  no_log: false
+
+- name: Read back the exact v3 A record after successful reconciliation
+  ansible.builtin.uri:
+    url: "https://api.godaddy.com/v3/domains/zones/{{ demo_public_dns_config.zone | urlencode }}/dns-records?type=A&name={{ demo_public_dns_config.record_name | urlencode }}&page=1&pageSize=100&totalRequired=true"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ demo_public_dns_api_token }}"
+    status_code: 200
+    follow_redirects: none
+    validate_certs: true
+    timeout: 30
+  when: not ansible_check_mode
+  delegate_to: localhost
+  become: false
+  changed_when: false
+  register: demo_public_dns_readback
+  no_log: false
+
+- name: Require exact v3 provider name, address and TTL readback
+  ansible.builtin.assert:
+    that:
+      - demo_public_dns_readback.json | godaddy_v3_records(demo_public_dns_config.record_name, 'A') | map(attribute='data') | list == [demo_public_dns_config.hypervisor.public_ipv4]
+      - demo_public_dns_readback.json | godaddy_v3_records(demo_public_dns_config.record_name, 'A') | map(attribute='ttl') | list == [600]
+    quiet: true
+  when: not ansible_check_mode
+  no_log: false
+
+- name: Require authoritative publication before existing recursive workload checks
+  ansible.builtin.include_tasks: demo_public_dns_ready.yml
