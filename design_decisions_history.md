@@ -1,5 +1,44 @@
 # Design decisions history
 
+## Separate retained phases and preserve successful diagnostic metadata — 2026-11-16
+
+Implementation `02d93ca987ae4580c834b2237ea2086305d30657` (deployment version 1.6.17)
+changes the existing report formatter after a successful functional rehearsal
+retained phase findings/conclusions in the same AAP output item as the following
+announcement, and the final phase together with the incident report. It splits
+only the retained presentation after matching findings and conclusion markers,
+preserves every original character and its order, and keeps the final report's
+repeated phase summaries together, including optional final-report headings and
+the next investigation cycle. Existing completion-time rendering is used;
+no new model turn, phase handoff or live-streaming implementation is introduced.
+The original rehearsal's presentation gap remains explicit.
+
+After the existing independent child, service and fresh-monitoring checks pass,
+the existing successful recovery artifact now includes the same bounded diagnostic
+filter already used on failure. It retains at most 64 ordered allowed tool names,
+assistant-message positions and returned/error metadata, plus total/omitted counts.
+It excludes arguments, raw tool results, model prose and credentials. A returned
+result does not prove successful effects. The original empty native CLI event
+result has an unknown cause and cannot be recovered from retained text messages;
+no Controller limit or global setting is changed to manufacture missing evidence.
+
+The entire runner YAML is semantically identical except for the successful
+artifact field. Python behavior outside the formatter is unchanged. CLI argv,
+prompt, permissions, four-phase instructions, lack of an owner turn cap and the
+600-second hard bound remain intact. All 18 focused tests passed in cached Core
+2.20.10, including actual Ansible debug-loop and set-stats tasks, payload-canary
+exclusion, bounds, both investigation cycles, optional final-report headings,
+existing CLI and native protocol checks. Separately, the actual protected
+five-message fixture was qualified locally with Core 2.21.5 and produced nine
+items with exact concatenated text and the
+complete final report preserved; environmental text was not copied into tests.
+The existing native recovery postcheck's six scenarios also passed with local
+Core 2.21.5 and already installed Controller 4.8.11, without installing dependencies.
+These focused source checks do not establish a complete fresh deployment or live
+post-fix output. The next full deployment must consume and verify both changes;
+no additional fault or model run is performed merely to obtain logs. Version
+1.6.18 documents this implementation and qualification without runtime changes.
+
 ## Reconcile selected Linux release metadata before monitoring import — 2026-11-16
 
 Implementation `abe7de546e0f325722239ea152f24ddd31b04878` (deployment version 1.6.15) prevents an

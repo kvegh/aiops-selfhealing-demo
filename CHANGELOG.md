@@ -126,6 +126,15 @@ templates, and the status page are still outstanding.
 - Interaction regressions for reversible switching and both-view parity through
   the complete recovery story; explicit Pages staging for the two local assets.
 
+## [1.6.18] — 2026-11-16
+
+### Documentation
+
+- Document implementation `02d93ca987ae4580c834b2237ea2086305d30657`, the focused Core 2.20
+  qualification and exact retained-message preservation. This checkpoint changes
+  no executable behavior; actual next-deployment output and artifact retention
+  remain separate acceptance requirements.
+
 ## [1.6.17] — 2026-11-16
 
 ### Fixed

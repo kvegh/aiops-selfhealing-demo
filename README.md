@@ -296,7 +296,7 @@ selected instance's verified hypervisor, testserver and TRA. Importing it
 creates AAP configuration and launches no application or EDA activation.
 Secret-dependent jobs receive a whole-file Vault ciphertext string and stop
 before managed host, DNS or API writes when required settings are missing.
-Deployment version **1.6.17** is documented in [CHANGELOG.md](CHANGELOG.md).
+Deployment version **1.6.18** is documented in [CHANGELOG.md](CHANGELOG.md).
 Failed MCP builds now retain protected stdout/stderr in the runtime user's
 private server `logs/build.log`, then fail and remove the temporary checkout.
 The observed image-build failure is diagnosed: enforcing SELinux denied
@@ -499,6 +499,12 @@ determine acceptance. The original empty CLI result in Controller event output
 has an unknown cause and cannot be reconstructed from retained text messages.
 Source qualification does not establish future live output or artifact retention;
 the next complete deployment must verify both through its normal demonstration.
+Eighteen focused tests passed in cached Core 2.20.10, including native AAP debug
+loop and successful-artifact rendering with payload canaries, optional final-report
+headings and the second investigation cycle. Separately, the protected retained-message
+fixture was qualified locally with Core 2.21.5 and produced nine output items from five original messages,
+with exact text/order and final summaries preserved. This is source qualification,
+not a new live rehearsal or a reconstruction of missing raw CLI output.
 
 On failure, the job reports its stage, numeric CLI exit code, recognized
 completion markers and up to 64 ordered tool calls. Tool names come only from
