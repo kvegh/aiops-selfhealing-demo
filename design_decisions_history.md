@@ -1,5 +1,19 @@
 # Design decisions history
 
+## Recheck actual TRA SMBIOS identity inside the subscription lock — 2026-11-16
+
+Implementation `be1bdc055a9c8d0fd17450a7796b2fa7c8c95aac` (deployment version1.7.2) adds a direct native SMBIOS
+UUID and machine-ID equality check before subscription owner reads. Source
+already proves the domain UUID and normal guest access checks the machine ID;
+the extra in-guest equality closes the copied-machine-identity case at the
+actual consumer operation. Registration and retirement share the same checked
+reader and existing native lock. Wrong UUID or machine ID fails before reading
+or modifying registration. No new connection, bootstrap or adoption is added.
+Thirteen focused tests passed in the existing cached Core2.20/certified1.120.5
+runtime, including both native refusal cases. Live exact-clone readiness and
+consumer registration remain separate acceptance gates.
+
+
 ## Retain native TRA consumer ownership before repository changes — 2026-11-16
 
 Implementation `8c352cf7d67329770649b3b529f320ccabed019d` (deployment version1.7.0) keeps the existing

@@ -113,6 +113,11 @@ templates, and the status page are still outstanding.
   stack. All three pages now make zero external requests, so they render
   identically on an audience phone with nothing but venue wifi.
 
+## [1.7.3] — 2026-11-16
+
+- Document the actual SMBIOS equality decision, implementation commit and
+  completed offline refusal tests without claiming live clone acceptance.
+
 ## [1.7.2] — 2026-11-16
 
 - Read the selected TRA's actual SMBIOS UUID and machine ID under the native
