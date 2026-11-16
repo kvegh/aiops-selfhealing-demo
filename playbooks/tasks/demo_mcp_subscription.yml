@@ -1,133 +1,134 @@
----
 - name: Register only the selected TRA and enable its required RHEL repositories
   no_log: false
   block:
-    - name: Require the matching instance's protected subscription inputs
-      ansible.builtin.assert:
-        that:
-          - demo_mcp_subscription is mapping
-          - demo_mcp_subscription.instance_name == demo_mcp_deployment.instance_name
-          - demo_mcp_subscription.organization is string
-          - demo_mcp_subscription.organization | trim | length > 0
-          - demo_mcp_subscription.activation_keys is sequence
-          - demo_mcp_subscription.activation_keys is not string
-          - demo_mcp_subscription.activation_keys is not mapping
-          - demo_mcp_subscription.activation_keys | length > 0
-          - demo_mcp_subscription.activation_keys | select('string') | list | length == demo_mcp_subscription.activation_keys | length
-          - >-
-            demo_mcp_subscription.activation_keys | map('trim') | reject('equalto', '') | list | length ==
-            demo_mcp_subscription.activation_keys | length
-          - >-
-            demo_mcp_subscription.repositories | map(attribute='name') | sort ==
-            ['rhel-9-for-x86_64-appstream-rpms', 'rhel-9-for-x86_64-baseos-rpms']
-          - demo_mcp_subscription.repositories | selectattr('state', 'equalto', 'enabled') | list | length == 2
-        quiet: true
-        fail_msg: Supply this instance's RHSM organization, activation keys and the two required RHEL 9 repositories in its encrypted runtime settings.
-
-    - name: Initialize only this registration invocation's native lock ownership
-      ansible.builtin.set_fact:
-        demo_subscription_lock_acquired: false
-
-    - name: Serialize registration against exact workload unregistration
-      ansible.builtin.command:
-        argv: [mkdir, --mode=0700, --, /run/aiops-subscription.lock]
-      register: demo_subscription_lock_attempt
-      until: demo_subscription_lock_attempt.rc == 0
-      retries: 12
-      delay: 5
-      changed_when: false
-      no_log: true
-
-    - name: Retain this invocation's successful subscription lock
-      ansible.builtin.set_fact:
-        demo_subscription_lock_acquired: true
-
-    - name: Bind native subscription ownership to the existing selected TRA
-      ansible.builtin.set_fact:
-        demo_subscription_config: '{{ demo_mcp_deployment | demo_subscription_configuration }}'
-      no_log: true
-
-    - name: Inspect current native registration before the certified role can reuse it
-      ansible.builtin.include_tasks: demo_subscription_owner_read.yml
-
-    - name: Refuse claiming a copied foreign or incompletely retired consumer
-      ansible.builtin.assert:
-        that: demo_subscription_observed | demo_subscription_before_registration(demo_subscription_saved_owner, demo_subscription_config)
-        quiet: true
-      no_log: true
-
-    # Full rhc main also manages Insights. These shipped task files are pinned
-    # to 1.120.5 so registration can use the role without altering Insights.
-    - name: Initialize the installed certified role's required platform facts
-      ansible.builtin.include_role:
-        name: redhat.rhel_system_roles.rhc
-        tasks_from: set_vars.yml
-        apply:
-          no_log: false
-      vars:
-        rhc_state: present
-
-    - name: Require the selected RHEL 9 runtime before enabling its repositories
-      ansible.builtin.assert:
-        that:
-          - ansible_facts.distribution == 'RedHat'
-          - ansible_facts.distribution_major_version | int == 9
-        quiet: true
-        fail_msg: This demo subscription setup supports the selected RHEL 9 TRA runtime.
-
-    - name: Apply only the certified role's registration before repository changes
-      ansible.builtin.include_role:
-        name: redhat.rhel_system_roles.rhc
-        tasks_from: subscription-manager.yml
-        apply:
-          no_log: false
-      vars:
-        rhc_state: present
-        rhc_organization: "{{ demo_mcp_subscription.organization }}"
-        rhc_auth:
-          activation_keys:
-            keys: "{{ demo_mcp_subscription.activation_keys }}"
-        rhc_repositories: []
-
-    - name: Read the actual consumer after the certified registration role succeeds
-      ansible.builtin.command:
-        argv: [subscription-manager, identity]
-      environment:
-        LC_ALL: C
-      register: demo_subscription_registered_identity
-      changed_when: false
-      no_log: true
-
-    - name: Require the exact selected TRA consumer before recording ownership
-      ansible.builtin.set_fact:
-        demo_subscription_registered: '{{ demo_subscription_registered_identity | demo_subscription_identity(demo_subscription_config) }}'
-      no_log: true
-
-    - name: Require successful registration rather than an inferred identity
-      ansible.builtin.assert:
-        that: demo_subscription_registered.registered is sameas true
-        quiet: true
-      no_log: true
-
-    - name: Bind the exact newly registered or previously owned native consumer
-      ansible.builtin.set_fact:
-        demo_subscription_desired_owner: '{{ demo_subscription_config | demo_subscription_owner(demo_subscription_registered.consumer_uuid, false, demo_subscription_registered.consumer_name) }}'
-      no_log: true
-
-    - name: Retain root-only subscription provenance for later exact teardown
-      ansible.builtin.include_tasks: demo_subscription_owner_write.yml
-
-    - name: Enable only the declared repositories after retaining consumer ownership
-      redhat.rhel_system_roles.rhsm_repository:
-        name: '{{ item.name }}'
-        state: '{{ item.state }}'
-        purge: false
-      loop: '{{ demo_mcp_subscription.repositories }}'
-      no_log: true
+  - name: Require the matching instance's protected subscription inputs
+    ansible.builtin.assert:
+      that:
+      - demo_mcp_subscription is mapping
+      - demo_mcp_subscription.instance_name == demo_mcp_deployment.instance_name
+      - demo_mcp_subscription.organization is string
+      - demo_mcp_subscription.organization | trim | length > 0
+      - demo_mcp_subscription.activation_keys is sequence
+      - demo_mcp_subscription.activation_keys is not string
+      - demo_mcp_subscription.activation_keys is not mapping
+      - demo_mcp_subscription.activation_keys | length > 0
+      - demo_mcp_subscription.activation_keys | select('string') | list | length == demo_mcp_subscription.activation_keys
+        | length
+      - demo_mcp_subscription.activation_keys | map('trim') | reject('equalto', '') | list | length == demo_mcp_subscription.activation_keys
+        | length
+      - demo_mcp_subscription.repositories | map(attribute='name') | sort == ['rhel-9-for-x86_64-appstream-rpms',
+        'rhel-9-for-x86_64-baseos-rpms']
+      - demo_mcp_subscription.repositories | selectattr('state', 'equalto', 'enabled') | list | length == 2
+      quiet: true
+      fail_msg: Supply this instance's RHSM organization, activation keys and the two required RHEL 9 repositories
+        in its encrypted runtime settings.
+    no_log: false
+  - name: Initialize only this registration invocation's native lock ownership
+    ansible.builtin.set_fact:
+      demo_subscription_lock_acquired: false
+    no_log: false
+  - name: Serialize registration against exact workload unregistration
+    ansible.builtin.command:
+      argv:
+      - mkdir
+      - --mode=0700
+      - --
+      - /run/aiops-subscription.lock
+    register: demo_subscription_lock_attempt
+    until: demo_subscription_lock_attempt.rc == 0
+    retries: 12
+    delay: 5
+    changed_when: false
+    no_log: false
+  - name: Retain this invocation's successful subscription lock
+    ansible.builtin.set_fact:
+      demo_subscription_lock_acquired: true
+    no_log: false
+  - name: Bind native subscription ownership to the existing selected TRA
+    ansible.builtin.set_fact:
+      demo_subscription_config: '{{ demo_mcp_deployment | demo_subscription_configuration }}'
+    no_log: false
+  - name: Inspect current native registration before the certified role can reuse it
+    ansible.builtin.include_tasks: demo_subscription_owner_read.yml
+    no_log: false
+  - name: Refuse claiming a copied foreign or incompletely retired consumer
+    ansible.builtin.assert:
+      that: demo_subscription_observed | demo_subscription_before_registration(demo_subscription_saved_owner, demo_subscription_config)
+      quiet: true
+    no_log: false
+  - name: Initialize the installed certified role's required platform facts
+    ansible.builtin.include_role:
+      name: redhat.rhel_system_roles.rhc
+      tasks_from: set_vars.yml
+      apply:
+        no_log: false
+    vars:
+      rhc_state: present
+    no_log: false
+  - name: Require the selected RHEL 9 runtime before enabling its repositories
+    ansible.builtin.assert:
+      that:
+      - ansible_facts.distribution == 'RedHat'
+      - ansible_facts.distribution_major_version | int == 9
+      quiet: true
+      fail_msg: This demo subscription setup supports the selected RHEL 9 TRA runtime.
+    no_log: false
+  - name: Apply only the certified role's registration before repository changes
+    ansible.builtin.include_role:
+      name: redhat.rhel_system_roles.rhc
+      tasks_from: subscription-manager.yml
+      apply:
+        no_log: false
+    vars:
+      rhc_state: present
+      rhc_organization: '{{ demo_mcp_subscription.organization }}'
+      rhc_auth:
+        activation_keys:
+          keys: '{{ demo_mcp_subscription.activation_keys }}'
+      rhc_repositories: []
+    no_log: false
+  - name: Read the actual consumer after the certified registration role succeeds
+    ansible.builtin.command:
+      argv:
+      - subscription-manager
+      - identity
+    environment:
+      LC_ALL: C
+    register: demo_subscription_registered_identity
+    changed_when: false
+    no_log: false
+  - name: Require the exact selected TRA consumer before recording ownership
+    ansible.builtin.set_fact:
+      demo_subscription_registered: '{{ demo_subscription_registered_identity | demo_subscription_identity(demo_subscription_config)
+        }}'
+    no_log: false
+  - name: Require successful registration rather than an inferred identity
+    ansible.builtin.assert:
+      that: demo_subscription_registered.registered is sameas true
+      quiet: true
+    no_log: false
+  - name: Bind the exact newly registered or previously owned native consumer
+    ansible.builtin.set_fact:
+      demo_subscription_desired_owner: '{{ demo_subscription_config | demo_subscription_owner(demo_subscription_registered.consumer_uuid,
+        false, demo_subscription_registered.consumer_name) }}'
+    no_log: false
+  - name: Retain root-only subscription provenance for later exact teardown
+    ansible.builtin.include_tasks: demo_subscription_owner_write.yml
+    no_log: false
+  - name: Enable only the declared repositories after retaining consumer ownership
+    redhat.rhel_system_roles.rhsm_repository:
+      name: '{{ item.name }}'
+      state: '{{ item.state }}'
+      purge: false
+    loop: '{{ demo_mcp_subscription.repositories }}'
+    no_log: false
   always:
-    - name: Release only the subscription lock acquired by this registration
-      ansible.builtin.command:
-        argv: [rmdir, --, /run/aiops-subscription.lock]
-      when: demo_subscription_lock_acquired | default(false)
-      changed_when: false
-      no_log: true
+  - name: Release only the subscription lock acquired by this registration
+    ansible.builtin.command:
+      argv:
+      - rmdir
+      - --
+      - /run/aiops-subscription.lock
+    when: demo_subscription_lock_acquired | default(false)
+    changed_when: false
+    no_log: false

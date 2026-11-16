@@ -113,6 +113,15 @@ templates, and the status page are still outstanding.
   stack. All three pages now make zero external requests, so they render
   identically on an audience phone with nothing but venue wifi.
 
+## [1.7.4] — 2026-11-16
+
+- Apply the owner's existing temporary `no_log: false` direction to every owned
+  native subscription task, include and block. Preserve vendor role masking and
+  keep raw job results private and reports redacted.
+- Exact parsed-YAML inverse against 1.7.3 proves all non-logging runtime fields
+  unchanged across the three maintained task files. Eleven focused policy and
+  native refusal/retry tests passed under cached Core 2.20 and local Core 2.21.
+
 ## [1.7.3] — 2026-11-16
 
 - Document the actual SMBIOS equality decision, implementation commit and

@@ -6,7 +6,9 @@ At the owner's explicit request, deployment tasks use no_log:false until clean
 deployment acceptance. This temporary direction overrides earlier protected
 task-logging defaults. Keep job output private, redact reports, and never copy
 raw logs or secrets into Git. Authentication, native credential-field redaction
-and existing operational safeguards remain active.
+and existing operational safeguards remain active. This direction also covers
+the native subscription owner tasks, includes and blocks; vendor role masking
+is unchanged.
 
 
 **[Open the interactive AIOps visualization](https://kvegh.github.io/aiops-selfhealing-demo/)**
@@ -315,7 +317,7 @@ selected instance's verified hypervisor, testserver and TRA. Importing it
 creates AAP configuration and launches no application or EDA activation.
 Secret-dependent jobs receive a whole-file Vault ciphertext string and stop
 before managed host, DNS or API writes when required settings are missing.
-Deployment version **1.7.3** is documented in [CHANGELOG.md](CHANGELOG.md).
+Deployment version **1.7.4** is documented in [CHANGELOG.md](CHANGELOG.md).
 Failed MCP builds now retain protected stdout/stderr in the runtime user's
 private server `logs/build.log`, then fail and remove the temporary checkout.
 The observed image-build failure is diagnosed: enforcing SELinux denied

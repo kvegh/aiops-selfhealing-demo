@@ -1,21 +1,16 @@
----
 - name: Inspect the project-owned subscription receipt directory without following links
   ansible.builtin.stat:
     path: /var/lib/aiops-selfhealing
     follow: false
   register: demo_subscription_directory_stat
-  no_log: true
-
+  no_log: false
 - name: Refuse a linked foreign or non-directory subscription receipt parent
   ansible.builtin.assert:
-    that: >-
-      not demo_subscription_directory_stat.stat.exists or
-      (demo_subscription_directory_stat.stat.isdir | default(false) and
-       not demo_subscription_directory_stat.stat.islnk | default(false) and
-       demo_subscription_directory_stat.stat.uid == 0)
+    that: "not demo_subscription_directory_stat.stat.exists or (demo_subscription_directory_stat.stat.isdir | default(false)\
+      \ and\n not demo_subscription_directory_stat.stat.islnk | default(false) and\n demo_subscription_directory_stat.stat.uid\
+      \ == 0)"
     quiet: true
-  no_log: true
-
+  no_log: false
 - name: Keep the native ownership receipt readable only by root
   ansible.builtin.file:
     path: /var/lib/aiops-selfhealing
@@ -23,8 +18,7 @@
     owner: root
     group: root
     mode: '0700'
-  no_log: true
-
+  no_log: false
 - name: Atomically save only the exact native subscription ownership receipt
   ansible.builtin.copy:
     dest: /var/lib/aiops-selfhealing/subscription-owner.json
@@ -33,4 +27,4 @@
     group: root
     mode: '0600'
   diff: false
-  no_log: true
+  no_log: false
