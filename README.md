@@ -21,6 +21,25 @@ AI-driven incident remediation for enterprise infrastructure — with the blast 
 
 > **This is a functionality demo, not a production reference architecture.** No attempt is made to follow least-privilege, security hardening, or production-grade guidelines. That is intentional — the goal is to demonstrate the architecture and the self-healing flow, not to provide a deployable solution.
 
+## Native subscription ownership
+
+The selected TRA subscription setup records its exact native consumer after
+successful registration and before enabling repositories. The root-only receipt
+binds the selected instance, guest UUID, authenticated machine identity and
+native consumer name/UUID. Repository failures retain that receipt so an owned
+retry can continue. Registered consumers without matching provenance, copied
+consumers and ambiguous interrupted retirement are refused. There is no forced
+registration, inferred adoption or foreign unregistration.
+
+Registration and retirement serialize through the same bounded native lock.
+The existing certified registration tasks still preserve Insights and unrelated
+repositories; the two selected repositories use `purge: false`. A receipt is
+not evidence of a completed workload teardown. The separate Source lifecycle
+and normal saved retirement template require their own adoption and acceptance.
+The approved minimal VM creator disables package updates in both recovery and
+normal upstream modes, so this AIOps setup is the first registrar on that path.
+A pre-registered golden image remains an explicit ownership refusal.
+
 ## Ansible Core 2.20 runtime
 
 For Core 2.20 deployments, use the unmodified official AAP 2.7 execution
@@ -296,7 +315,7 @@ selected instance's verified hypervisor, testserver and TRA. Importing it
 creates AAP configuration and launches no application or EDA activation.
 Secret-dependent jobs receive a whole-file Vault ciphertext string and stop
 before managed host, DNS or API writes when required settings are missing.
-Deployment version **1.6.20** is documented in [CHANGELOG.md](CHANGELOG.md).
+Deployment version **1.7.0** is documented in [CHANGELOG.md](CHANGELOG.md).
 Failed MCP builds now retain protected stdout/stderr in the runtime user's
 private server `logs/build.log`, then fail and remove the temporary checkout.
 The observed image-build failure is diagnosed: enforcing SELinux denied

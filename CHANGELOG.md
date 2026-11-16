@@ -126,6 +126,20 @@ templates, and the status page are still outstanding.
 - Interaction regressions for reversible switching and both-view parity through
   the complete recovery story; explicit Pages staging for the two local assets.
 
+## [1.7.0] — 2026-11-16
+
+- Bind selected TRA RHSM registration to exact native guest and consumer
+  provenance. Persist the root-only ownership receipt before repository changes
+  so a repository failure can be retried without claiming another consumer.
+- Serialize native subscription work and refuse copied, foreign, missing-owner
+  or ambiguously retired registrations. Preserve certified registration behavior,
+  Insights and unrelated repositories; no force/register adoption is added.
+- Qualification: 12 focused tests passed in the cached official Core 2.20 runtime
+  using the already cached certified collection 1.120.5, including native atomic
+  receipt retention after a simulated repository failure and an owned retry.
+  The same tests passed under local Core 2.21 with the existing collection cache.
+  This implementation is not live registration, teardown or redeploy acceptance.
+
 ## [1.6.20] — 2026-11-16
 
 ### Documentation

@@ -79,7 +79,7 @@ class NativeSubscriptionTests(unittest.TestCase):
                             if "redhat.rhel_system_roles.redhat_subscription" in t)
         repositories = next(t for t in vendor if "block" in t)["block"][-1]["redhat.rhel_system_roles.rhsm_repository"]
         self.assertIs(repositories["purge"], False)
-        role_vars = self.deployment_tasks()[-1]["vars"]
+        role_vars = next(t["vars"] for t in self.deployment_tasks() if t.get("ansible.builtin.include_role", {}).get("tasks_from") == "subscription-manager.yml")
         selected_arguments = {key: registration[key] for key in ["state", "force_register", "org_id", "activationkey"]}
         tasks = [{"name": "Render actual vendor registration parameters using the selected native role inputs",
                   "ansible.builtin.set_fact": {"fixture_registration": selected_arguments}, "vars": role_vars, "no_log": True},

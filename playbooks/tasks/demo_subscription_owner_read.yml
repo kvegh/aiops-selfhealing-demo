@@ -1,0 +1,85 @@
+---
+- name: Read the authenticated TRA native fully qualified hostname
+  ansible.builtin.command:
+    argv: [python3, -c, 'import socket; print(socket.getfqdn())']
+  register: demo_subscription_native_hostname
+  changed_when: false
+  no_log: true
+
+- name: Require its native hostname to retain this exact TRA first label
+  ansible.builtin.assert:
+    that:
+      - demo_subscription_native_hostname.stdout | trim | lower is match('^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$')
+      - (demo_subscription_native_hostname.stdout | trim | lower).split('.')[0] == demo_subscription_config.tra.vm_name
+    quiet: true
+  no_log: true
+
+- name: Bind only that native name alongside the already verified guest identity
+  ansible.builtin.set_fact:
+    demo_subscription_config: '{{ demo_subscription_config | combine({"registration_name": demo_subscription_native_hostname.stdout | trim | lower}) }}'
+  no_log: true
+
+- name: Inspect only this project's native subscription owner file without following links
+  ansible.builtin.stat:
+    path: /var/lib/aiops-selfhealing/subscription-owner.json
+    follow: false
+    get_checksum: false
+  register: demo_subscription_owner_stat
+  no_log: true
+
+- name: Refuse foreign linked or permissive subscription ownership
+  ansible.builtin.assert:
+    that: >-
+      not demo_subscription_owner_stat.stat.exists or
+      (demo_subscription_owner_stat.stat.isreg | default(false) and
+       not demo_subscription_owner_stat.stat.islnk | default(false) and
+       demo_subscription_owner_stat.stat.uid == 0 and demo_subscription_owner_stat.stat.mode == '0600')
+    quiet: true
+  no_log: true
+
+- name: Read existing protected subscription ownership only when present
+  ansible.builtin.slurp:
+    src: /var/lib/aiops-selfhealing/subscription-owner.json
+  when: demo_subscription_owner_stat.stat.exists
+  register: demo_subscription_owner_file
+  no_log: true
+
+- name: Retain the existing subscription owner without inventing one
+  ansible.builtin.set_fact:
+    demo_subscription_saved_owner: >-
+      {{ (demo_subscription_owner_file.content | b64decode | from_json)
+         if demo_subscription_owner_stat.stat.exists else none }}
+  no_log: true
+
+- name: Inspect native subscription tooling and local consumer presence
+  ansible.builtin.stat:
+    path: '{{ item }}'
+    follow: false
+    get_checksum: false
+  loop: [/usr/sbin/subscription-manager, /etc/pki/consumer/cert.pem]
+  register: demo_subscription_native_files
+  no_log: true
+
+- name: Refuse a consumer identity without its native registration tooling
+  ansible.builtin.assert:
+    that: not demo_subscription_native_files.results[1].stat.exists or demo_subscription_native_files.results[0].stat.exists
+    quiet: true
+  no_log: true
+
+- name: Read native RHSM identity without registering or removing it
+  ansible.builtin.command:
+    argv: [subscription-manager, identity]
+  environment:
+    LC_ALL: C
+  register: demo_subscription_identity_command
+  when: demo_subscription_native_files.results[0].stat.exists
+  changed_when: false
+  failed_when: demo_subscription_identity_command.rc not in [0, 1]
+  no_log: true
+
+- name: Parse exact current consumer ownership or explicit native absence
+  ansible.builtin.set_fact:
+    demo_subscription_observed: >-
+      {{ (demo_subscription_identity_command | demo_subscription_identity(demo_subscription_config))
+         if demo_subscription_native_files.results[0].stat.exists else {'registered': false, 'consumer_uuid': none, 'consumer_name': none} }}
+  no_log: true
