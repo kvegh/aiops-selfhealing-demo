@@ -515,7 +515,8 @@ webhook concurrency and the monitoring chain rather than Wi-Fi throughput.
 | Final rounds 1585 / 1587 / 1589 and 1591 / 1593 / 1595 | Ten concurrent 202 responses in each round; one fault, repair, and automatic rearm per round; fresh nonce in the second round; late presses returned 423 |
 | Final Disable 1597 | Successful; placeholder 200, content/arm 404, panic 423, marker absent, item/trigger disabled, rate limit restored, jail running |
 | Later panic-message update, Enable 1616 | Successfully deployed the larger OMG message and retained the timestamp; no repeat rehearsal, as requested |
-| Repeat-press change, local nginx 1.20 with the versioned include (2026-11-18) | Five simultaneous presses: one `MISS`, four `HIT`; later press `HIT`; next nonce `MISS`; disarmed 423 without the header; one upstream delivery per round. Not yet deployed or rehearsed live |
+| Repeat-press change, local nginx 1.20 with the versioned include (2026-11-18) | Five simultaneous presses: one `MISS`, four `HIT`; later press `HIT`; next nonce `MISS`; disarmed 423 without the header; one upstream delivery per round |
+| Repeat-press change live, Enable 5099 and round 5101 / 5103 / 5105 (2026-11-18) | Enable installed the include, validated, reloaded and saw new workers. Live press: first `MISS`, second `HIT`; one fault, one repair, one rearm. Outage visible 31 s after the press, repaired at 51 s, rearmed with a fresh nonce at 71 s. Project pinned to branch `demo-live-panic-header` (pinned commit plus this change) |
 
 The complete final sequence passed and the demo was left disabled as requested.
 Zabbix alerts 77–80 were sent with no errors for the two final problem/recovery
