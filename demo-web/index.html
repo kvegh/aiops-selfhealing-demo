@@ -180,6 +180,7 @@
     var up = null;                  // null = unknown, true/false once polled
     var armed = null;               // server-side state, not this tab's opinion
     var nonce = null;               // read from the marker, sent as the body
+    var usedNonce = null;           // the round this tab has already pressed in
     var inFlight = false;
 
     function showFlash(msg, ms) {
@@ -236,8 +237,21 @@
             })
                 .then(function (r) {
                     // Another participant may disarm the server between
-                    // this tab's last poll and its press. That is expected.
-                    if (r.status === 423) {
+                    // this tab's last poll and its press (423), or may have
+                    // pressed first in this round while the fault job is
+                    // still starting (nginx serves the first press's cached
+                    // 202 and marks it HIT). Both are expected.
+                    var beaten = r.status === 423 ||
+                        r.headers.get("X-Panic-Delivery") === "HIT";
+
+                    // An accepted or beaten press settles this round for
+                    // this tab. The marker keeps the same nonce until the
+                    // fault job deletes it, which can take a while, so polls
+                    // must not re-enable the button for this round. Errors
+                    // do not count, so the press can be retried.
+                    if (beaten || r.ok) { usedNonce = nonce; }
+
+                    if (beaten) {
                         armed = false;
                         applyArmedState();
                         showFlash("Someone beat you to it.", 2200);
@@ -257,7 +271,9 @@
         applyArmedState();
     }
 
-    // 200 = armed, body is the nonce. 404 = the marker is gone.
+    // 200 = marker present, body is the nonce. 404 = the marker is gone.
+    // A marker still holding the nonce this tab pressed with is not armed:
+    // only a fresh nonce, written after recovery, starts a new round.
     function pollArmed() {
         fetch("armed?t=" + Date.now(), { cache: "no-store" })
             .then(function (r) {
@@ -265,7 +281,7 @@
                 return r.text();
             })
             .then(function (t) {
-                if (t !== null) { nonce = t.trim(); armed = true; }
+                if (t !== null) { nonce = t.trim(); armed = nonce !== usedNonce; }
                 applyArmedState();
             })
             .catch(function () { armed = false; applyArmedState(); });

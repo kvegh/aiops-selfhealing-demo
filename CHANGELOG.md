@@ -85,6 +85,13 @@ templates, and the status page are still outstanding.
 
 ### Changed
 
+- `demo-web/index.html`, `assets/nginx/demo-website-panic-cache-location.conf`
+  — every press after the first in a round now shows "Someone beat you to
+  it." straight away. The page remembers the nonce it pressed with and no
+  longer re-enables the button while the marker still holds it; nginx marks
+  cached repeat presses with `X-Panic-Delivery: HIT`, which other phones
+  treat like a 423. Previously the button came back on the next poll and
+  repeat presses said "You pushed it" until the fault job removed the marker.
 - Fresh-target inventory data comes from the AIOps private capture's selected
   allocation and verified guest artifacts. Guest jobs reuse the target's existing base Machine
   credential; hypervisor jobs retain their separate Machine credential.
