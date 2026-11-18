@@ -62,6 +62,11 @@ server {
         proxy_read_timeout 10s;
         proxy_send_timeout 10s;
         proxy_next_upstream off;
+        # HIT = a repeat press in this round; the page shows "Someone beat
+        # you to it." A location add_header drops server-level ones, so HSTS
+        # is repeated here as in /armed.
+        add_header X-Panic-Delivery $upstream_cache_status always;
+        add_header Strict-Transport-Security "max-age=300" always;
 
         proxy_set_header X-Gitlab-Token "{{ demo_website_webhook_key }}";
         proxy_set_header X-Gitlab-Event "Push Hook";

@@ -32,6 +32,7 @@
     demo_website_root: /var/www/redhat
     demo_button_marker: /var/www/redhat/.armed
     demo_website_rate_limit_file: /etc/nginx/demo-website-rate-limit.conf
+    demo_website_panic_cache_file: /etc/nginx/demo-website-panic-cache-location.conf
     # Page content is checked out on the target rather than copied out of the
     # AAP project directory. The project checkout is the controller's working
     # copy, not a distribution channel — reaching into it couples the play to
@@ -114,6 +115,12 @@
     # therefore removes rate limiting for the whole demo site.
     - name: Set the demo site's rate limiting for this session
       ansible.builtin.include_tasks: tasks/demo_website_rate_limit.yml
+
+    # Host-owned vhosts include this file in their panic location. It tells
+    # the page whether a press was the first of its round.
+    - name: Keep the host's panic cache include current
+      ansible.builtin.include_tasks: tasks/demo_website_panic_cache.yml
+      when: not (demo_website_manage_infrastructure | default(false) | bool)
 
     - name: Ensure the site directory exists
       ansible.builtin.file:
