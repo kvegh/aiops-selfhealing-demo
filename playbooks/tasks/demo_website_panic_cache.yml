@@ -1,0 +1,100 @@
+---
+# Keeps the host-owned /api/panic cache include in step with the repository.
+# The vhost itself stays host-owned; only this include, which carries no
+# secrets, is replaced. Hosts without the include are left untouched.
+# Versioned deployments inline these settings in their vhost template instead.
+
+- name: Look for the host's panic cache include
+  ansible.builtin.stat:
+    path: "{{ demo_website_panic_cache_file }}"
+  register: demo_panic_cache_current
+
+- name: Update and verify the panic cache include
+  when: demo_panic_cache_current.stat.exists
+  block:
+    - name: Read the current panic cache include
+      ansible.builtin.slurp:
+        src: "{{ demo_website_panic_cache_file }}"
+      register: demo_previous_panic_cache
+
+    - name: Install the repository's panic cache include
+      ansible.builtin.copy:
+        src: "{{ demo_web_checkout }}/assets/nginx/demo-website-panic-cache-location.conf"
+        remote_src: true
+        dest: "{{ demo_website_panic_cache_file }}"
+        owner: root
+        group: root
+        mode: "0644"
+        setype: httpd_config_t
+      register: demo_panic_cache_update
+
+    - name: Apply and verify the panic cache change # noqa: no-handler -- Immediate reload is part of the rollback transaction.
+      when: demo_panic_cache_update is changed
+      block:
+        - name: Validate the complete nginx configuration
+          ansible.builtin.command: nginx -t
+          changed_when: false
+
+        - name: Read the running nginx master PID
+          ansible.builtin.slurp:
+            src: /run/nginx.pid
+          register: demo_nginx_pid
+
+        - name: Record the current nginx workers
+          ansible.builtin.command:
+            argv:
+              - ps
+              - -o
+              - pid=
+              - --ppid
+              - "{{ demo_nginx_pid.content | b64decode | trim }}"
+          register: demo_nginx_workers_before
+          changed_when: false
+
+        - name: Reload nginx
+          ansible.builtin.systemd_service:
+            name: nginx
+            state: reloaded
+
+        # A successful reload command only proves that the signal was sent.
+        # New workers prove the master accepted the new configuration.
+        - name: Confirm nginx started workers with the new configuration
+          ansible.builtin.command:
+            argv:
+              - ps
+              - -o
+              - pid=
+              - --ppid
+              - "{{ demo_nginx_pid.content | b64decode | trim }}"
+          register: demo_nginx_workers_after
+          changed_when: false
+          until: >-
+            (demo_nginx_workers_after.stdout.split()
+             | difference(demo_nginx_workers_before.stdout.split()) | length) > 0
+          retries: 10
+          delay: 1
+
+      rescue:
+        - name: Restore the previous panic cache include after failure
+          ansible.builtin.copy:
+            content: "{{ demo_previous_panic_cache.content | b64decode }}"
+            dest: "{{ demo_website_panic_cache_file }}"
+            owner: root
+            group: root
+            mode: "0644"
+            setype: httpd_config_t
+
+        - name: Validate the restored nginx configuration
+          ansible.builtin.command: nginx -t
+          changed_when: false
+
+        - name: Reload the restored configuration
+          ansible.builtin.systemd_service:
+            name: nginx
+            state: reloaded
+
+        - name: Report the failed panic cache change
+          ansible.builtin.fail:
+            msg: >-
+              nginx did not apply the panic cache include. The previous
+              include was restored. Inspect the failed task and nginx error log.

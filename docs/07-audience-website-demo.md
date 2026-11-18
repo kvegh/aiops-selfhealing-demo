@@ -142,6 +142,18 @@ The include also sets `X-Panic-Delivery` from `$upstream_cache_status`
 location-level `add_header`, server-level `add_header` directives such as
 HSTS no longer apply to `/api/panic` responses; the page and `/armed` keep
 them, so browsers still receive HSTS. nginx omits the header on its own 423.
+Versioned deployments (`demo_website_manage_infrastructure`) inline the same
+settings in `playbooks/templates/demo-website-vhost.conf.j2`, which also
+repeats HSTS in that location.
+
+After the first manual installation, **Enable Demo Website** and **Disable
+Demo Website** keep this include in step with the repository
+(`playbooks/tasks/demo_website_panic_cache.yml`). They replace it only where
+it already exists, then validate, reload, confirm new nginx workers, and
+restore the previous file if any step fails. The host-owned vhost and its
+webhook key are not touched. The AAP project must be synced to the commit
+that contains the include; the page itself is checked out from
+`demo_web_version` on the target.
 
 See the official [nginx proxy-cache reference](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_cache_lock)
 for lock and POST caching behavior. Back up private configuration with protected

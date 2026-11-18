@@ -64,6 +64,10 @@ templates, and the status page are still outstanding.
   cached repeat presses with `X-Panic-Delivery: HIT`, which other phones
   treat like a 423. Previously the button came back on the next poll and
   repeat presses said "You pushed it" until the fault job removed the marker.
+- `playbooks/demo_website.yml` — Enable and Disable keep a host-owned
+  `/etc/nginx/demo-website-panic-cache-location.conf` in step with the
+  repository (validate, reload, confirm new workers, roll back on failure).
+  The versioned vhost template sets the same header inline.
 - Fresh-target inventory data comes from the AIOps private capture's selected
   allocation and verified guest artifacts. Guest jobs reuse the target's existing base Machine
   credential; hypervisor jobs retain their separate Machine credential.
