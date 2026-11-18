@@ -52,6 +52,7 @@ let contentStatus = 200;
 let armedStatus = 200;
 let nonce = "first-round";
 let panicStatus = 202;
+let panicDelivery = "MISS";
 const posts = [];
 vm.runInNewContext(script, {
     Date,
@@ -65,7 +66,12 @@ vm.runInNewContext(script, {
         if (route === "/api/panic") {
             assert.equal(options.method, "POST");
             posts.push(JSON.parse(options.body));
-            return { status: panicStatus, ok: panicStatus >= 200 && panicStatus < 300 };
+            return {
+                status: panicStatus,
+                ok: panicStatus >= 200 && panicStatus < 300,
+                // nginx sends no cache status on its own 423.
+                headers: { get: (name) => name === "X-Panic-Delivery" && panicStatus !== 423 ? panicDelivery : null }
+            };
         }
         const status = route === "armed" ? armedStatus : contentStatus;
         return { status, ok: status === 200, text: async () => route === "armed" ? nonce : content };
@@ -109,6 +115,15 @@ async function run() {
     assert.equal(posts.at(-1).nonce, "second-round");
     assert.equal(button.disabled, true);
 
+    // The fault job has not started yet: the marker still holds the nonce this
+    // tab pressed with. The button must stay grey instead of coming back.
+    await poll();
+    assert.equal(button.disabled, true, "a pressed round must not re-arm the same tab");
+    const postsBefore = posts.length;
+    button.click();
+    await flush();
+    assert.equal(posts.length, postsBefore, "a disarmed button must not post");
+
     contentStatus = 404;
     armedStatus = 404;
     await poll();
@@ -119,7 +134,34 @@ async function run() {
     await poll();
     assert.equal(button.disabled, false);
     assert.equal(elements.notfound.classList.contains("is-shown"), false);
-    console.log("PASS: automatic failure/recovery/rearm, repeated rounds, and a benign 423 race");
+
+    // Someone else pressed first in this round and the fault job is still
+    // starting. nginx answers from the cache with HIT.
+    panicDelivery = "HIT";
+    button.click();
+    await flush();
+    assert.equal(posts.at(-1).nonce, "third-round");
+    assert.equal(elements["flash-text"].textContent, "Someone beat you to it.");
+    assert.equal(button.disabled, true);
+    await poll();
+    assert.equal(button.disabled, true, "a beaten round must not re-arm the tab");
+
+    // A failed delivery does not use up the round, so the press can be retried.
+    contentStatus = 404;
+    armedStatus = 404;
+    await poll();
+    contentStatus = 200;
+    armedStatus = 200;
+    nonce = "fourth-round";
+    panicDelivery = "MISS";
+    await poll();
+    panicStatus = 502;
+    button.click();
+    await flush();
+    assert.match(elements["flash-text"].textContent, /Fault injection failed/);
+    await poll();
+    assert.equal(button.disabled, false, "a failed press must stay retryable");
+    console.log("PASS: automatic failure/recovery/rearm, repeated rounds, no same-tab re-arm, and benign 423/HIT races");
 }
 
 run().catch((error) => { console.error(error); process.exitCode = 1; });

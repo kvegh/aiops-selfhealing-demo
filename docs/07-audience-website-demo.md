@@ -22,6 +22,28 @@ paths, and IDs for your deployment.
 10. EDA launches **Arm Demo Button**, which verifies the content and publishes
     a fresh nonce. Open browsers enable their button again without refreshing.
 
+### Repeat presses within a round
+
+Between a press and the fault job deleting `.armed`, AAP needs time to queue
+and start the job (typically 10–30 seconds). During that window the marker
+still exists and still holds the same nonce, so the 423 guard does not apply
+yet. Two mechanisms make every press after the first show **Someone beat you
+to it.** immediately:
+
+- **Same browser:** after an accepted (or beaten) press, the page remembers
+  the nonce it pressed with. A poll that returns the same nonce leaves the
+  button disarmed; only a fresh nonce from **Arm Demo Button** enables it.
+  A failed request (for example 429 or 5xx) does not count, so it can be
+  retried.
+- **Other browsers:** nginx adds `X-Panic-Delivery: $upstream_cache_status`
+  to `/api/panic` responses. The first press of a round is a cache `MISS`
+  and reaches AAP. Every later or simultaneous press with the same nonce is
+  answered from the cache as a `HIT`, which the page treats like a 423.
+
+Before this change a pressed button came back to life on the next poll, and
+further presses reported "You pushed it" again. They were already harmless
+(the cache prevented a second fault job), but misleading on stage.
+
 Content recovery and rearming are distinct steps. Rearming immediately in the
 repair job would allow a second press before Zabbix closed the first problem;
 that second outage could then produce no new problem event. Waiting for the
@@ -114,6 +136,12 @@ The next arm nonce makes a different key, so the next round reaches AAP.
 This is independent of client IP and request-rate enforcement. Upstream
 timeouts are shorter than the cache lock timeout to avoid normal requests
 escaping the lock before the first delivery completes.
+
+The include also sets `X-Panic-Delivery` from `$upstream_cache_status`
+(see [repeat presses](#repeat-presses-within-a-round)). Because this is a
+location-level `add_header`, server-level `add_header` directives such as
+HSTS no longer apply to `/api/panic` responses; the page and `/armed` keep
+them, so browsers still receive HSTS. nginx omits the header on its own 423.
 
 See the official [nginx proxy-cache reference](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_cache_lock)
 for lock and POST caching behavior. Back up private configuration with protected
@@ -453,7 +481,9 @@ git diff --check
 The Node harness runs the actual page script with simulated DOM and HTTP
 responses. It verifies two-second polling, failure and recovery transitions,
 waiting for server rearming, fresh nonces across rounds, and a benign message
-for HTTP 423. It checks behavior, not browser rendering. The user also observed
+for HTTP 423. It also checks that a pressed round does not re-enable the same
+tab, that an `X-Panic-Delivery: HIT` response shows the beaten message, and
+that a failed delivery stays retryable. It checks behavior, not browser rendering. The user also observed
 the live page switching to failure without refreshing.
 
 Stress requests used SSH and loopback hostname resolution on the web server;
@@ -473,6 +503,7 @@ webhook concurrency and the monitoring chain rather than Wi-Fi throughput.
 | Final rounds 1585 / 1587 / 1589 and 1591 / 1593 / 1595 | Ten concurrent 202 responses in each round; one fault, repair, and automatic rearm per round; fresh nonce in the second round; late presses returned 423 |
 | Final Disable 1597 | Successful; placeholder 200, content/arm 404, panic 423, marker absent, item/trigger disabled, rate limit restored, jail running |
 | Later panic-message update, Enable 1616 | Successfully deployed the larger OMG message and retained the timestamp; no repeat rehearsal, as requested |
+| Repeat-press change, local nginx 1.20 with the versioned include (2026-11-18) | Five simultaneous presses: one `MISS`, four `HIT`; later press `HIT`; next nonce `MISS`; disarmed 423 without the header; one upstream delivery per round. Not yet deployed or rehearsed live |
 
 The complete final sequence passed and the demo was left disabled as requested.
 Zabbix alerts 77–80 were sent with no errors for the two final problem/recovery
